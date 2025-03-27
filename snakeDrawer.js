@@ -18,21 +18,8 @@ class SnakeDrawer {
             glowYellow: { r: 255, g: 255, b: 0 }     // Target for glow: bright yellow
         };
 
-        // Generate a random color for the snake on creation
-        this.generateRandomColor();
-
-        // Initialize sprites
-        this.snakeSprites = {
-            head: this.createSnakeHead(),
-            body: this.createSnakeBody(),
-            tail: this.createSnakeTail()
-        };
-    }
-
-    // Generate a random color for the snake
-    generateRandomColor() {
-        // Array of bright, visually appealing color pairs (primary, secondary)
-        const colorPairs = [
+        // Define color pairs
+        this.colorPairs = [
             // Greens
             { primary: '#2ecc71', secondary: '#27ae60' }, // Default emerald
             // Blues
@@ -58,8 +45,21 @@ class SnakeDrawer {
             { primary: '#ffecd2', secondary: '#fcb69f' }, // Light orange
         ];
 
+        // Generate a random color for the snake on creation
+        this.generateRandomColor();
+
+        // Initialize sprites
+        this.snakeSprites = {
+            head: this.createSnakeHead(),
+            body: this.createSnakeBody(),
+            tail: this.createSnakeTail()
+        };
+    }
+
+    // Generate a random color for the snake
+    generateRandomColor() {
         // Pick a random color pair
-        const randomPair = colorPairs[Math.floor(Math.random() * colorPairs.length)];
+        const randomPair = this.colorPairs[Math.floor(Math.random() * this.colorPairs.length)];
         this.snakeColor = randomPair;
 
         // Reset darkness level when creating a new color

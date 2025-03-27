@@ -10,21 +10,15 @@ class SoundManager {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
 
             // Force resume the context immediately
-            if (this.audioContext.state !== 'running') {
-                this.audioContext.resume();
+            this.resumeAudioContext();
 
-                // Add user interaction listeners to ensure the context stays active
-                const resumeAudioContext = () => {
-                    if (this.audioContext.state !== 'running') {
-                        this.audioContext.resume();
-                    }
-                };
+            // Add user interaction listeners to ensure the context stays active
+            const resumeHandler = () => this.resumeAudioContext();
 
-                // These will auto-trigger on first user interaction with the page
-                window.addEventListener('click', resumeAudioContext, { once: true });
-                window.addEventListener('touchstart', resumeAudioContext, { once: true });
-                window.addEventListener('keydown', resumeAudioContext, { once: true });
-            }
+            // These will auto-trigger on first user interaction with the page
+            window.addEventListener('click', resumeHandler, { once: true });
+            window.addEventListener('touchstart', resumeHandler, { once: true });
+            window.addEventListener('keydown', resumeHandler, { once: true });
 
             // Create sound templates
             this.initSoundTemplates();
@@ -35,6 +29,13 @@ class SoundManager {
         } catch (e) {
             console.error('Error creating AudioContext:', e);
             this.audioContext = null;
+        }
+    }
+
+    // Helper method to resume audio context
+    resumeAudioContext() {
+        if (this.audioContext && this.audioContext.state !== 'running') {
+            this.audioContext.resume();
         }
     }
 
@@ -121,9 +122,7 @@ class SoundManager {
         if (!this.audioContext || !this.soundTemplates[soundType]) return;
 
         // Always force resume before playing
-        if (this.audioContext.state !== 'running') {
-            this.audioContext.resume();
-        }
+        this.resumeAudioContext();
 
         // Get template and create sound
         const template = this.soundTemplates[soundType];
@@ -160,9 +159,7 @@ class SoundManager {
         if (!this.audioContext) return;
 
         // Always force resume before playing
-        if (this.audioContext.state !== 'running') {
-            this.audioContext.resume();
-        }
+        this.resumeAudioContext();
 
         const now = this.audioContext.currentTime;
 
