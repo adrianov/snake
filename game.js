@@ -330,20 +330,20 @@ class SnakeGame {
             this.musicManager.stopMusic(true);
         }
 
-        // Make sure we have a clean sound manager with a fresh audio context
+        // Create a fresh sound manager with a new audio context
         this.soundManager = new SoundManager();
         this.soundManager.init(true);
 
-        // Create a fresh music manager with the new audio context
-        this.musicManager = new MusicManager();
-        this.musicManager.init(this.soundManager.getAudioContext());
-
-        // Start music with a short delay to ensure initialization is complete
+        // Wait a short time to ensure the audio context is properly initialized
         setTimeout(() => {
+            // Create a fresh music manager with the new audio context
+            this.musicManager = new MusicManager();
+            this.musicManager.init(this.soundManager.getAudioContext());
+
             // Select a random melody and start music
             this.musicManager.selectRandomMelody();
             this.musicManager.startMusic();
-        }, 50);
+        }, 100);
 
         // Start the game loop
         this.restartGameLoop();
@@ -452,7 +452,7 @@ class SnakeGame {
 
             // Draw game over screen
             this.drawGameOver();
-        }, 300); // Longer delay to ensure crash sound completes
+        }, 500); // Longer delay to ensure crash sound completes
     }
 
     drawGameOver() {
