@@ -51,18 +51,14 @@ class MusicManager {
             this.audioContext = audioContext;
         }
 
-        // Create gain node structure
+        // Create gain node structure with higher levels
         this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = 0.3;
+        this.masterGain.gain.value = 0.5; // Increased from 0.3
         this.masterGain.connect(this.audioContext.destination);
 
         this.melodyGain = this.audioContext.createGain();
-        this.melodyGain.gain.value = 0.7;  // Increased volume to compensate for removed chords
+        this.melodyGain.gain.value = 0.9; // Increased from 0.7
         this.melodyGain.connect(this.masterGain);
-
-        this.drumGain = this.audioContext.createGain();
-        this.drumGain.gain.value = 0.2;
-        this.drumGain.connect(this.masterGain);
 
         // Reset playback state
         this.isPlaying = false;
@@ -148,22 +144,21 @@ class MusicManager {
         const melody = musicData.melody;
         const secondsPerBeat = 60.0 / musicData.tempo;
 
-        // Schedule 3 notes at a time
-        const notesToSchedule = Math.min(3, melody.length - this.currentNoteIndex);
+        // Schedule 4 notes at a time for smoother scheduling
+        const notesToSchedule = Math.min(4, melody.length - this.currentNoteIndex);
         let schedulingTime = 0;
 
         for (let i = 0; i < notesToSchedule; i++) {
             const noteIndex = (this.currentNoteIndex + i) % melody.length;
             const note = melody[noteIndex];
 
-            // Handle new 2-element array format for duration
-            // First element is the note duration in beats
-            // Second element is the note name
             const duration = note[0] * secondsPerBeat;
             const noteName = note[1];
 
             if (noteName !== 'REST') {
-                this.playNote(noteName, this.nextNoteTime + schedulingTime, duration);
+                // Calculate legato overlap with next note - notes overlap by 10% of their duration
+                const overlapDuration = duration * 0.1;
+                this.playNote(noteName, this.nextNoteTime + schedulingTime, duration + overlapDuration);
             }
 
             schedulingTime += duration;
@@ -171,7 +166,7 @@ class MusicManager {
 
         // Update current index and next time
         this.currentNoteIndex = (this.currentNoteIndex + notesToSchedule) % melody.length;
-        const nextScheduleTime = schedulingTime * 1000 * 0.8; // Schedule next batch at 80% of current duration
+        const nextScheduleTime = schedulingTime * 1000 * 0.7; // Schedule next batch at 70% of current duration for smoother transitions
 
         // Schedule next batch of notes
         this.melodyScheduler = setTimeout(() => {
@@ -179,7 +174,7 @@ class MusicManager {
                 this.nextNoteTime += schedulingTime;
                 this.scheduleNotes();
             }
-        }, Math.max(nextScheduleTime, 100)); // At least 100ms to avoid tight scheduling
+        }, Math.max(nextScheduleTime, 100));
     }
 
     scheduleBeats() {
@@ -218,43 +213,59 @@ class MusicManager {
         // Skip if the note is a rest
         if (noteName === 'REST') return;
 
-        // Create oscillator and gain for envelope
-        const oscillator = this.audioContext.createOscillator();
+        // Create oscillators for richer sound
+        const sineOsc = this.audioContext.createOscillator();
+        const squareOsc = this.audioContext.createOscillator();
         const envelope = this.audioContext.createGain();
 
-        // Use triangle wave for melody (clear, pure sound)
-        oscillator.type = 'triangle';
+        // Set waveforms for different timbres
+        sineOsc.type = 'sine';
+        squareOsc.type = 'square';
 
         // Set note frequency
         const frequency = this.noteFrequencies[noteName];
         if (frequency) {
-            oscillator.frequency.value = frequency;
+            sineOsc.frequency.value = frequency;
+            squareOsc.frequency.value = frequency;
         } else {
             console.warn(`Unknown note: ${noteName}, defaulting to A4`);
-            oscillator.frequency.value = 440;
+            sineOsc.frequency.value = 440;
+            squareOsc.frequency.value = 440;
         }
 
-        // ADSR envelope
+        // Create a mixer for the oscillators
+        const mixer = this.audioContext.createGain();
+        mixer.gain.setValueAtTime(0.7, startTime); // Sine wave at 70%
+        mixer.gain.setValueAtTime(0.3, startTime); // Square wave at 30%
+
+        // Crisper envelope with stronger attack
         envelope.gain.setValueAtTime(0, startTime);
-        envelope.gain.linearRampToValueAtTime(0.7, startTime + 0.02); // Attack
-        envelope.gain.linearRampToValueAtTime(0.5, startTime + 0.08); // Decay
-        envelope.gain.setValueAtTime(0.5, startTime + duration * 0.75); // Sustain
+        envelope.gain.linearRampToValueAtTime(0.9, startTime + 0.02); // Faster, stronger attack
+        envelope.gain.setValueAtTime(0.8, startTime + duration * 0.3); // Higher sustain
         envelope.gain.linearRampToValueAtTime(0, startTime + duration); // Release
 
         // Connect audio nodes
-        oscillator.connect(envelope);
+        sineOsc.connect(mixer);
+        squareOsc.connect(mixer);
+        mixer.connect(envelope);
         envelope.connect(this.melodyGain);
 
-        // Track this oscillator for potential cleanup
-        this.activeOscillators.add(oscillator);
+        // Track oscillators for cleanup
+        this.activeOscillators.add(sineOsc);
+        this.activeOscillators.add(squareOsc);
 
-        // Play the note
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration + 0.05);
+        // Play the notes
+        sineOsc.start(startTime);
+        squareOsc.start(startTime);
+        sineOsc.stop(startTime + duration + 0.05);
+        squareOsc.stop(startTime + duration + 0.05);
 
         // Remove from tracking when finished
-        oscillator.onended = () => {
-            this.activeOscillators.delete(oscillator);
+        sineOsc.onended = () => {
+            this.activeOscillators.delete(sineOsc);
+        };
+        squareOsc.onended = () => {
+            this.activeOscillators.delete(squareOsc);
         };
     }
 
@@ -383,21 +394,21 @@ class MusicManager {
             this.drumScheduler = null;
         }
 
-        // Stop all active oscillators with a quick fade out
+        // Stop all active oscillators with a gentle fade out
         if (this.audioContext) {
             const currentTime = this.audioContext.currentTime;
 
-            // Fade out master gain over 50ms
+            // Fade out master gain over 100ms for smoother transition
             if (this.masterGain) {
                 this.masterGain.gain.cancelScheduledValues(currentTime);
                 this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, currentTime);
-                this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.05);
+                this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
             }
 
-            // Stop all active oscillators with a quick fade
+            // Stop all active oscillators with a smoother fade
             for (const source of this.activeOscillators) {
                 try {
-                    source.stop(currentTime + 0.05);
+                    source.stop(currentTime + 0.1);
                     source.disconnect();
                 } catch (e) {
                     // Ignore errors from already stopped oscillators
@@ -407,7 +418,7 @@ class MusicManager {
             // Clear the set
             this.activeOscillators.clear();
 
-            // Full cleanup for when we're completely done with this audio context
+            // Full cleanup if requested
             if (fullCleanup) {
                 try {
                     // Disconnect all nodes
@@ -435,7 +446,7 @@ class MusicManager {
                         try {
                             this.audioContext.resume();
                             if (this.masterGain) {
-                                this.masterGain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                                this.masterGain.gain.setValueAtTime(0.5, this.audioContext.currentTime); // Updated to match new level
                             }
                         } catch (e) {
                             console.error('Error resuming audio context:', e);
