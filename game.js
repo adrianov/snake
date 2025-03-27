@@ -37,6 +37,8 @@ class SnakeGame {
         this.lastGameState = null; // Store the state of the game before pausing
         this.lastRandomSpawnTime = Date.now();
         this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+        this.lastEatenTime = 0; // Track when snake last ate
+        this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -575,6 +577,7 @@ class SnakeGame {
                 const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
                 this.score += fruitConfig.score;
                 this.scoreElement.textContent = this.score;
+                this.lastEatenTime = Date.now(); // Update last eaten time
 
                 // Increase speed by 5% when food is eaten
                 this.speed *= 0.95; // 0.95 means 95% of current speed (5% faster)
@@ -916,49 +919,66 @@ class SnakeGame {
         return canvas;
     }
 
-    drawSnakeSegment(segment, index, isLast) {
-        const x = segment.x * this.gridSize;
-        const y = segment.y * this.gridSize;
+    drawSnake() {
+        // Calculate glow effect with pulsing
+        const timeSinceEaten = Date.now() - this.lastEatenTime;
+        const glowIntensity = Math.max(0, 1 - (timeSinceEaten / this.glowDuration));
 
-        // Determine which sprite to use
-        let sprite;
-        if (index === 0) {
-            sprite = this.snakeSprites.head;
-        } else if (isLast) {
-            sprite = this.snakeSprites.tail;
-        } else {
-            sprite = this.snakeSprites.body;
-        }
+        // Create pulsing effect with 3 cycles
+        const pulse = Math.sin((timeSinceEaten / 1000) * Math.PI * 3) * 0.5 + 0.5;
+        const finalGlowIntensity = glowIntensity * pulse;
 
-        // Calculate rotation based on direction
-        let rotation = 0;
-        if (index > 0) {
-            const prev = this.snake[index - 1];
-            const next = this.snake[index + 1] || segment;
+        this.snake.forEach((segment, index) => {
+            const x = segment.x * this.gridSize;
+            const y = segment.y * this.gridSize;
 
-            if (prev.x === next.x) {
-                // Vertical movement
-                rotation = prev.y < segment.y ? Math.PI / 2 : -Math.PI / 2;
+            // Determine which sprite to use
+            let sprite;
+            if (index === 0) {
+                sprite = this.snakeSprites.head;
+            } else if (index === this.snake.length - 1) {
+                sprite = this.snakeSprites.tail;
             } else {
-                // Horizontal movement
-                rotation = prev.x < segment.x ? 0 : Math.PI;
+                sprite = this.snakeSprites.body;
             }
-        } else {
-            // Head rotation
-            switch (this.direction) {
-                case 'up': rotation = -Math.PI / 2; break;
-                case 'down': rotation = Math.PI / 2; break;
-                case 'left': rotation = Math.PI; break;
-                case 'right': rotation = 0; break;
-            }
-        }
 
-        // Save context, rotate, draw, and restore
-        this.ctx.save();
-        this.ctx.translate(x + this.gridSize / 2, y + this.gridSize / 2);
-        this.ctx.rotate(rotation);
-        this.ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
-        this.ctx.restore();
+            // Calculate rotation based on direction
+            let rotation = 0;
+            if (index > 0) {
+                const prev = this.snake[index - 1];
+                const next = this.snake[index + 1] || segment;
+
+                if (prev.x === next.x) {
+                    // Vertical movement
+                    rotation = prev.y < segment.y ? Math.PI / 2 : -Math.PI / 2;
+                } else {
+                    // Horizontal movement
+                    rotation = prev.x < segment.x ? 0 : Math.PI;
+                }
+            } else {
+                // Head rotation
+                switch (this.direction) {
+                    case 'up': rotation = -Math.PI / 2; break;
+                    case 'down': rotation = Math.PI / 2; break;
+                    case 'left': rotation = Math.PI; break;
+                    case 'right': rotation = 0; break;
+                }
+            }
+
+            // Save context, rotate, draw, and restore
+            this.ctx.save();
+            this.ctx.translate(x + this.gridSize / 2, y + this.gridSize / 2);
+            this.ctx.rotate(rotation);
+
+            // Add glow effect if recently eaten
+            if (finalGlowIntensity > 0) {
+                this.ctx.shadowColor = 'rgba(46, 204, 113, 0.8)';
+                this.ctx.shadowBlur = 20 * finalGlowIntensity;
+            }
+
+            this.ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
+            this.ctx.restore();
+        });
     }
 
     draw() {
@@ -1084,12 +1104,6 @@ class SnakeGame {
                 }
             });
         }
-    }
-
-    drawSnake() {
-        this.snake.forEach((segment, index) => {
-            this.drawSnakeSegment(segment, index, index === this.snake.length - 1);
-        });
     }
 
     drawStartMessage() {
