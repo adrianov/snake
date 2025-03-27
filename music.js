@@ -155,10 +155,15 @@ class MusicManager {
         for (let i = 0; i < notesToSchedule; i++) {
             const noteIndex = (this.currentNoteIndex + i) % melody.length;
             const note = melody[noteIndex];
-            const duration = note.duration * secondsPerBeat;
 
-            if (note.note !== 'REST') {
-                this.playNote(note.note, this.nextNoteTime + schedulingTime, duration);
+            // Handle new 2-element array format for duration
+            // First element is the note duration in beats
+            // Second element is the note name
+            const duration = note[0] * secondsPerBeat;
+            const noteName = note[1];
+
+            if (noteName !== 'REST') {
+                this.playNote(noteName, this.nextNoteTime + schedulingTime, duration);
             }
 
             schedulingTime += duration;

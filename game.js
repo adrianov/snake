@@ -1067,7 +1067,12 @@ class SnakeGame {
 
                     // Apply fade out effect if close to disappearing
                     if (remainingLifetime < fadeOutDuration) {
-                        this.ctx.globalAlpha = remainingLifetime / fadeOutDuration;
+                        // Calculate alpha value (1.0 to 0.0)
+                        const alpha = Math.max(0, remainingLifetime / fadeOutDuration);
+                        this.ctx.globalAlpha = alpha;
+                    } else {
+                        // Ensure full opacity for non-fading fruits
+                        this.ctx.globalAlpha = 1.0;
                     }
 
                     this.ctx.drawImage(
