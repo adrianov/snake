@@ -136,13 +136,9 @@ class SnakeGame {
     }
 
     handleKeyPress(e) {
-        // If game is over and arrow key is pressed, restart the game
-        if (this.isGameOver && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        // If game is over and space key is pressed, restart the game
+        if (this.isGameOver && e.key === ' ') {
             e.preventDefault();
-
-            // No need to try resuming the audio context here since we create a fresh one in startGame
-            // The old code trying to resume the audio context won't work because it was fully closed in gameOver
-
             this.startGame();
             return;
         }
@@ -163,8 +159,9 @@ class SnakeGame {
             e.preventDefault();
         }
 
-        // If game hasn't started and an arrow key is pressed, start the game
-        if (!this.isGameStarted && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        // If game hasn't started and arrow key is pressed, start the game
+        // BUT only if the game is not in game over state
+        if (!this.isGameStarted && !this.isGameOver && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             this.startGame();
             return;
         }
@@ -589,7 +586,7 @@ class SnakeGame {
             this.ctx.restore();
         }
 
-        // Draw "Press any arrow to play again" message with animation
+        // Draw "Press SPACE to play again" message with animation
         this.ctx.save();
         this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -604,7 +601,7 @@ class SnakeGame {
             ? this.canvas.height / 2 + this.gridSize * 7.5 // After high score badge
             : this.canvas.height / 2 + this.gridSize * 6; // Directly after high score
 
-        this.ctx.fillText('Press any arrow to play again', this.canvas.width / 2, y);
+        this.ctx.fillText('Press SPACE to play again', this.canvas.width / 2, y);
         this.ctx.restore();
     }
 
