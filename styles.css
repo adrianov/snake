@@ -268,3 +268,44 @@ body {
 .game-wrapper {
     animation: fadeIn 0.5s ease-out;
 }
+
+/* High Score Reset Button */
+.high-score-container {
+    position: relative;
+}
+
+.reset-button {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.reset-button:hover {
+    background-color: rgba(231, 76, 60, 0.4);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.reset-button:active {
+    transform: scale(0.95);
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}

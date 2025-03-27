@@ -86,6 +86,9 @@ class SoundManager {
             case 'crash':
                 sound = this.createCrashSound();
                 break;
+            case 'highscore':
+                sound = this.createHighScoreSound();
+                break;
             default:
                 return;
         }
@@ -201,6 +204,91 @@ class SoundManager {
         gainNode.connect(this.audioContext.destination);
 
         return { oscillator, gainNode };
+    }
+
+    createHighScoreSound() {
+        if (!this.audioContext) this.init();
+
+        // We'll create a multi-note triumphant fanfare
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        // Make it sound triumphant and celebratory
+        oscillator.type = 'triangle';
+
+        // Starting time
+        const now = this.audioContext.currentTime;
+
+        // Create an ascending victorious pattern
+        oscillator.frequency.setValueAtTime(523.25, now); // C5
+        oscillator.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        oscillator.frequency.setValueAtTime(783.99, now + 0.2); // G5
+        oscillator.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+
+        // Set envelope to make it sound like a fanfare
+        gainNode.gain.setValueAtTime(0, now);
+        gainNode.gain.linearRampToValueAtTime(0.4, now + 0.05);
+        gainNode.gain.setValueAtTime(0.4, now + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0.3, now + 0.15);
+        gainNode.gain.setValueAtTime(0.3, now + 0.2);
+        gainNode.gain.linearRampToValueAtTime(0.4, now + 0.25);
+        gainNode.gain.setValueAtTime(0.4, now + 0.3);
+        gainNode.gain.linearRampToValueAtTime(0.5, now + 0.35);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        return { oscillator, gainNode };
+    }
+
+    playHighScoreFanfare() {
+        if (!this.audioContext) {
+            this.init();
+        }
+
+        // Ensure audio context is running
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        // Simpler implementation with sequential notes that are guaranteed to play
+        const now = this.audioContext.currentTime;
+
+        // Simple rising arpeggio for victory
+        this.playSimpleNote(392.00, now, 0.15, 0.5);       // G4
+        this.playSimpleNote(523.25, now + 0.15, 0.15, 0.5); // C5
+        this.playSimpleNote(659.25, now + 0.3, 0.15, 0.5);  // E5
+        this.playSimpleNote(783.99, now + 0.45, 0.3, 0.6);  // G5
+
+        // Final chord
+        this.playSimpleNote(783.99, now + 0.8, 0.5, 0.4);   // G5
+        this.playSimpleNote(987.77, now + 0.8, 0.5, 0.4);   // B5
+        this.playSimpleNote(1174.66, now + 0.8, 0.5, 0.4);  // D6
+
+        // Also play the simple sound in case the above doesn't work
+        this.playSound('highscore');
+    }
+
+    playSimpleNote(frequency, startTime, duration, volume) {
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        // Use triangle for a richer sound
+        oscillator.type = 'triangle';
+        oscillator.frequency.value = frequency;
+
+        // Simplified envelope with higher volume
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.05);
+        gainNode.gain.setValueAtTime(volume, startTime + duration - 0.05);
+        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
     }
 }
 

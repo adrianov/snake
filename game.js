@@ -85,6 +85,15 @@ class SnakeGame {
                 this.toggleMusic();
             });
         }
+
+        // Set up high score reset button
+        const resetButton = document.getElementById('resetHighScore');
+        if (resetButton) {
+            resetButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.resetHighScore();
+            });
+        }
     }
 
     toggleSound() {
@@ -546,29 +555,40 @@ class SnakeGame {
         this.isGameOver = true;
         this.isGameStarted = false;
 
+        // Check if we have a new high score
+        const isNewHighScore = this.score > this.highScore;
+
         // Play crash sound first before stopping music, but only if sound is enabled
         if (this.soundEnabled && this.soundManager) {
             this.soundManager.playSound('crash');
         }
 
-        // Delay the stopping of music to ensure crash sound is played
+        // Update high score immediately if needed
+        if (isNewHighScore) {
+            this.highScore = this.score;
+            localStorage.setItem('snakeHighScore', this.highScore);
+            this.highScoreElement.textContent = this.highScore;
+
+            // Play triumph sound for new high score right after crash sound, but only if sound is enabled
+            if (this.soundEnabled && this.soundManager) {
+                setTimeout(() => {
+                    console.log("Playing high score fanfare!");
+                    this.soundManager.playHighScoreFanfare();
+                }, 600);
+            }
+        }
+
+        // Delay the stopping of music to ensure sounds have time to play
         setTimeout(() => {
-            // Stop music after crash sound has started
+            // Stop music after sounds have had time to play
             if (this.musicManager) {
                 // Force complete stop of all audio, passing true for full cleanup
                 this.musicManager.stopMusic(true);
             }
 
-            // Update high score if needed
-            if (this.score > this.highScore) {
-                this.highScore = this.score;
-                localStorage.setItem('snakeHighScore', this.highScore);
-                this.highScoreElement.textContent = this.highScore;
-            }
-
             // Draw game over screen
             this.drawGameOver();
-        }, 500); // Longer delay to ensure crash sound completes
+        }, 1500); // Longer delay to ensure all sounds complete
     }
 
     drawGameOver() {
@@ -1185,6 +1205,21 @@ class SnakeGame {
 
         // Show the melody name
         musicInfoElement.classList.add('has-melody');
+    }
+
+    resetHighScore() {
+        // Show confirmation dialog to confirm reset
+        if (confirm('Are you sure you want to reset your high score?')) {
+            // Reset high score to 0
+            this.highScore = 0;
+            localStorage.setItem('snakeHighScore', 0);
+            this.highScoreElement.textContent = 0;
+
+            // Play sound if sound is enabled
+            if (this.soundEnabled && this.soundManager) {
+                this.soundManager.playSound('crash');
+            }
+        }
     }
 }
 
