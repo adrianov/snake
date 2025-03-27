@@ -13,12 +13,16 @@ class GameDrawer {
 
     // Reset darkness level when starting a new game
     resetDarknessLevel() {
+        // Reset in both specialized drawers
         this.snakeDrawer.resetLevels();
+        this.sceneDrawer.resetDarknessLevel();
     }
 
     // Increment darkness level when snake eats food
     incrementDarknessLevel() {
+        // Increment in both specialized drawers
         this.snakeDrawer.incrementLevels();
+        this.sceneDrawer.incrementDarknessLevel();
     }
 
     // The snake drawer now handles color internally - this method is kept for backward compatibility
