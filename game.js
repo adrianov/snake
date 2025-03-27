@@ -22,7 +22,6 @@ class SnakeGame {
         this.nextDirection = 'right';
         this.score = 0;
         this.highScore = localStorage.getItem('snakeHighScore') || 0;
-        this.gameLoop = null;
         this.fruitLoop = null; // Add new loop for fruit spawning
         this.baseSpeed = 100; // Base speed in milliseconds
         this.speed = this.baseSpeed;
@@ -38,7 +37,10 @@ class SnakeGame {
         this.lastEatenTime = 0; // Track when snake last ate
         this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
         this.oldDrawer = null;  // Keep track of previous drawer for preserving darkness level
-        this.lastSpeedChangeTime = null; // Track time of last speed change
+        this.lastFrameTime = 0; // Track time of last frame
+        this.frameInterval = this.baseSpeed; // Current interval between frames
+        this.animationFrame = null; // Handle for requestAnimationFrame
+        this.boundGameLoop = null; // Bound game loop function
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -157,7 +159,7 @@ class SnakeGame {
         this.nextDirection = 'right';
         this.score = 0;
         this.speed = this.baseSpeed;
-        this.lastSpeedChangeTime = null;
+        this.frameInterval = this.baseSpeed;
         this.uiManager.updateScore(this.score);
         this.uiManager.updateHighScore(this.highScore);
         this.generateFood();
@@ -240,11 +242,11 @@ class SnakeGame {
             // Update next direction only if the change is valid
             if (validDirectionChange) {
                 this.nextDirection = keyDirection;
-
-                // Only update speed if the direction change is valid
-                // This prevents invalid keypresses from affecting speed
-                this.updateGameSpeed(keyDirection, validDirectionChange);
             }
+
+            // Always update speed regardless of whether direction change is valid
+            // This allows slowing down by pressing opposite direction
+            this.updateGameSpeed(keyDirection, validDirectionChange);
         }
     }
 
@@ -263,63 +265,57 @@ class SnakeGame {
     }
 
     updateGameSpeed(keyDirection, validDirectionChange) {
-        // Store previous speed to check if it changed
+        // Store previous speed for comparison
         const previousSpeed = this.speed;
 
-        // Prevent rapid key presses from stacking speed changes
-        // Only allow speed changes after a minimum time has passed (100ms)
-        const now = Date.now();
-        if (this.lastSpeedChangeTime && now - this.lastSpeedChangeTime < 100) {
-            // Skip speed update if keys are pressed too quickly
-            return;
-        }
-
-        // Apply gradual speed changes instead of resetting to base speed
-        // This makes effects cumulative but controlled
-
-        // Calculate speed change factor based on key direction
-        let speedChangeFactor = 1.0; // Default: no change
-
-        if (keyDirection === this.direction) {
-            // Speed up when pressing same direction
-            // Apply a smaller multiplier for gradual acceleration
-            speedChangeFactor = 0.95; // Speed up by 5% of current speed
-        } else if (
+        // Check if key is in the same or opposite direction, regardless of validity
+        const isCurrentDirection = keyDirection === this.direction;
+        const isOppositeDirection =
             (keyDirection === 'up' && this.direction === 'down') ||
             (keyDirection === 'down' && this.direction === 'up') ||
             (keyDirection === 'left' && this.direction === 'right') ||
-            (keyDirection === 'right' && this.direction === 'left')
-        ) {
-            // Slow down when pressing opposite direction
-            // Apply a smaller multiplier for gradual deceleration
-            speedChangeFactor = 1.05; // Slow down by 5% of current speed
+            (keyDirection === 'right' && this.direction === 'left');
+
+        // Calculate speed change based on key direction
+        if (isCurrentDirection) {
+            // Speed up by 20% when pressing in current direction
+            this.speed *= 0.8; // 0.8 = 80% of current speed (20% faster)
+        } else if (isOppositeDirection) {
+            // Slow down by 20% when pressing opposite direction
+            this.speed *= 1.2; // 1.2 = 120% of current speed (20% slower)
         }
 
-        // Apply the speed change to current speed (making it cumulative)
-        this.speed *= speedChangeFactor;
-
-        // Ensure speed doesn't get too extreme - use original limits
+        // Ensure speed doesn't get too extreme
         this.speed = Math.max(this.speed, this.baseSpeed * 0.25); // No faster than 4x base speed
         this.speed = Math.min(this.speed, this.baseSpeed * 3);    // No slower than 1/3 base speed
 
-        // Record time of this speed change
-        this.lastSpeedChangeTime = now;
-
-        // Only restart the game loop if speed changed and game is running
-        if (previousSpeed !== this.speed && this.isGameStarted && !this.isPaused) {
-            this.restartGameLoop();
-        }
+        // Update frame interval based on new speed - no need to restart the loop
+        this.frameInterval = this.speed;
     }
 
-    restartGameLoop() {
-        // Clear any existing game loop
-        if (this.gameLoop) {
-            clearInterval(this.gameLoop);
-            this.gameLoop = null;
+    startGameLoop() {
+        // Use requestAnimationFrame for smoother animation
+        this.lastFrameTime = performance.now();
+        // Bind this context properly for the gameLoop method
+        this.boundGameLoop = this.gameLoop.bind(this);
+        this.animationFrame = requestAnimationFrame(this.boundGameLoop);
+    }
+
+    gameLoop(timestamp) {
+        // Calculate elapsed time since last frame
+        const elapsed = timestamp - this.lastFrameTime;
+
+        // Only update game state if enough time has passed based on current speed
+        if (elapsed >= this.frameInterval) {
+            this.update();
+            // Adjust lastFrameTime (add exact frame interval to avoid drift)
+            this.lastFrameTime = timestamp - (elapsed % this.frameInterval);
         }
 
-        // Start a new game loop with the current speed
-        this.gameLoop = setInterval(() => this.update(), this.speed);
+        // Continue loop if game is running
+        if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
+            this.animationFrame = requestAnimationFrame(this.boundGameLoop);
+        }
     }
 
     startFruitLoop() {
@@ -377,13 +373,14 @@ class SnakeGame {
             nextDirection: this.nextDirection,
             food: JSON.parse(JSON.stringify(this.food)), // Deep copy food
             score: this.score,
-            speed: this.speed
+            speed: this.speed,
+            frameInterval: this.frameInterval
         };
 
-        // Stop the game loop
-        if (this.gameLoop) {
-            clearInterval(this.gameLoop);
-            this.gameLoop = null;
+        // Stop the animation frame
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
         }
 
         // Stop background music without full cleanup
@@ -399,7 +396,7 @@ class SnakeGame {
         }
 
         // Restart the game loop
-        this.restartGameLoop();
+        this.startGameLoop();
     }
 
     startGame() {
@@ -417,7 +414,7 @@ class SnakeGame {
         this.direction = 'right';
         this.nextDirection = 'right';
         this.speed = this.baseSpeed;
-        this.lastSpeedChangeTime = null;
+        this.frameInterval = this.baseSpeed;
         this.snake = [
             { x: 5, y: 5 },
             { x: 4, y: 5 },
@@ -458,8 +455,8 @@ class SnakeGame {
         // Update the melody display
         this.uiManager.updateMelodyDisplay();
 
-        // Start the game loop
-        this.restartGameLoop();
+        // Start the game loop using requestAnimationFrame
+        this.startGameLoop();
     }
 
     generateFood() {
@@ -532,6 +529,9 @@ class SnakeGame {
                 // Ensure speed doesn't get too fast
                 this.speed = Math.max(this.speed, this.baseSpeed * 0.25); // No faster than 4x base speed
 
+                // Update frame interval to match new speed
+                this.frameInterval = this.speed;
+
                 // Notify drawer that snake has grown - it will handle darkness progression internally
                 if (this.drawer) {
                     this.drawer.incrementDarknessLevel();
@@ -587,10 +587,10 @@ class SnakeGame {
             this.uiManager.updateHighScore(this.highScore);
         }
 
-        // Stop the game loop
-        if (this.gameLoop) {
-            clearInterval(this.gameLoop);
-            this.gameLoop = null;
+        // Stop the animation frame
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
         }
 
         // Draw game over screen immediately to prevent flashing
