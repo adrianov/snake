@@ -36,7 +36,7 @@ class SnakeGame {
         this.isGameOver = false;
         this.lastGameState = null; // Store the state of the game before pausing
         this.lastRandomSpawnTime = Date.now();
-        this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+        this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
         this.lastEatenTime = 0; // Track when snake last ate
         this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
 
@@ -477,7 +477,7 @@ class SnakeGame {
         ];
         this.food = []; // Clear all food
         this.lastRandomSpawnTime = Date.now();
-        this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+        this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
         this.generateFood(); // Generate initial food
         this.isGameStarted = true;
         this.isPaused = false;
@@ -539,7 +539,7 @@ class SnakeGame {
             this.generateFood();
             this.lastRandomSpawnTime = currentTime;
             // Set new random interval for next spawn
-            this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+            this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
         }
     }
 

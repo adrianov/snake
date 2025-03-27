@@ -5,29 +5,25 @@ class SoundManager {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             // Force immediate activation of audio context
             this.activateAudioContext();
+
+            // Pre-create and cache basic sound nodes for faster playback
+            this.soundCache = {};
+
+            // Pre-warm the audio context with a silent sound
+            this.warmupAudioContext();
         } catch (e) {
             console.error('Error creating AudioContext:', e);
             this.audioContext = null;
         }
 
-        // Pre-create and cache basic sound nodes for faster playback
-        this.soundCache = {};
-
         // Flag for initialization
         this.isInitialized = !!this.audioContext;
     }
 
-    activateAudioContext() {
+    warmupAudioContext() {
         if (!this.audioContext) return;
 
-        // Force context to running state
-        if (this.audioContext.state !== 'running') {
-            this.audioContext.resume().catch(err => {
-                console.error('Error activating AudioContext:', err);
-            });
-        }
-
-        // Create a silent sound to activate the audio context immediately
+        // Create a silent sound to warm up the audio context
         const silentOsc = this.audioContext.createOscillator();
         const silentGain = this.audioContext.createGain();
         silentGain.gain.value = 0.001; // Nearly silent
@@ -35,6 +31,17 @@ class SoundManager {
         silentGain.connect(this.audioContext.destination);
         silentOsc.start();
         silentOsc.stop(this.audioContext.currentTime + 0.001);
+    }
+
+    activateAudioContext() {
+        if (!this.audioContext) return;
+
+        // Force context to running state immediately
+        if (this.audioContext.state !== 'running') {
+            this.audioContext.resume().catch(err => {
+                console.error('Error activating AudioContext:', err);
+            });
+        }
     }
 
     init(forceNewContext = false) {
@@ -83,7 +90,7 @@ class SoundManager {
         // Fast return if no audio context available
         if (!this.audioContext) {
             this.init();
-            if (!this.audioContext) return; // Still no context after init
+            if (!this.audioContext) return;
         }
 
         // Force wake the audio context immediately if suspended
@@ -134,7 +141,7 @@ class SoundManager {
             this.soundCache[fruitType] = this.createCacheableSound(sound);
         }
 
-        // Play immediately
+        // Play immediately with minimal latency
         sound.oscillator.start(now);
         sound.oscillator.stop(now + 0.3);
 
