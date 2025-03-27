@@ -2,8 +2,6 @@ class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.scoreElement = document.getElementById('score');
-        this.highScoreElement = document.getElementById('highScore');
 
         // Remove start button
         const startButton = document.getElementById('startButton');
@@ -50,6 +48,9 @@ class SnakeGame {
         this.musicManager = new MusicManager();
         this.musicManager.init(); // Initialize audio context immediately
 
+        // Initialize UI Manager
+        this.uiManager = new UIManager(this);
+
         // Load fruit images
         this.fruitImages = {};
         this.loadFruitImages().then(() => {
@@ -60,110 +61,6 @@ class SnakeGame {
 
             this.init();
         });
-
-        // Set up sound and music toggle controls
-        this.initializeControls();
-    }
-
-    initializeControls() {
-        // Set up sound toggle
-        const soundToggle = document.getElementById('soundToggle');
-        if (soundToggle) {
-            // Update initial state
-            this.updateSoundToggleUI();
-
-            // Add click event listener
-            soundToggle.addEventListener('click', () => {
-                this.toggleSound();
-            });
-        }
-
-        // Set up music toggle
-        const musicToggle = document.getElementById('musicToggle');
-        if (musicToggle) {
-            // Update initial state
-            this.updateMusicToggleUI();
-
-            // Add click event listener
-            musicToggle.addEventListener('click', () => {
-                this.toggleMusic();
-            });
-        }
-
-        // Set up high score reset button
-        const resetButton = document.getElementById('resetHighScore');
-        if (resetButton) {
-            resetButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.resetHighScore();
-            });
-        }
-    }
-
-    toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        localStorage.setItem('snakeSoundEnabled', this.soundEnabled.toString());
-        this.updateSoundToggleUI();
-
-        // Play a test sound to wake up the audio context
-        if (this.soundEnabled) {
-            this.soundManager.playSound('click', 0.2); // Play at low volume
-        }
-    }
-
-    toggleMusic() {
-        this.musicEnabled = !this.musicEnabled;
-        localStorage.setItem('snakeMusicEnabled', this.musicEnabled.toString());
-        this.updateMusicToggleUI();
-
-        // Update music playback immediately
-        if (this.musicEnabled) {
-            if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
-                this.musicManager.startMusic();
-            }
-        } else {
-            this.musicManager.stopMusic(false);
-        }
-    }
-
-    updateSoundToggleUI() {
-        const soundToggle = document.getElementById('soundToggle');
-        if (!soundToggle) return;
-
-        const soundOnIcon = soundToggle.querySelector('.sound-on');
-        const soundOffIcon = soundToggle.querySelector('.sound-off');
-
-        if (this.soundEnabled) {
-            soundToggle.classList.remove('disabled');
-            soundToggle.title = "Sound ON (S key to toggle)";
-            soundOnIcon.classList.remove('hidden');
-            soundOffIcon.classList.add('hidden');
-        } else {
-            soundToggle.classList.add('disabled');
-            soundToggle.title = "Sound OFF (S key to toggle)";
-            soundOnIcon.classList.add('hidden');
-            soundOffIcon.classList.remove('hidden');
-        }
-    }
-
-    updateMusicToggleUI() {
-        const musicToggle = document.getElementById('musicToggle');
-        if (!musicToggle) return;
-
-        const musicOnIcon = musicToggle.querySelector('.music-on');
-        const musicOffIcon = musicToggle.querySelector('.music-off');
-
-        if (this.musicEnabled) {
-            musicToggle.classList.remove('disabled');
-            musicToggle.title = "Music ON (M key to toggle)";
-            musicOnIcon.classList.remove('hidden');
-            musicOffIcon.classList.add('hidden');
-        } else {
-            musicToggle.classList.add('disabled');
-            musicToggle.title = "Music OFF (M key to toggle)";
-            musicOnIcon.classList.add('hidden');
-            musicOffIcon.classList.remove('hidden');
-        }
     }
 
     resizeCanvas() {
@@ -243,8 +140,8 @@ class SnakeGame {
         this.direction = 'right';
         this.nextDirection = 'right';
         this.score = 0;
-        this.scoreElement.textContent = this.score;
-        this.highScoreElement.textContent = this.highScore;
+        this.uiManager.updateScore(this.score);
+        this.uiManager.updateHighScore(this.highScore);
         this.generateFood();
         this.draw();
 
@@ -466,7 +363,7 @@ class SnakeGame {
 
         // Reset game state first
         this.score = 0;
-        this.scoreElement.textContent = this.score;
+        this.uiManager.updateScore(this.score);
         this.direction = 'right';
         this.nextDirection = 'right';
         this.speed = this.baseSpeed;
@@ -490,10 +387,7 @@ class SnakeGame {
         }
 
         // Clear melody display initially
-        const melodyElement = document.getElementById('currentMelody');
-        if (melodyElement) {
-            melodyElement.textContent = '';
-        }
+        this.uiManager.clearMelodyDisplay();
 
         // If there was a previous music manager, stop it completely
         if (this.musicManager) {
@@ -511,7 +405,7 @@ class SnakeGame {
         }
 
         // Update the melody display
-        this.drawMelodyName();
+        this.uiManager.updateMelodyDisplay();
 
         // Start the game loop
         this.restartGameLoop();
@@ -578,7 +472,7 @@ class SnakeGame {
                 const eatenFood = this.food[foodEatenIndex];
                 const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
                 this.score += fruitConfig.score;
-                this.scoreElement.textContent = this.score;
+                this.uiManager.updateScore(this.score);
                 this.lastEatenTime = Date.now(); // Update last eaten time
 
                 // Increase speed by 5% when food is eaten
@@ -607,7 +501,7 @@ class SnakeGame {
         }
 
         // Make sure melody name is always updated
-        this.drawMelodyName();
+        this.uiManager.updateMelodyDisplay();
 
         this.draw();
     }
@@ -634,7 +528,7 @@ class SnakeGame {
         if (isNewHighScore) {
             this.highScore = this.score;
             localStorage.setItem('snakeHighScore', this.highScore);
-            this.highScoreElement.textContent = this.highScore;
+            this.uiManager.updateHighScore(this.highScore);
         }
 
         // Stop the game loop
@@ -693,55 +587,29 @@ class SnakeGame {
         this.drawer.draw(gameState);
     }
 
-    drawMelodyName() {
-        const melodyElement = document.getElementById('currentMelody');
-        const musicInfoElement = document.querySelector('.music-info');
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        localStorage.setItem('snakeSoundEnabled', this.soundEnabled.toString());
+        this.uiManager.updateSoundToggleUI();
 
-        if (!melodyElement || !musicInfoElement) return;
-
-        if (!this.musicEnabled || !this.musicManager || !this.musicManager.getCurrentMelody()) {
-            // Clear the melody display when no melody is playing or music is disabled
-            melodyElement.textContent = '';
-
-            // If music is enabled but no melody is playing yet, show "Loading..."
-            if (this.musicEnabled && this.isGameStarted && !this.isPaused) {
-                melodyElement.textContent = 'Loading...';
-                musicInfoElement.classList.add('has-melody');
-            } else {
-                musicInfoElement.classList.remove('has-melody');
-            }
-            return;
+        // Play a test sound to wake up the audio context
+        if (this.soundEnabled) {
+            this.soundManager.playSound('click', 0.2); // Play at low volume
         }
-
-        const melodyInfo = this.musicManager.getCurrentMelody();
-        if (!melodyInfo) {
-            // This is a redundant check but ensures we always handle the case
-            melodyElement.textContent = '';
-            musicInfoElement.classList.remove('has-melody');
-            return;
-        }
-
-        const displayName = melodyInfo.name;
-
-        // Update the melody display
-        melodyElement.textContent = displayName;
-
-        // Show the melody name
-        musicInfoElement.classList.add('has-melody');
     }
 
-    resetHighScore() {
-        // Show confirmation dialog to confirm reset
-        if (confirm('Are you sure you want to reset your high score?')) {
-            // Reset high score to 0
-            this.highScore = 0;
-            localStorage.setItem('snakeHighScore', 0);
-            this.highScoreElement.textContent = 0;
+    toggleMusic() {
+        this.musicEnabled = !this.musicEnabled;
+        localStorage.setItem('snakeMusicEnabled', this.musicEnabled.toString());
+        this.uiManager.updateMusicToggleUI();
 
-            // Play sound if sound is enabled - directly using the sound manager
-            if (this.soundEnabled && this.soundManager) {
-                this.soundManager.playSound('crash');
+        // Update music playback immediately
+        if (this.musicEnabled) {
+            if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
+                this.musicManager.startMusic();
             }
+        } else {
+            this.musicManager.stopMusic(false);
         }
     }
 }
