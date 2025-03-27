@@ -21,11 +21,24 @@ class SceneDrawer {
 
         // Initialize the moon drawer
         this.moonDrawer = new MoonDrawer();
+
+        // Create star field caching system
+        this.starFieldCache = null;
+        this.starFieldDarkness = -1; // Force initial render
+        this.stars = []; // Pre-calculated star data
+        this.starsGenerated = false;
+
+        // Performance tracking
+        this.lastFrameTime = 0;
     }
 
     // Update gridSize (for responsive design)
     updateGridSize(gridSize) {
         this.gridSize = gridSize;
+
+        // Invalidate star cache when size changes
+        this.starFieldCache = null;
+        this.starsGenerated = false;
     }
 
     // Reset darkness level when starting a new game
@@ -77,7 +90,7 @@ class SceneDrawer {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw stars when darkness level increases
+        // Draw stars when darkness level increases (using cached system)
         if (this.darknessLevel > 30) {
             this.drawStars();
         }
@@ -114,108 +127,248 @@ class SceneDrawer {
             // Use the MoonDrawer to draw the moon with the current context, position and exact sky color
             this.moonDrawer.draw(this.ctx, moonX, moonY, moonSize, moonAlpha, skyColor);
         }
+
+        // FPS counter for debugging (uncomment if needed)
+        /*
+        const now = performance.now();
+        const fps = Math.round(1000 / (now - this.lastFrameTime));
+        this.lastFrameTime = now;
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '12px monospace';
+        this.ctx.fillText(`FPS: ${fps}`, 10, 20);
+        */
     }
 
-    // Draw stars in the night sky
-    drawStars() {
-        // Only show stars as it gets darker
-        const starsAlpha = Math.max(0, (this.darknessLevel - 30) / 70);
-
-        this.ctx.save();
-
-        // Create a starfield with different sizes
-        const numStars = Math.floor(this.canvas.width * this.canvas.height / 800); // More stars
-
-        // Use a better pseudo-random number generator for star positions
-        // Using a combination of different prime numbers and offsets to avoid patterns
+    // Generate star data - only called once or when canvas size changes
+    generateStars() {
+        // Use a deterministic seed for consistent star pattern
+        const seed = 12345;
         const pseudoRandom = (i, offset) => {
             const a = Math.sin(i * 12.9898 + offset * 78.233) * 43758.5453;
             return a - Math.floor(a);
         };
 
-        // Calculate moon position and radius
-        // Only calculate when moon would be visible
-        let moonX = 0, moonY = 0, moonRadius = 0;
-        let moonVisible = false;
+        // Determine moon position for star exclusion
+        const moonX = this.canvas.width * 0.8;
+        const moonY = this.canvas.height * 0.2;
+        const moonRadius = this.gridSize * 2.5;
 
-        if (this.darknessLevel > 25) {
-            moonVisible = true;
-            moonX = this.canvas.width * 0.8;
-            moonY = this.canvas.height * 0.2;
-            moonRadius = this.gridSize * 2.5; // Actual moon radius
-        }
+        // Reset stars array
+        this.stars = [];
 
-        // Pre-compute star positions based on canvas size to keep them consistent
+        // Enhanced star colors for HDR astronomy look
+        const starColors = {
+            // Warm colors (red to yellow)
+            warm: [
+                { r: 255, g: 180, b: 180 }, // Light pink
+                { r: 255, g: 200, b: 175 }, // Peach
+                { r: 255, g: 202, b: 122 }, // Gold
+                { r: 255, g: 210, b: 160 }, // Pale yellow
+                { r: 255, g: 170, b: 140 }, // Coral
+                { r: 255, g: 140, b: 140 }, // Salmon
+                { r: 255, g: 120, b: 100 }  // Orange-red
+            ],
+            // Cool colors (blue to purple)
+            cool: [
+                { r: 170, g: 200, b: 255 }, // Light blue
+                { r: 180, g: 180, b: 255 }, // Periwinkle
+                { r: 210, g: 230, b: 255 }, // Ice blue
+                { r: 190, g: 215, b: 255 }, // Sky blue
+                { r: 160, g: 175, b: 255 }, // Lavender
+                { r: 140, g: 170, b: 255 }, // Medium blue
+                { r: 130, g: 130, b: 255 }  // Blue-purple
+            ],
+            // White to blue-white (for most stars)
+            neutral: [
+                { r: 255, g: 255, b: 255 }, // Pure white
+                { r: 245, g: 250, b: 255 }, // Slight blue white
+                { r: 240, g: 245, b: 255 }, // Cool white
+                { r: 235, g: 240, b: 255 }, // Pale blue white
+                { r: 230, g: 235, b: 250 }  // Slightly bluer white
+            ]
+        };
+
+        // Create a starfield with different sizes
+        const numStars = Math.floor(this.canvas.width * this.canvas.height / 1000); // Slightly fewer stars for performance
+
+        // Pre-generate all star data
         for (let i = 0; i < numStars; i++) {
             // Use multiple offsets to break any potential patterns
             const x = pseudoRandom(i, 1) * this.canvas.width;
             const y = pseudoRandom(i, 2) * this.canvas.height * 0.8; // Keep stars in upper 80% of sky
 
-            // Skip stars that would be inside the moon's circle regardless of phase
-            if (moonVisible) {
-                // Calculate distance from star to moon center
-                const distToMoon = Math.sqrt(Math.pow(x - moonX, 2) + Math.pow(y - moonY, 2));
-
-                // Skip ALL stars inside the moon's circle, regardless of phase
-                if (distToMoon < moonRadius) {
-                    continue; // Skip this star entirely
-                }
+            // Skip stars that would be inside the moon's circle
+            const distToMoon = Math.sqrt(Math.pow(x - moonX, 2) + Math.pow(y - moonY, 2));
+            if (distToMoon < moonRadius) {
+                continue;
             }
 
             // Create varied star sizes with small bias toward smaller stars
-            const size = pseudoRandom(i, 3) * pseudoRandom(i, 4) * 2 + 0.5;
+            const sizeRand = pseudoRandom(i, 3) * pseudoRandom(i, 4);
+            const size = sizeRand * 2 + 0.5;
 
-            // Create varied twinkle speeds for more natural look
+            // Create varied twinkle properties
             const twinkleSpeed = 500 + pseudoRandom(i, 5) * 1500;
             const twinklePhase = pseudoRandom(i, 6) * Math.PI * 2; // Random starting phase
-            const twinkle = Math.sin(Date.now() / twinkleSpeed + twinklePhase) * 0.3 + 0.7;
 
-            // Add slight color variation to stars
-            let starColor;
-            const colorRand = pseudoRandom(i, 7);
+            // Determine star color
+            const colorType = pseudoRandom(i, 7);
+            let starColorObj;
 
-            if (colorRand > 0.94) {
-                // Reddish stars (5%)
-                starColor = `rgba(255, ${Math.floor(220 + pseudoRandom(i, 8) * 35)}, ${Math.floor(200 + pseudoRandom(i, 9) * 30)}, ${starsAlpha * twinkle})`;
-            } else if (colorRand > 0.88) {
-                // Bluish stars (6%)
-                starColor = `rgba(${Math.floor(220 + pseudoRandom(i, 10) * 35)}, ${Math.floor(220 + pseudoRandom(i, 11) * 35)}, 255, ${starsAlpha * twinkle})`;
+            if (colorType > 0.94) {
+                // Warm colors (6%)
+                const warmIndex = Math.floor(pseudoRandom(i, 8) * starColors.warm.length);
+                starColorObj = starColors.warm[warmIndex];
+            } else if (colorType > 0.88) {
+                // Cool colors (6%)
+                const coolIndex = Math.floor(pseudoRandom(i, 9) * starColors.cool.length);
+                starColorObj = starColors.cool[coolIndex];
             } else {
-                // White stars (89%)
-                starColor = `rgba(255, 255, 255, ${starsAlpha * twinkle})`;
+                // Neutral colors (88%)
+                const neutralIndex = Math.floor(pseudoRandom(i, 10) * starColors.neutral.length);
+                starColorObj = starColors.neutral[neutralIndex];
             }
 
-            // Draw star
-            this.ctx.fillStyle = starColor;
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, size, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Adjust brightness based on size
+            const brightnessBoost = Math.min(50, size * 15);
+            const finalR = Math.min(255, starColorObj.r + brightnessBoost);
+            const finalG = Math.min(255, starColorObj.g + brightnessBoost);
+            const finalB = Math.min(255, starColorObj.b + brightnessBoost);
 
-            // Add occasional sparkle effect to brightest stars
-            if (size > 1.7 && pseudoRandom(i, 12) > 0.7) {
-                this.ctx.save();
-                this.ctx.globalAlpha = starsAlpha * twinkle * 0.7;
+            // Create core color
+            const coreR = Math.min(255, finalR + 40);
+            const coreG = Math.min(255, finalG + 40);
+            const coreB = Math.min(255, finalB + 40);
 
-                // Draw simple cross-shaped sparkle
-                this.ctx.strokeStyle = starColor;
-                this.ctx.lineWidth = 0.5;
-                const sparkleSize = size * 2;
-
-                this.ctx.beginPath();
-                this.ctx.moveTo(x - sparkleSize, y);
-                this.ctx.lineTo(x + sparkleSize, y);
-                this.ctx.stroke();
-
-                this.ctx.beginPath();
-                this.ctx.moveTo(x, y - sparkleSize);
-                this.ctx.lineTo(x, y + sparkleSize);
-                this.ctx.stroke();
-
-                this.ctx.restore();
-            }
+            // Store all star data
+            this.stars.push({
+                x,
+                y,
+                size,
+                glowRadius: size * 1.5,
+                twinkleSpeed,
+                twinklePhase,
+                finalR,
+                finalG,
+                finalB,
+                coreR,
+                coreG,
+                coreB,
+                hasDiffraction: size > 1.7,
+                hasOctoDiffraction: size > 2.2,
+                spikeLength: size * 3
+            });
         }
 
-        this.ctx.restore();
+        this.starsGenerated = true;
+    }
+
+    // Draw stars in the night sky - using caching for performance
+    drawStars() {
+        // Calculate opacity once
+        const starsAlpha = Math.max(0, (this.darknessLevel - 30) / 70);
+
+        // Skip if stars wouldn't be visible
+        if (starsAlpha <= 0.01) return;
+
+        // Generate stars data if needed
+        if (!this.starsGenerated) {
+            this.generateStars();
+        }
+
+        // Check if we need to regenerate the star field cache
+        // Only regenerate when darkness changes by more than 5%
+        const currentDarknessBand = Math.floor(this.darknessLevel / 5);
+        if (this.starFieldDarkness !== currentDarknessBand || !this.starFieldCache) {
+            // Cache needs updating
+            this.updateStarFieldCache(starsAlpha);
+            this.starFieldDarkness = currentDarknessBand;
+        }
+
+        // Draw cached star field
+        if (this.starFieldCache) {
+            this.ctx.drawImage(this.starFieldCache, 0, 0);
+        }
+    }
+
+    // Update the star field cache - only called when darkness changes significantly
+    updateStarFieldCache(starsAlpha) {
+        // Initialize or resize cache canvas if needed
+        if (!this.starFieldCache) {
+            this.starFieldCache = document.createElement('canvas');
+            this.starFieldCache.width = this.canvas.width;
+            this.starFieldCache.height = this.canvas.height;
+        }
+
+        // Get context of the cache canvas
+        const cacheCtx = this.starFieldCache.getContext('2d', { alpha: true });
+
+        // Clear previous content
+        cacheCtx.clearRect(0, 0, this.starFieldCache.width, this.starFieldCache.height);
+
+        // Current timestamp for twinkle calculation
+        const now = Date.now();
+
+        // Draw all stars onto the cache
+        for (const star of this.stars) {
+            // Calculate twinkle effect
+            const twinkle = Math.sin(now / star.twinkleSpeed + star.twinklePhase) * 0.3 + 0.7;
+            const alphaWithTwinkle = starsAlpha * twinkle;
+
+            // Draw star with gradient
+            const gradient = cacheCtx.createRadialGradient(
+                star.x, star.y, 0,
+                star.x, star.y, star.glowRadius
+            );
+
+            gradient.addColorStop(0, `rgba(${star.coreR}, ${star.coreG}, ${star.coreB}, ${alphaWithTwinkle})`);
+            gradient.addColorStop(0.5, `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithTwinkle})`);
+            gradient.addColorStop(1, `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, 0)`);
+
+            cacheCtx.fillStyle = gradient;
+            cacheCtx.beginPath();
+            cacheCtx.arc(star.x, star.y, star.glowRadius, 0, Math.PI * 2);
+            cacheCtx.fill();
+
+            // Add diffraction spikes for brightest stars
+            if (star.hasDiffraction) {
+                cacheCtx.save();
+
+                // Star color but more transparent
+                cacheCtx.strokeStyle = `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithTwinkle * 0.7})`;
+                cacheCtx.lineWidth = 0.6;
+
+                // Draw 4-point diffraction spike
+                cacheCtx.beginPath();
+                cacheCtx.moveTo(star.x - star.spikeLength, star.y);
+                cacheCtx.lineTo(star.x + star.spikeLength, star.y);
+                cacheCtx.stroke();
+
+                cacheCtx.beginPath();
+                cacheCtx.moveTo(star.x, star.y - star.spikeLength);
+                cacheCtx.lineTo(star.x, star.y + star.spikeLength);
+                cacheCtx.stroke();
+
+                // Draw 8-point diffraction for largest stars
+                if (star.hasOctoDiffraction) {
+                    const diagonalLength = star.spikeLength * 0.7;
+                    const offset = diagonalLength / Math.sqrt(2);
+
+                    cacheCtx.lineWidth = 0.4;
+                    cacheCtx.beginPath();
+                    cacheCtx.moveTo(star.x - offset, star.y - offset);
+                    cacheCtx.lineTo(star.x + offset, star.y + offset);
+                    cacheCtx.stroke();
+
+                    cacheCtx.beginPath();
+                    cacheCtx.moveTo(star.x - offset, star.y + offset);
+                    cacheCtx.lineTo(star.x + offset, star.y - offset);
+                    cacheCtx.stroke();
+                }
+
+                cacheCtx.restore();
+            }
+        }
     }
 
     // Draw grid lines
@@ -262,37 +415,6 @@ class SceneDrawer {
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
         }
-
-        // Draw subtle glow regions
-        const regionSize = this.gridSize * 5;
-        const numRegions = 3;
-
-        this.ctx.save();
-
-        // Adjust glow intensity based on darkness level - make it more visible at night
-        const glowAlpha = (0.05 + Math.sin(time * 1.5) * 0.02) * (1 + this.darknessLevel / 150);
-        this.ctx.globalAlpha = glowAlpha;
-
-        for (let i = 0; i < numRegions; i++) {
-            const x = Math.sin(time + i * Math.PI * 2 / numRegions) * this.canvas.width / 3 + this.canvas.width / 2;
-            const y = Math.cos(time + i * Math.PI * 2 / numRegions) * this.canvas.height / 3 + this.canvas.height / 2;
-
-            const gradient = this.ctx.createRadialGradient(
-                x, y, 0,
-                x, y, regionSize
-            );
-
-            // Use adjusted glow color
-            gradient.addColorStop(0, `rgba(${gridColorRGB.glow.r}, ${gridColorRGB.glow.g}, ${gridColorRGB.glow.b}, 0.3)`);
-            gradient.addColorStop(1, `rgba(${gridColorRGB.glow.r}, ${gridColorRGB.glow.g}, ${gridColorRGB.glow.b}, 0)`);
-
-            this.ctx.fillStyle = gradient;
-            this.ctx.beginPath();
-            this.ctx.arc(x, y, regionSize, 0, Math.PI * 2);
-            this.ctx.fill();
-        }
-
-        this.ctx.restore();
     }
 
     // Draw game over screen
