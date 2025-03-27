@@ -21,9 +21,16 @@ class GameDrawer {
         this.snakeDrawer.incrementLevels();
     }
 
-    // Update snake colors and regenerate sprites
+    // The snake drawer now handles color internally - this method is kept for backward compatibility
     updateSnakeColors(colors) {
+        // This method is now deprecated as the SnakeDrawer handles colors internally
+        // It's kept for backward compatibility
         this.snakeDrawer.updateColors(colors);
+    }
+
+    // Get a new random color for the snake - added to support restarting the game
+    generateNewSnakeColor() {
+        this.snakeDrawer.generateRandomColor();
     }
 
     // Update gridSize for responsive design

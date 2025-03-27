@@ -2,7 +2,7 @@ class SnakeDrawer {
     constructor(gridSize) {
         this.gridSize = gridSize;
 
-        // Set default snake colors
+        // Set default snake colors (will be overridden by random selection)
         this.snakeColor = {
             primary: '#2ecc71',   // Vibrant green
             secondary: '#27ae60'  // Emerald green
@@ -18,12 +18,52 @@ class SnakeDrawer {
             glowYellow: { r: 255, g: 255, b: 0 }     // Target for glow: bright yellow
         };
 
+        // Generate a random color for the snake on creation
+        this.generateRandomColor();
+
         // Initialize sprites
         this.snakeSprites = {
             head: this.createSnakeHead(),
             body: this.createSnakeBody(),
             tail: this.createSnakeTail()
         };
+    }
+
+    // Generate a random color for the snake
+    generateRandomColor() {
+        // Array of bright, visually appealing color pairs (primary, secondary)
+        const colorPairs = [
+            // Greens
+            { primary: '#2ecc71', secondary: '#27ae60' }, // Default emerald
+            // Blues
+            { primary: '#3498db', secondary: '#2980b9' }, // Bright blue
+            // Purples
+            { primary: '#9b59b6', secondary: '#8e44ad' }, // Amethyst
+            // Reds
+            { primary: '#e74c3c', secondary: '#c0392b' }, // Alizarin
+            // Oranges
+            { primary: '#e67e22', secondary: '#d35400' }, // Carrot
+            // Yellows
+            { primary: '#f1c40f', secondary: '#f39c12' }, // Sunflower
+            // Teals
+            { primary: '#1abc9c', secondary: '#16a085' }, // Turquoise
+            // Pinks
+            { primary: '#e84393', secondary: '#d81b60' }, // Pink
+            // Gradients with better contrast
+            { primary: '#6a11cb', secondary: '#2575fc' }, // Purple to blue
+            { primary: '#ff0844', secondary: '#ffb199' }, // Red to pink
+            { primary: '#09c6f9', secondary: '#045de9' }, // Light blue to blue
+            { primary: '#13547a', secondary: '#80d0c7' }, // Dark blue to teal
+            { primary: '#ff9a9e', secondary: '#fad0c4' }, // Light pink
+            { primary: '#ffecd2', secondary: '#fcb69f' }, // Light orange
+        ];
+
+        // Pick a random color pair
+        const randomPair = colorPairs[Math.floor(Math.random() * colorPairs.length)];
+        this.snakeColor = randomPair;
+
+        // Reset darkness level when creating a new color
+        this.resetLevels();
     }
 
     // Reset darkness and glow levels to initial values
