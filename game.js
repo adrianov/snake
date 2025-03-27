@@ -558,37 +558,34 @@ class SnakeGame {
         // Check if we have a new high score
         const isNewHighScore = this.score > this.highScore;
 
-        // Play crash sound first before stopping music, but only if sound is enabled
-        if (this.soundEnabled && this.soundManager) {
-            this.soundManager.playSound('crash');
-        }
-
         // Update high score immediately if needed
         if (isNewHighScore) {
             this.highScore = this.score;
             localStorage.setItem('snakeHighScore', this.highScore);
             this.highScoreElement.textContent = this.highScore;
-
-            // Play triumph sound for new high score right after crash sound, but only if sound is enabled
-            if (this.soundEnabled && this.soundManager) {
-                setTimeout(() => {
-                    console.log("Playing high score fanfare!");
-                    this.soundManager.playHighScoreFanfare();
-                }, 600);
-            }
         }
 
-        // Delay the stopping of music to ensure sounds have time to play
+        // Play crash sound first before stopping music, but only if sound is enabled
+        if (this.soundEnabled && this.soundManager) {
+            this.soundManager.playSound('crash');
+        }
+
+        // Stop only the music after a short delay
         setTimeout(() => {
-            // Stop music after sounds have had time to play
+            // Stop background music but keep sound manager active
             if (this.musicManager) {
-                // Force complete stop of all audio, passing true for full cleanup
-                this.musicManager.stopMusic(true);
+                this.musicManager.stopMusic(false); // false = don't fully clean up
             }
 
             // Draw game over screen
             this.drawGameOver();
-        }, 1500); // Longer delay to ensure all sounds complete
+
+            // Play triumph sound for new high score after game over screen appears
+            if (isNewHighScore && this.soundEnabled && this.soundManager) {
+                console.log("Playing high score fanfare!");
+                this.soundManager.playHighScoreFanfare();
+            }
+        }, 500); // Short delay to ensure crash sound starts properly
     }
 
     drawGameOver() {
