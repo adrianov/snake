@@ -58,13 +58,8 @@ class SnakeGame {
         // Make canvas fill available space while maintaining square aspect ratio
         const container = this.canvas.parentElement;
 
-        // Take into account the score container height to calculate available space
-        // Subtract additional 10px to account for potential margin/padding
-        const scoreContainerHeight = container.querySelector('.score-container')?.offsetHeight || 0;
-        const availableHeight = container.clientHeight - scoreContainerHeight - 10;
-
-        // Use the smaller dimension to maintain square aspect
-        const size = Math.min(container.clientWidth, availableHeight);
+        // Use the container dimensions to maintain square aspect
+        const size = Math.min(container.clientWidth, container.clientHeight);
 
         this.canvas.width = size;
         this.canvas.height = size;
@@ -468,47 +463,149 @@ class SnakeGame {
     }
 
     drawGameOver() {
-        // Draw semi-transparent overlay with gradient
+        // Create a semi-transparent gradient overlay with a green-to-red tint
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
-        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        gradient.addColorStop(0, 'rgba(30, 41, 59, 0.9)');
+        gradient.addColorStop(1, 'rgba(153, 27, 27, 0.85)'); // Darker red that complements green
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Set text style with shadow
-        this.ctx.fillStyle = '#fff';
+        // Set common text properties
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
 
-        // Draw "Game Over!" text
-        this.ctx.font = `${this.gridSize * 1.2}px Arial`;
-        this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 2);
+        // Draw "Game Over!" text with gradient and glow
+        this.ctx.save();
 
-        // Draw score
-        this.ctx.font = `${this.gridSize * 0.8}px Arial`;
-        this.ctx.fillText(`Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 0.5);
+        // Create gradient for game over text - using a red that complements green
+        const gameOverGradient = this.ctx.createLinearGradient(
+            this.canvas.width/2 - 120,
+            this.canvas.height/2 - 60,
+            this.canvas.width/2 + 120,
+            this.canvas.height/2 - 20
+        );
+        gameOverGradient.addColorStop(0, '#e74c3c');
+        gameOverGradient.addColorStop(1, '#c0392b');
 
-        // Draw high score
-        this.ctx.fillText(`High Score: ${this.highScore}`, this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 0.5);
+        // Add glow effect
+        this.ctx.shadowColor = 'rgba(231, 76, 60, 0.6)';
+        this.ctx.shadowBlur = 15;
 
-        // Draw new high score badge if it was beaten
-        if (this.score === this.highScore) {
-            this.ctx.fillStyle = '#f1c40f';
-            this.ctx.font = `${this.gridSize * 0.6}px Arial`;
-            this.ctx.fillText('✨ New High Score! ✨', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.2);
-            this.ctx.fillStyle = '#fff';
+        this.ctx.font = `bold ${this.gridSize * 1.8}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = gameOverGradient;
+        this.ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 4);
+
+        this.ctx.restore();
+
+        // Draw score panel with glass effect - moved down for better spacing
+        this.ctx.save();
+
+        // Panel background
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(
+            this.canvas.width / 2 - this.gridSize * 5,
+            this.canvas.height / 2 - this.gridSize * 2,
+            this.gridSize * 10,
+            this.gridSize * 6, // Increased height to add more space
+            this.gridSize / 3
+        );
+        this.ctx.fill();
+
+        // Score border highlight
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+
+        this.ctx.restore();
+
+        // Draw score with green gradient matching snake
+        this.ctx.save();
+
+        const scoreGradient = this.ctx.createLinearGradient(
+            this.canvas.width/2 - 60,
+            this.canvas.height/2,
+            this.canvas.width/2 + 60,
+            this.canvas.height/2
+        );
+        scoreGradient.addColorStop(0, '#2ecc71');
+        scoreGradient.addColorStop(1, '#27ae60');
+
+        this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.fillText('SCORE', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 1);
+
+        this.ctx.font = `bold ${this.gridSize * 1.2}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = scoreGradient;
+        this.ctx.fillText(`${this.score}`, this.canvas.width / 2, this.canvas.height / 2);
+
+        this.ctx.restore();
+
+        // Draw high score with complementary blue gradient
+        this.ctx.save();
+
+        const highScoreGradient = this.ctx.createLinearGradient(
+            this.canvas.width/2 - 80,
+            this.canvas.height/2 + 60,
+            this.canvas.width/2 + 80,
+            this.canvas.height/2 + 60
+        );
+        highScoreGradient.addColorStop(0, '#3498db');
+        highScoreGradient.addColorStop(1, '#2980b9');
+
+        this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        this.ctx.fillText('HIGH SCORE', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.8);
+
+        this.ctx.font = `bold ${this.gridSize * 1.2}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = highScoreGradient;
+        this.ctx.fillText(`${this.highScore}`, this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 2.8);
+
+        this.ctx.restore();
+
+        // Draw new high score badge if it was beaten - using amber color that complements green
+        if (this.score === this.highScore && this.score > 0) {
+            this.ctx.save();
+
+            // Draw badge background
+            this.ctx.fillStyle = 'rgba(243, 156, 18, 0.2)';
+            this.ctx.beginPath();
+            this.ctx.roundRect(
+                this.canvas.width / 2 - this.gridSize * 4,
+                this.canvas.height / 2 + this.gridSize * 5.5,
+                this.gridSize * 8,
+                this.gridSize * 1,
+                this.gridSize / 3
+            );
+            this.ctx.fill();
+
+            // Add star icon and glow
+            this.ctx.shadowColor = 'rgba(243, 156, 18, 0.6)';
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillStyle = '#f39c12';
+            this.ctx.font = `${this.gridSize * 0.65}px 'Poppins', sans-serif`;
+            this.ctx.fillText('✨ NEW HIGH SCORE! ✨', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 6);
+
+            this.ctx.restore();
         }
 
-        // Draw "Press any arrow to play again" message
-        this.ctx.font = `${this.gridSize * 0.6}px Arial`;
-        this.ctx.fillText('Press any arrow to play again', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 2);
+        // Draw "Press any arrow to play again" message with animation
+        this.ctx.save();
+        this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
 
-        // Reset shadow
-        this.ctx.shadowColor = 'transparent';
+        // Add subtle pulsing animation
+        const time = Date.now() / 1000;
+        const pulse = Math.sin(time * 2) * 0.1 + 0.9;
+        this.ctx.globalAlpha = pulse;
+
+        // Position based on whether there's a new high score badge
+        const y = this.score === this.highScore && this.score > 0
+            ? this.canvas.height / 2 + this.gridSize * 7.5 // After high score badge
+            : this.canvas.height / 2 + this.gridSize * 6; // Directly after high score
+
+        this.ctx.fillText('Press any arrow to play again', this.canvas.width / 2, y);
+        this.ctx.restore();
     }
 
     createSnakeHead() {
@@ -517,11 +614,21 @@ class SnakeGame {
         canvas.height = this.gridSize;
         const ctx = canvas.getContext('2d');
 
-        // Draw head body (slightly bigger than other segments)
-        ctx.fillStyle = '#2ecc71';
+        // Draw head body with gradient - using healthier, more vibrant colors
+        const gradient = ctx.createLinearGradient(0, 0, this.gridSize, this.gridSize);
+        gradient.addColorStop(0, '#2ecc71'); // Vibrant green
+        gradient.addColorStop(1, '#27ae60'); // Emerald green
+
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, 10);
         ctx.fill();
+
+        // Add a subtle glow/inner shadow effect
+        ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
 
         // Draw eyes with white eyeballs
         // Left eye
@@ -551,6 +658,10 @@ class SnakeGame {
         ctx.arc(this.gridSize / 2, this.gridSize / 2, 5, 0, Math.PI);
         ctx.stroke();
 
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+
         return canvas;
     }
 
@@ -560,14 +671,19 @@ class SnakeGame {
         canvas.height = this.gridSize;
         const ctx = canvas.getContext('2d');
 
+        // Create gradient for body with healthier green colors
+        const gradient = ctx.createLinearGradient(0, 0, this.gridSize, this.gridSize);
+        gradient.addColorStop(0, '#2ecc71'); // Vibrant green
+        gradient.addColorStop(1, '#27ae60'); // Emerald green
+
         // Draw body segment
-        ctx.fillStyle = '#2ecc71';
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.roundRect(2, 2, this.gridSize - 4, this.gridSize - 4, 4);
         ctx.fill();
 
-        // Add subtle pattern
-        ctx.fillStyle = '#27ae60';
+        // Add subtle pattern as a highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.beginPath();
         ctx.roundRect(4, 4, this.gridSize - 8, this.gridSize - 8, 2);
         ctx.fill();
@@ -581,11 +697,11 @@ class SnakeGame {
         canvas.height = this.gridSize;
         const ctx = canvas.getContext('2d');
 
-        // Create a gradient for the tail that makes it thinner
+        // Create a gradient for the tail that makes it thinner, using healthier greens
         const gradient = ctx.createLinearGradient(0, 0, this.gridSize, 0);
-        gradient.addColorStop(0, '#2ecc71');
-        gradient.addColorStop(0.7, '#27ae60');
-        gradient.addColorStop(1, '#27ae60');
+        gradient.addColorStop(0, '#2ecc71'); // Vibrant green
+        gradient.addColorStop(0.7, '#27ae60'); // Emerald green
+        gradient.addColorStop(1, '#27ae60'); // Emerald green
 
         // Draw tail segment with tapered shape
         ctx.fillStyle = gradient;
@@ -598,8 +714,8 @@ class SnakeGame {
         ctx.closePath();
         ctx.fill();
 
-        // Add pattern that fades out
-        ctx.fillStyle = '#27ae60';
+        // Add pattern that fades out (subtle highlight)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.beginPath();
         ctx.roundRect(4, 4, this.gridSize - 12, this.gridSize - 8, 2);
         ctx.fill();
@@ -653,11 +769,14 @@ class SnakeGame {
     }
 
     draw() {
-        // Clear canvas
-        this.ctx.fillStyle = '#ecf0f1';
+        // Clear canvas with a light green gradient background
+        const gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+        gradient.addColorStop(0, '#dff5e6'); // Light green tint
+        gradient.addColorStop(1, '#e7f7f5'); // Light green-blue tint
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw background grid
+        // Draw background grid with luminescent effect
         this.drawGrid();
 
         // Draw food
@@ -688,9 +807,12 @@ class SnakeGame {
     }
 
     drawGrid() {
-        // Draw a subtle grid on the background
-        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
-        this.ctx.lineWidth = 1;
+        // Draw a luminescent grid with subtle animation
+        const time = Date.now() / 4000; // Slow pulse
+        const alpha = 0.15 + Math.sin(time) * 0.05; // Range from 0.1 to 0.2
+
+        this.ctx.strokeStyle = `rgba(46, 204, 113, ${alpha})`; // Green grid lines matching snake
+        this.ctx.lineWidth = 1.5;
 
         // Draw vertical lines
         for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
@@ -707,6 +829,33 @@ class SnakeGame {
             this.ctx.lineTo(this.canvas.width, y);
             this.ctx.stroke();
         }
+
+        // Draw subtle glow regions
+        const regionSize = this.gridSize * 5;
+        const numRegions = 3;
+
+        this.ctx.save();
+        this.ctx.globalAlpha = 0.05 + Math.sin(time * 1.5) * 0.02;
+        this.ctx.fillStyle = '#2ecc71'; // Green glow matching snake
+
+        for (let i = 0; i < numRegions; i++) {
+            const x = Math.sin(time + i * Math.PI * 2 / numRegions) * this.canvas.width / 3 + this.canvas.width / 2;
+            const y = Math.cos(time + i * Math.PI * 2 / numRegions) * this.canvas.height / 3 + this.canvas.height / 2;
+
+            const gradient = this.ctx.createRadialGradient(
+                x, y, 0,
+                x, y, regionSize
+            );
+            gradient.addColorStop(0, 'rgba(46, 204, 113, 0.3)');
+            gradient.addColorStop(1, 'rgba(46, 204, 113, 0)');
+
+            this.ctx.fillStyle = gradient;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, regionSize, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+
+        this.ctx.restore();
     }
 
     drawFood() {
@@ -728,81 +877,167 @@ class SnakeGame {
     }
 
     drawStartMessage() {
-        // Draw semi-transparent overlay with gradient
+        // Create a semi-transparent gradient overlay
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
-        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+        gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        this.ctx.fillStyle = '#fff';
+        // Set common text properties
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
 
-        // Draw title with shadow
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
-        this.ctx.font = `${this.gridSize * 1.5}px Arial`;
-        this.ctx.fillText('Snake Game', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 3);
-        this.ctx.shadowColor = 'transparent';
+        // Draw title with gradients and glow
+        this.ctx.save();
 
-        // Draw "Press" text with shadow
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
-        this.ctx.font = `${this.gridSize * 1.2}px Arial`;
-        this.ctx.fillText('Press', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 1.5);
-        this.ctx.shadowColor = 'transparent';
+        // Create gradient for title - using snake greens
+        const titleGradient = this.ctx.createLinearGradient(
+            this.canvas.width/2 - 150,
+            this.canvas.height/2 - 80,
+            this.canvas.width/2 + 150,
+            this.canvas.height/2 - 40
+        );
+        titleGradient.addColorStop(0, '#2ecc71');
+        titleGradient.addColorStop(1, '#27ae60');
 
-        // Draw arrow emojis with animation
-        const arrowSize = this.gridSize * 0.8;
+        // Add glow effect
+        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
+        this.ctx.shadowBlur = 15;
+
+        this.ctx.font = `bold ${this.gridSize * 1.8}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = titleGradient;
+        this.ctx.fillText('SNAKE GAME', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 4);
+
+        this.ctx.restore();
+
+        // Draw arrow keys with animation and colors in the green/blue family
+        const arrowSize = this.gridSize * 0.9;
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
-        const arrowSpacing = arrowSize * 1.2;
+        const arrowSpacing = arrowSize * 1.4;
         const time = Date.now() / 1000;
-        const bounce = Math.sin(time * 2) * 5;
+        const bounce = Math.sin(time * 3) * 5;
 
+        this.ctx.save();
+
+        // Left arrow - teal blue
+        this.ctx.fillStyle = '#3498db';
+        this.ctx.shadowColor = 'rgba(52, 152, 219, 0.6)';
+        this.ctx.shadowBlur = 8;
         this.ctx.font = `${arrowSize}px Arial`;
         this.ctx.fillText('←', centerX - arrowSpacing * 1.5, centerY + bounce);
+
+        // Up arrow - green
+        this.ctx.fillStyle = '#2ecc71';
+        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
         this.ctx.fillText('↑', centerX - arrowSpacing/2, centerY + bounce);
+
+        // Down arrow - darker blue
+        this.ctx.fillStyle = '#2980b9';
+        this.ctx.shadowColor = 'rgba(41, 128, 185, 0.6)';
         this.ctx.fillText('↓', centerX + arrowSpacing/2, centerY + bounce);
+
+        // Right arrow - darker green
+        this.ctx.fillStyle = '#27ae60';
+        this.ctx.shadowColor = 'rgba(39, 174, 96, 0.6)';
         this.ctx.fillText('→', centerX + arrowSpacing * 1.5, centerY + bounce);
 
+        this.ctx.restore();
+
         // Draw "to start" text
-        this.ctx.font = `${this.gridSize * 0.6}px Arial`;
+        this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         this.ctx.fillText('to start', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.5);
     }
 
     drawPauseMessage() {
-        // Draw semi-transparent overlay with gradient
+        // Create a semi-transparent gradient overlay
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
-        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+        gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Set text style with shadow
-        this.ctx.fillStyle = '#fff';
+        // Set common text properties
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
-        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.shadowBlur = 5;
-        this.ctx.shadowOffsetX = 2;
-        this.ctx.shadowOffsetY = 2;
 
-        // Draw "Paused" text
-        this.ctx.font = `${this.gridSize * 1.2}px Arial`;
-        this.ctx.fillText('Paused', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize);
+        // Draw pause icon (two vertical bars)
+        this.ctx.save();
+
+        // Draw rounded rectangle background
+        this.ctx.fillStyle = 'rgba(46, 204, 113, 0.2)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(
+            this.canvas.width / 2 - this.gridSize * 2,
+            this.canvas.height / 2 - this.gridSize * 3,
+            this.gridSize * 4,
+            this.gridSize * 2,
+            this.gridSize / 2
+        );
+        this.ctx.fill();
+
+        // Draw left pause bar
+        this.ctx.fillStyle = '#2ecc71';
+        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.beginPath();
+        this.ctx.roundRect(
+            this.canvas.width / 2 - this.gridSize * 0.8,
+            this.canvas.height / 2 - this.gridSize * 2.5,
+            this.gridSize * 0.6,
+            this.gridSize * 1,
+            this.gridSize / 8
+        );
+        this.ctx.fill();
+
+        // Draw right pause bar
+        this.ctx.beginPath();
+        this.ctx.roundRect(
+            this.canvas.width / 2 + this.gridSize * 0.2,
+            this.canvas.height / 2 - this.gridSize * 2.5,
+            this.gridSize * 0.6,
+            this.gridSize * 1,
+            this.gridSize / 8
+        );
+        this.ctx.fill();
+
+        this.ctx.restore();
+
+        // Draw "Paused" text with gradient
+        this.ctx.save();
+
+        // Create gradient for text using snake colors
+        const textGradient = this.ctx.createLinearGradient(
+            this.canvas.width/2 - 80,
+            this.canvas.height/2,
+            this.canvas.width/2 + 80,
+            this.canvas.height/2
+        );
+        textGradient.addColorStop(0, '#2ecc71');
+        textGradient.addColorStop(1, '#27ae60');
+
+        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
+        this.ctx.shadowBlur = 10;
+        this.ctx.font = `bold ${this.gridSize * 1.4}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = textGradient;
+        this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 0.5);
+
+        this.ctx.restore();
 
         // Draw "Press SPACE to continue" text
-        this.ctx.font = `${this.gridSize * 0.6}px Arial`;
-        this.ctx.fillText('Press SPACE to continue', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize);
+        this.ctx.save();
+        this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
 
-        // Reset shadow
-        this.ctx.shadowColor = 'transparent';
+        // Add subtle pulsing animation
+        const time = Date.now() / 1000;
+        const pulse = Math.sin(time * 2) * 0.1 + 0.9;
+        this.ctx.globalAlpha = pulse;
+
+        this.ctx.fillText('Press SPACE to continue', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.5);
+        this.ctx.restore();
     }
 
     drawMelodyName() {
