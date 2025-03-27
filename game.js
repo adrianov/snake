@@ -38,6 +38,7 @@ class SnakeGame {
         this.lastEatenTime = 0; // Track when snake last ate
         this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
         this.oldDrawer = null;  // Keep track of previous drawer for preserving darkness level
+        this.lastSpeedChangeTime = null; // Track time of last speed change
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -155,110 +156,134 @@ class SnakeGame {
         this.direction = 'right';
         this.nextDirection = 'right';
         this.score = 0;
+        this.speed = this.baseSpeed;
+        this.lastSpeedChangeTime = null;
         this.uiManager.updateScore(this.score);
         this.uiManager.updateHighScore(this.highScore);
         this.generateFood();
         this.draw();
 
         // Add event listeners
-        document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
 
         // Start the fruit loop immediately
         this.startFruitLoop();
-
-        // Wake up audio context with a silent sound to prevent initial delay
-        this.soundManager.playSound('click', 0);
     }
 
-    handleKeyPress(e) {
+    handleKeyDown(event) {
         // Handle sound toggle with 'S' key
-        if (e.key.toLowerCase() === 's') {
-            e.preventDefault();
+        if (event.key && event.key.toLowerCase() === 's') {
+            event.preventDefault();
             this.toggleSound();
             return;
         }
 
         // Handle music toggle with 'M' key
-        if (e.key.toLowerCase() === 'm') {
-            e.preventDefault();
+        if (event.key && event.key.toLowerCase() === 'm') {
+            event.preventDefault();
             this.toggleMusic();
             return;
         }
 
-        // If game is over and space key is pressed, restart the game
-        if (this.isGameOver && e.key === ' ') {
-            e.preventDefault();
-            this.startGame();
+        // CHEAT CODE: Spawn fruit in front of snake when 'A' key is pressed
+        if (event.key && event.key.toLowerCase() === 'a') {
+            event.preventDefault();
+            if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
+                this.spawnFruitInSnakeDirection();
+            }
             return;
         }
 
-        // Handle space key for pause/unpause/start
-        if (e.key === ' ') {
-            e.preventDefault();
-            if (!this.isGameStarted) {
+        // Prevent default behavior for arrow keys to avoid page scrolling
+        if ([37, 38, 39, 40, 32].includes(event.keyCode)) {
+            event.preventDefault();
+        }
+
+        // Handle game pause/resume with spacebar
+        if (event.keyCode === 32) { // Spacebar
+            if (this.isGameOver) {
+                // If game is over, reset and start a new game directly
+                this.resetGame();
                 this.startGame();
-            } else if (!this.isGameOver) {
+                return;
+            } else if (this.isGameStarted) {
                 this.togglePause();
+                return;
+            } else {
+                // If game isn't started yet, start it
+                this.startGame();
+                return;
+            }
+        }
+
+        // If game is over, paused, or not started, don't process direction changes
+        if (!this.isGameStarted || this.isPaused || this.isGameOver) {
+            // Special case: allow any arrow key to start the game if not started yet
+            if (!this.isGameStarted && !this.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
+                this.startGame();
             }
             return;
         }
 
-        // Prevent default scrolling behavior for arrow keys
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-        }
-
-        // If game hasn't started and arrow key is pressed, start the game
-        // BUT only if the game is not in game over state
-        if (!this.isGameStarted && !this.isGameOver && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            this.startGame();
-            return;
-        }
-
-        // If game is paused and arrow key is pressed, unpause
-        if (this.isPaused && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            this.togglePause(); // Unpause first
-            return;
-        }
-
-        // Only handle arrow keys if game is running and not paused
-        if (!this.isGameStarted || this.isPaused || this.isGameOver) return;
-
-        // Determine the key direction
+        // Process directional input
         let keyDirection = null;
-        switch (e.key) {
-            case 'ArrowUp': keyDirection = 'up'; break;
-            case 'ArrowDown': keyDirection = 'down'; break;
-            case 'ArrowLeft': keyDirection = 'left'; break;
-            case 'ArrowRight': keyDirection = 'right'; break;
-        }
+        if (event.keyCode === 37) keyDirection = 'left';
+        else if (event.keyCode === 38) keyDirection = 'up';
+        else if (event.keyCode === 39) keyDirection = 'right';
+        else if (event.keyCode === 40) keyDirection = 'down';
 
+        // Only proceed if a direction key was pressed
         if (keyDirection) {
-            // Check if this is a valid direction change
-            let validDirectionChange = false;
-            if (
-                (keyDirection === 'up' && this.direction !== 'down') ||
-                (keyDirection === 'down' && this.direction !== 'up') ||
-                (keyDirection === 'left' && this.direction !== 'right') ||
-                (keyDirection === 'right' && this.direction !== 'left')
-            ) {
-                this.nextDirection = keyDirection;
-                validDirectionChange = true;
-            }
+            // Check if the requested direction change is valid
+            const validDirectionChange = this.isValidDirectionChange(keyDirection);
 
-            // Update game speed based on key direction - this happens even if we can't change direction
-            this.updateGameSpeed(keyDirection, validDirectionChange);
+            // Update next direction only if the change is valid
+            if (validDirectionChange) {
+                this.nextDirection = keyDirection;
+
+                // Only update speed if the direction change is valid
+                // This prevents invalid keypresses from affecting speed
+                this.updateGameSpeed(keyDirection, validDirectionChange);
+            }
         }
+    }
+
+    // Add helper method to determine if a direction change is valid
+    isValidDirectionChange(newDirection) {
+        // Can't move in the opposite direction of current movement
+        if (
+            (this.direction === 'up' && newDirection === 'down') ||
+            (this.direction === 'down' && newDirection === 'up') ||
+            (this.direction === 'left' && newDirection === 'right') ||
+            (this.direction === 'right' && newDirection === 'left')
+        ) {
+            return false;
+        }
+        return true;
     }
 
     updateGameSpeed(keyDirection, validDirectionChange) {
         // Store previous speed to check if it changed
         const previousSpeed = this.speed;
 
-        // Apply speed changes cumulatively
+        // Prevent rapid key presses from stacking speed changes
+        // Only allow speed changes after a minimum time has passed (100ms)
+        const now = Date.now();
+        if (this.lastSpeedChangeTime && now - this.lastSpeedChangeTime < 100) {
+            // Skip speed update if keys are pressed too quickly
+            return;
+        }
+
+        // Apply gradual speed changes instead of resetting to base speed
+        // This makes effects cumulative but controlled
+
+        // Calculate speed change factor based on key direction
+        let speedChangeFactor = 1.0; // Default: no change
+
         if (keyDirection === this.direction) {
             // Speed up when pressing same direction
-            this.speed *= this.speedMultiplier;
+            // Apply a smaller multiplier for gradual acceleration
+            speedChangeFactor = 0.95; // Speed up by 5% of current speed
         } else if (
             (keyDirection === 'up' && this.direction === 'down') ||
             (keyDirection === 'down' && this.direction === 'up') ||
@@ -266,12 +291,19 @@ class SnakeGame {
             (keyDirection === 'right' && this.direction === 'left')
         ) {
             // Slow down when pressing opposite direction
-            this.speed *= this.slowMultiplier;
+            // Apply a smaller multiplier for gradual deceleration
+            speedChangeFactor = 1.05; // Slow down by 5% of current speed
         }
 
-        // Ensure speed doesn't get too extreme
+        // Apply the speed change to current speed (making it cumulative)
+        this.speed *= speedChangeFactor;
+
+        // Ensure speed doesn't get too extreme - use original limits
         this.speed = Math.max(this.speed, this.baseSpeed * 0.25); // No faster than 4x base speed
         this.speed = Math.min(this.speed, this.baseSpeed * 3);    // No slower than 1/3 base speed
+
+        // Record time of this speed change
+        this.lastSpeedChangeTime = now;
 
         // Only restart the game loop if speed changed and game is running
         if (previousSpeed !== this.speed && this.isGameStarted && !this.isPaused) {
@@ -385,6 +417,7 @@ class SnakeGame {
         this.direction = 'right';
         this.nextDirection = 'right';
         this.speed = this.baseSpeed;
+        this.lastSpeedChangeTime = null;
         this.snake = [
             { x: 5, y: 5 },
             { x: 4, y: 5 },
@@ -587,6 +620,11 @@ class SnakeGame {
         }
     }
 
+    resetGame() {
+        // Reset game state for a new game
+        this.isGameOver = false;
+    }
+
     draw() {
         // Skip if drawer or canvas context isn't ready
         if (!this.drawer || !this.ctx) {
@@ -633,6 +671,60 @@ class SnakeGame {
             }
         } else {
             this.musicManager.stopMusic(false);
+        }
+    }
+
+    // Add new method to spawn fruit in snake's direction
+    spawnFruitInSnakeDirection() {
+        if (this.snake.length === 0) return;
+
+        const head = this.snake[0];
+        let newFruitPos = { x: head.x, y: head.y };
+
+        // Calculate position in front of snake head based on current direction
+        switch (this.direction) {
+            case 'up':
+                newFruitPos.y = head.y - 2; // 2 spaces ahead
+                break;
+            case 'down':
+                newFruitPos.y = head.y + 2;
+                break;
+            case 'left':
+                newFruitPos.x = head.x - 2;
+                break;
+            case 'right':
+                newFruitPos.x = head.x + 2;
+                break;
+        }
+
+        // Ensure the new position is within the game bounds
+        if (newFruitPos.x < 0) newFruitPos.x = 0;
+        if (newFruitPos.x >= this.tileCount) newFruitPos.x = this.tileCount - 1;
+        if (newFruitPos.y < 0) newFruitPos.y = 0;
+        if (newFruitPos.y >= this.tileCount) newFruitPos.y = this.tileCount - 1;
+
+        // Check if the position is already occupied by snake or another food
+        const positionOccupied =
+            this.snake.some(segment => segment.x === newFruitPos.x && segment.y === newFruitPos.y) ||
+            this.food.some(f => f.x === newFruitPos.x && f.y === newFruitPos.y);
+
+        // Only spawn if position is free
+        if (!positionOccupied) {
+            // Create a special fruit that lasts longer and gives bonus points
+            const specialFruit = {
+                x: newFruitPos.x,
+                y: newFruitPos.y,
+                type: this.getRandomFruit(), // Random fruit type
+                spawnTime: Date.now(),
+                lifetime: 10000 + Math.random() * 5000 // 10-15 seconds lifetime
+            };
+
+            this.food.push(specialFruit);
+
+            // Play a sound for the cheat if sound is enabled
+            if (this.soundEnabled) {
+                this.soundManager.playSound('click');
+            }
         }
     }
 }

@@ -28,6 +28,10 @@ class SceneDrawer {
         this.stars = []; // Pre-calculated star data
         this.starsGenerated = false;
 
+        // Moon animation properties
+        this.moonStartTime = Date.now();
+        this.moonCycleDuration = 120000; // 2 minutes for a full moon cycle across the sky
+
         // Performance tracking
         this.lastFrameTime = 0;
     }
@@ -44,6 +48,8 @@ class SceneDrawer {
     // Reset darkness level when starting a new game
     resetDarknessLevel() {
         this.darknessLevel = 0;
+        // Reset moon animation cycle
+        this.moonStartTime = Date.now();
     }
 
     // Increment darkness level when snake eats food
@@ -99,16 +105,30 @@ class SceneDrawer {
         // Show moon earlier in the darkness transition for a more gradual appearance
         // Start at 25% darkness instead of 40%
         if (this.darknessLevel > 25) {
-            // Position moon in the upper right quadrant
-            const moonX = this.canvas.width * 0.8;
-            const moonY = this.canvas.height * 0.2;
+            // Calculate time-based moon position for smooth animation
+            const currentTime = Date.now();
+            const elapsedTime = currentTime - this.moonStartTime;
+
+            // Calculate cyclic time position (0 to 1) for current moon cycle
+            const cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
+
+            // X coordinate moves from 0.1 to 0.9 across width following time
+            const moonX = this.canvas.width * (0.1 + (0.8 * cycleProgress));
+
+            // Y coordinate follows a parabolic arc (higher in middle)
+            // Using a simple parabola: y = a*(x-h)^2 + k where (h,k) is the vertex
+            const arcHeight = 0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)); // Creates an arc that peaks in the middle
+            const moonY = this.canvas.height * arcHeight;
+
             const moonSize = this.gridSize * 2.5;
 
-            // Calculate moon visibility with a more gradual curve
-            // Use a curve that starts very faint and gradually increases
-            // Spread the transition over a wider range (25-65 instead of 40-60)
-            const moonProgress = (this.darknessLevel - 25) / 40; // 0-1 scale over 40% range
-            const moonAlpha = Math.min(1, Math.pow(moonProgress, 1.5) * 1.2); // Non-linear curve
+            // Calculate moon visibility with a more gradual curve based on darkness
+            // This ensures the moon is only visible when dark enough
+            const visibilityProgress = (this.darknessLevel - 25) / 40; // 0-1 scale over 40% range
+            const moonAlpha = Math.min(1, Math.pow(visibilityProgress, 1.5) * 1.2); // Non-linear curve
+
+            // Skip drawing if moon wouldn't be visible
+            if (moonAlpha <= 0.01) return;
 
             // Get the current sky color at the moon's position for proper shadow blending
             // Calculate the exact RGB values of the top of the sky
@@ -148,118 +168,168 @@ class SceneDrawer {
             return a - Math.floor(a);
         };
 
-        // Determine moon position for star exclusion
-        const moonX = this.canvas.width * 0.8;
-        const moonY = this.canvas.height * 0.2;
-        const moonRadius = this.gridSize * 2.5;
-
         // Reset stars array
         this.stars = [];
 
-        // Enhanced star colors for HDR astronomy look
+        // Enhanced star colors for a fantasy sky look
         const starColors = {
-            // Warm colors (red to yellow)
+            // Warm colors (red to yellow with more saturation)
             warm: [
-                { r: 255, g: 180, b: 180 }, // Light pink
-                { r: 255, g: 200, b: 175 }, // Peach
-                { r: 255, g: 202, b: 122 }, // Gold
-                { r: 255, g: 210, b: 160 }, // Pale yellow
-                { r: 255, g: 170, b: 140 }, // Coral
-                { r: 255, g: 140, b: 140 }, // Salmon
-                { r: 255, g: 120, b: 100 }  // Orange-red
+                { r: 255, g: 150, b: 150 }, // Bright pink
+                { r: 255, g: 180, b: 130 }, // Vivid peach
+                { r: 255, g: 190, b: 100 }, // Vibrant gold
+                { r: 255, g: 170, b: 110 }, // Intense coral
+                { r: 255, g: 120, b: 120 }, // Rich salmon
+                { r: 255, g: 100, b: 80 }   // Deep orange-red
             ],
-            // Cool colors (blue to purple)
+            // Cool colors (blue to purple with higher saturation)
             cool: [
-                { r: 170, g: 200, b: 255 }, // Light blue
-                { r: 180, g: 180, b: 255 }, // Periwinkle
-                { r: 210, g: 230, b: 255 }, // Ice blue
-                { r: 190, g: 215, b: 255 }, // Sky blue
-                { r: 160, g: 175, b: 255 }, // Lavender
-                { r: 140, g: 170, b: 255 }, // Medium blue
-                { r: 130, g: 130, b: 255 }  // Blue-purple
+                { r: 150, g: 190, b: 255 }, // Electric blue
+                { r: 160, g: 160, b: 255 }, // Vibrant periwinkle
+                { r: 190, g: 220, b: 255 }, // Glowing ice blue
+                { r: 140, g: 180, b: 255 }, // Intense sky blue
+                { r: 130, g: 130, b: 255 }  // Rich blue-purple
             ],
-            // White to blue-white (for most stars)
+            // White to blue-white (for enchanted stars)
             neutral: [
                 { r: 255, g: 255, b: 255 }, // Pure white
-                { r: 245, g: 250, b: 255 }, // Slight blue white
-                { r: 240, g: 245, b: 255 }, // Cool white
-                { r: 235, g: 240, b: 255 }, // Pale blue white
-                { r: 230, g: 235, b: 250 }  // Slightly bluer white
+                { r: 240, g: 250, b: 255 }, // Enchanted white
+                { r: 230, g: 240, b: 255 }, // Cool white with aura
+                { r: 220, g: 235, b: 255 }  // Slight blue white glow
+            ],
+            // Fantasy distinctive colors
+            fantasy: [
+                { r: 255, g: 50, b: 220 },  // Magical pink
+                { r: 180, g: 255, b: 180 }, // Ethereal green
+                { r: 255, g: 150, b: 30 },  // Mystic amber
+                { r: 30, g: 200, b: 255 },  // Arcane blue
+                { r: 255, g: 255, b: 100 }, // Fairy gold
+                { r: 200, g: 100, b: 255 }, // Wizard purple
+                { r: 100, g: 255, b: 210 }, // Elven teal
+                { r: 255, g: 130, b: 255 }  // Dragon rose
+            ],
+            // Legendary stars (ultra bright with unique colors)
+            legendary: [
+                { r: 255, g: 220, b: 50 },  // Phoenix gold
+                { r: 50, g: 255, b: 120 },  // Emerald essence
+                { r: 255, g: 50, b: 50 },   // Ruby heart
+                { r: 50, g: 150, b: 255 },  // Sapphire soul
+                { r: 255, g: 100, b: 255 }  // Amethyst spirit
             ]
         };
 
-        // Create a starfield with different sizes
-        const numStars = Math.floor(this.canvas.width * this.canvas.height / 1000); // Slightly fewer stars for performance
+        // Create a starfield with different sizes and fantasy effects
+        const numStars = Math.floor(this.canvas.width * this.canvas.height / 1200); // Fewer stars (was 900)
 
-        // Pre-generate all star data
+        // Pre-generate all star data with fantasy enhancements
         for (let i = 0; i < numStars; i++) {
             // Use multiple offsets to break any potential patterns
             const x = pseudoRandom(i, 1) * this.canvas.width;
             const y = pseudoRandom(i, 2) * this.canvas.height * 0.8; // Keep stars in upper 80% of sky
 
-            // Skip stars that would be inside the moon's circle
-            const distToMoon = Math.sqrt(Math.pow(x - moonX, 2) + Math.pow(y - moonY, 2));
-            if (distToMoon < moonRadius) {
-                continue;
-            }
+            // Create varied star sizes with more extremes for fantasy effect
+            const sizeBase = pseudoRandom(i, 3);
 
-            // Create varied star sizes with small bias toward smaller stars
-            const sizeRand = pseudoRandom(i, 3) * pseudoRandom(i, 4);
-            const size = sizeRand * 2 + 0.5;
+            // Make some stars significantly larger for a fantasy feel
+            let size;
+            if (sizeBase > 0.97) {
+                // Legendary stars (3%) - but smaller than before
+                size = 2 + pseudoRandom(i, 4) * 1.5;
+            } else if (sizeBase > 0.90) {
+                // Large stars (7%) - reduced in size
+                size = 1.5 + pseudoRandom(i, 4) * 1;
+            } else {
+                // Regular stars (90%) - smaller sizes
+                size = 0.5 + pseudoRandom(i, 4) * 0.8;
+            }
 
             // Create varied twinkle properties
             const twinkleSpeed = 500 + pseudoRandom(i, 5) * 1500;
             const twinklePhase = pseudoRandom(i, 6) * Math.PI * 2; // Random starting phase
 
-            // Determine star color
+            // Remove pulsing effect
+            const hasPulsingEffect = false;
+            const pulseSpeed = 0;
+            const pulseIntensity = 0;
+
+            // Determine star color with more realistic distribution
             const colorType = pseudoRandom(i, 7);
             let starColorObj;
 
-            if (colorType > 0.94) {
-                // Warm colors (6%)
-                const warmIndex = Math.floor(pseudoRandom(i, 8) * starColors.warm.length);
+            if (colorType > 0.98) {
+                // Legendary stars (2% - was 4%) - rare special colors
+                const legendaryIndex = Math.floor(pseudoRandom(i, 15) * starColors.legendary.length);
+                starColorObj = starColors.legendary[legendaryIndex];
+            } else if (colorType > 0.92) {
+                // Fantasy colors (6% - was 11%) - fewer magical colors
+                const fantasyIndex = Math.floor(pseudoRandom(i, 8) * starColors.fantasy.length);
+                starColorObj = starColors.fantasy[fantasyIndex];
+            } else if (colorType > 0.82) {
+                // Warm colors (10% - was 15%)
+                const warmIndex = Math.floor(pseudoRandom(i, 9) * starColors.warm.length);
                 starColorObj = starColors.warm[warmIndex];
-            } else if (colorType > 0.88) {
-                // Cool colors (6%)
-                const coolIndex = Math.floor(pseudoRandom(i, 9) * starColors.cool.length);
+            } else if (colorType > 0.72) {
+                // Cool colors (10% - was 15%)
+                const coolIndex = Math.floor(pseudoRandom(i, 10) * starColors.cool.length);
                 starColorObj = starColors.cool[coolIndex];
             } else {
-                // Neutral colors (88%)
-                const neutralIndex = Math.floor(pseudoRandom(i, 10) * starColors.neutral.length);
+                // Neutral colors (72% - was 55%) - more white/blue-white stars
+                const neutralIndex = Math.floor(pseudoRandom(i, 11) * starColors.neutral.length);
                 starColorObj = starColors.neutral[neutralIndex];
             }
 
-            // Adjust brightness based on size
-            const brightnessBoost = Math.min(50, size * 15);
+            // Less brightness boost for more realistic stars
+            const brightnessBoost = Math.min(70, size * 20);
             const finalR = Math.min(255, starColorObj.r + brightnessBoost);
             const finalG = Math.min(255, starColorObj.g + brightnessBoost);
             const finalB = Math.min(255, starColorObj.b + brightnessBoost);
 
-            // Create core color
-            const coreR = Math.min(255, finalR + 40);
-            const coreG = Math.min(255, finalG + 40);
-            const coreB = Math.min(255, finalB + 40);
+            // Create core color - less intense
+            const coreR = Math.min(255, finalR + 30);
+            const coreG = Math.min(255, finalG + 30);
+            const coreB = Math.min(255, finalB + 30);
 
-            // Store all star data
+            // Fewer halos, smaller size
+            const hasHalo = size > 2.8 || colorType > 0.98;
+            const haloSize = size * (1.5 + pseudoRandom(i, 16));
+            const haloColor = {
+                r: starColorObj.r,
+                g: starColorObj.g,
+                b: starColorObj.b
+            };
+
+            // Fewer diffraction spikes
+            const hasDiffraction = size > 1.6 || pseudoRandom(i, 17) > 0.9;
+            const spikeLength = size * (1.5 + pseudoRandom(i, 18) * 2);
+            const hasOctoDiffraction = size > 2.2 || pseudoRandom(i, 19) > 0.95;
+
+            // Store all star data with reduced fantasy elements
             this.stars.push({
                 x,
                 y,
                 size,
-                glowRadius: size * 1.5,
+                glowRadius: size * 1.5, // Smaller glow radius (was 1.8)
                 twinkleSpeed,
                 twinklePhase,
+                hasPulsingEffect,
+                pulseSpeed,
+                pulseIntensity,
                 finalR,
                 finalG,
                 finalB,
                 coreR,
                 coreG,
                 coreB,
-                hasDiffraction: size > 1.7,
-                hasOctoDiffraction: size > 2.2,
-                spikeLength: size * 3
+                hasHalo,
+                haloSize,
+                haloColor,
+                hasDiffraction,
+                spikeLength,
+                hasOctoDiffraction
             });
         }
 
+        // Mark stars as generated
         this.starsGenerated = true;
     }
 
@@ -276,13 +346,20 @@ class SceneDrawer {
             this.generateStars();
         }
 
-        // Check if we need to regenerate the star field cache
-        // Only regenerate when darkness changes by more than 5%
+        // Get the current moon position for more accurate caching
+        const currentTime = Date.now();
+        const moonTimePosition = ((currentTime - this.moonStartTime) % this.moonCycleDuration) / this.moonCycleDuration;
+
+        // Create a key that represents both darkness level and moon position
+        const moonPositionBand = Math.floor(moonTimePosition * 20); // 20 discrete positions
         const currentDarknessBand = Math.floor(this.darknessLevel / 5);
-        if (this.starFieldDarkness !== currentDarknessBand || !this.starFieldCache) {
+        const cacheKey = `${currentDarknessBand}_${moonPositionBand}`;
+
+        // Check if we need to regenerate the star field cache
+        if (this.lastCacheKey !== cacheKey || !this.starFieldCache) {
             // Cache needs updating
             this.updateStarFieldCache(starsAlpha);
-            this.starFieldDarkness = currentDarknessBand;
+            this.lastCacheKey = cacheKey;
         }
 
         // Draw cached star field
@@ -291,7 +368,7 @@ class SceneDrawer {
         }
     }
 
-    // Update the star field cache - only called when darkness changes significantly
+    // Update the star field cache with less fantasy-style stars
     updateStarFieldCache(starsAlpha) {
         // Initialize or resize cache canvas if needed
         if (!this.starFieldCache) {
@@ -306,23 +383,76 @@ class SceneDrawer {
         // Clear previous content
         cacheCtx.clearRect(0, 0, this.starFieldCache.width, this.starFieldCache.height);
 
-        // Current timestamp for twinkle calculation
+        // Current timestamp for animation effects
         const now = Date.now();
 
-        // Draw all stars onto the cache
-        for (const star of this.stars) {
-            // Calculate twinkle effect
-            const twinkle = Math.sin(now / star.twinkleSpeed + star.twinklePhase) * 0.3 + 0.7;
-            const alphaWithTwinkle = starsAlpha * twinkle;
+        // Get current moon position to hide stars that are behind the moon
+        let moonX, moonY, moonRadius;
+        let hasMoon = false;
 
-            // Draw star with gradient
+        if (this.darknessLevel > 25) {
+            // Calculate time-based moon position
+            const elapsedTime = now - this.moonStartTime;
+            const cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
+
+            // X coordinate moves from 0.1 to 0.9 across width
+            moonX = this.canvas.width * (0.1 + (0.8 * cycleProgress));
+
+            // Y coordinate follows a parabolic arc (higher in middle)
+            const arcHeight = 0.25 - (0.15 * Math.sin(cycleProgress * Math.PI));
+            moonY = this.canvas.height * arcHeight;
+
+            // Moon size plus a small buffer
+            moonRadius = this.gridSize * 3;
+
+            // Only consider moon if it's visible
+            const visibilityProgress = (this.darknessLevel - 25) / 40;
+            const moonAlpha = Math.min(1, Math.pow(visibilityProgress, 1.5) * 1.2);
+
+            hasMoon = moonAlpha > 0.01;
+        }
+
+        // Draw all stars onto the cache with reduced fantasy effects
+        for (const star of this.stars) {
+            // Skip stars that are currently behind the moon
+            if (hasMoon) {
+                const distToMoon = Math.sqrt(Math.pow(star.x - moonX, 2) + Math.pow(star.y - moonY, 2));
+                if (distToMoon < moonRadius) {
+                    continue; // Skip this star as it's behind the moon
+                }
+            }
+
+            // Calculate twinkle effect (keep only twinkle, remove pulsing)
+            let effectMultiplier = Math.sin(now / star.twinkleSpeed + star.twinklePhase) * 0.3 + 0.7;
+
+            const alphaWithEffect = starsAlpha * effectMultiplier;
+
+            // Draw special halo for legendary stars (with reduced intensity)
+            if (star.hasHalo) {
+                const haloGradient = cacheCtx.createRadialGradient(
+                    star.x, star.y, star.size * 0.5,
+                    star.x, star.y, star.haloSize
+                );
+
+                // Create ethereal glow effect with reduced opacity
+                haloGradient.addColorStop(0, `rgba(${star.haloColor.r}, ${star.haloColor.g}, ${star.haloColor.b}, ${alphaWithEffect * 0.4})`);
+                haloGradient.addColorStop(0.7, `rgba(${star.haloColor.r}, ${star.haloColor.g}, ${star.haloColor.b}, ${alphaWithEffect * 0.15})`);
+                haloGradient.addColorStop(1, `rgba(${star.haloColor.r}, ${star.haloColor.g}, ${star.haloColor.b}, 0)`);
+
+                cacheCtx.fillStyle = haloGradient;
+                cacheCtx.beginPath();
+                cacheCtx.arc(star.x, star.y, star.haloSize, 0, Math.PI * 2);
+                cacheCtx.fill();
+            }
+
+            // Draw basic star with gradient
             const gradient = cacheCtx.createRadialGradient(
                 star.x, star.y, 0,
                 star.x, star.y, star.glowRadius
             );
 
-            gradient.addColorStop(0, `rgba(${star.coreR}, ${star.coreG}, ${star.coreB}, ${alphaWithTwinkle})`);
-            gradient.addColorStop(0.5, `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithTwinkle})`);
+            gradient.addColorStop(0, `rgba(${star.coreR}, ${star.coreG}, ${star.coreB}, ${alphaWithEffect})`);
+            gradient.addColorStop(0.5, `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithEffect})`);
             gradient.addColorStop(1, `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, 0)`);
 
             cacheCtx.fillStyle = gradient;
@@ -330,13 +460,13 @@ class SceneDrawer {
             cacheCtx.arc(star.x, star.y, star.glowRadius, 0, Math.PI * 2);
             cacheCtx.fill();
 
-            // Add diffraction spikes for brightest stars
+            // Add diffraction spikes for brighter stars
             if (star.hasDiffraction) {
                 cacheCtx.save();
 
-                // Star color but more transparent
-                cacheCtx.strokeStyle = `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithTwinkle * 0.7})`;
-                cacheCtx.lineWidth = 0.6;
+                // Star color but more transparent for light rays
+                cacheCtx.strokeStyle = `rgba(${star.finalR}, ${star.finalG}, ${star.finalB}, ${alphaWithEffect * 0.7})`;
+                cacheCtx.lineWidth = 0.8;
 
                 // Draw 4-point diffraction spike
                 cacheCtx.beginPath();
@@ -349,12 +479,12 @@ class SceneDrawer {
                 cacheCtx.lineTo(star.x, star.y + star.spikeLength);
                 cacheCtx.stroke();
 
-                // Draw 8-point diffraction for largest stars
+                // Draw 8-point diffraction for larger stars
                 if (star.hasOctoDiffraction) {
                     const diagonalLength = star.spikeLength * 0.7;
                     const offset = diagonalLength / Math.sqrt(2);
 
-                    cacheCtx.lineWidth = 0.4;
+                    cacheCtx.lineWidth = 0.6;
                     cacheCtx.beginPath();
                     cacheCtx.moveTo(star.x - offset, star.y - offset);
                     cacheCtx.lineTo(star.x + offset, star.y + offset);
