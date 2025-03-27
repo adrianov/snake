@@ -1,61 +1,169 @@
+/* Modern CSS Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Base Styles */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f2f5;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    overflow: hidden;
 }
 
+/* Game Layout */
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    max-width: 800px;
+    padding: 10px;
+    gap: 10px;
+}
+
+/* Game Container */
 .game-container {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
 }
 
-h1 {
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
+/* Canvas Container - Square */
+.canvas-container {
+    width: min(100%, calc(100vh - 160px));
+    height: 0;
+    padding-bottom: min(100%, calc(100vh - 160px));
+    position: relative;
+    background-color: #ecf0f1;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
 }
 
 #gameCanvas {
-    background-color: #ecf0f1;
-    border: 2px solid #bdc3c7;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
-.game-info {
+/* Score Container */
+.score-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    padding: 10px;
+    background-color: #2c3e50;
+    border-radius: 12px;
+    align-items: center;
+}
+
+.score-item {
     display: flex;
-    justify-content: space-around;
-    margin-bottom: 1rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.score-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.score-value {
     font-size: 1.2rem;
-    color: #34495e;
+    font-weight: bold;
+    color: #2ecc71;
+    text-align: center;
+    padding: 4px 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    min-width: 60px;
 }
 
-#startButton {
-    background-color: #2ecc71;
-    color: white;
-    border: none;
-    padding: 0.8rem 1.5rem;
-    font-size: 1.1rem;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+/* Music Info */
+.music-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    min-width: 120px;
+    text-align: center;
+    visibility: hidden; /* Hide by default */
+    opacity: 0;
+    transition: visibility 0.2s, opacity 0.2s;
 }
 
-#startButton:hover {
-    background-color: #27ae60;
+/* Show only when has-melody class is present */
+.music-info.has-melody {
+    visibility: visible;
+    opacity: 1;
 }
 
-#startButton:active {
-    transform: scale(0.98);
+.music-icon {
+    color: #2ecc71;
+    font-size: 1rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .game-wrapper {
+        padding: 5px;
+        gap: 5px;
+    }
+
+    .game-container {
+        gap: 5px;
+    }
+
+    .canvas-container {
+        width: min(100%, calc(100vh - 130px));
+        padding-bottom: min(100%, calc(100vh - 130px));
+    }
+
+    .score-container {
+        padding: 8px;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .score-label {
+        font-size: 0.7rem;
+    }
+
+    .score-value {
+        font-size: 1rem;
+        min-width: 40px;
+    }
+
+    .music-info {
+        font-size: 0.7rem;
+        min-width: 0;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.game-wrapper {
+    animation: fadeIn 0.3s ease-out;
 }

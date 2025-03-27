@@ -334,6 +334,12 @@ class SnakeGame {
         this.soundManager = new SoundManager();
         this.soundManager.init(true);
 
+        // Clear melody display initially
+        const melodyElement = document.getElementById('currentMelody');
+        if (melodyElement) {
+            melodyElement.textContent = '';
+        }
+
         // Wait a short time to ensure the audio context is properly initialized
         setTimeout(() => {
             // Create a fresh music manager with the new audio context
@@ -343,6 +349,9 @@ class SnakeGame {
             // Select a random melody and start music
             this.musicManager.selectRandomMelody();
             this.musicManager.startMusic();
+
+            // Update the melody display
+            this.drawMelodyName();
         }, 100);
 
         // Start the game loop
@@ -406,6 +415,9 @@ class SnakeGame {
             this.snake.pop();
         }
 
+        // Make sure melody name is always updated
+        this.drawMelodyName();
+
         this.draw();
     }
 
@@ -456,16 +468,23 @@ class SnakeGame {
     }
 
     drawGameOver() {
-        // Draw semi-transparent overlay
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        // Draw semi-transparent overlay with gradient
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
+        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Set text style
+        // Set text style with shadow
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
 
-        // Draw "Game Over" text (biggest)
+        // Draw "Game Over!" text
         this.ctx.font = `${this.gridSize * 1.2}px Arial`;
         this.ctx.fillText('Game Over!', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 2);
 
@@ -487,6 +506,9 @@ class SnakeGame {
         // Draw "Press any arrow to play again" message
         this.ctx.font = `${this.gridSize * 0.6}px Arial`;
         this.ctx.fillText('Press any arrow to play again', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 2);
+
+        // Reset shadow
+        this.ctx.shadowColor = 'transparent';
     }
 
     createSnakeHead() {
@@ -661,15 +683,13 @@ class SnakeGame {
             return;
         }
 
-        // Draw current melody name when game is running
-        if (this.isGameStarted && !this.isGameOver && !this.isPaused) {
-            this.drawMelodyName();
-        }
+        // Always check and update melody name display
+        this.drawMelodyName();
     }
 
     drawGrid() {
         // Draw a subtle grid on the background
-        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.03)';
+        this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)';
         this.ctx.lineWidth = 1;
 
         // Draw vertical lines
@@ -699,7 +719,6 @@ class SnakeGame {
                 this.gridSize
             );
         }
-
     }
 
     drawSnake() {
@@ -709,68 +728,124 @@ class SnakeGame {
     }
 
     drawStartMessage() {
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        // Draw semi-transparent overlay with gradient
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
+        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
 
-        // Draw "Press" text (biggest)
+        // Draw title with shadow
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
+        this.ctx.font = `${this.gridSize * 1.5}px Arial`;
+        this.ctx.fillText('Snake Game', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 3);
+        this.ctx.shadowColor = 'transparent';
+
+        // Draw "Press" text with shadow
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
         this.ctx.font = `${this.gridSize * 1.2}px Arial`;
         this.ctx.fillText('Press', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize * 1.5);
+        this.ctx.shadowColor = 'transparent';
 
-        // Draw arrow emojis
-        const arrowSize = this.gridSize * 0.8; // Match score text size
+        // Draw arrow emojis with animation
+        const arrowSize = this.gridSize * 0.8;
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
         const arrowSpacing = arrowSize * 1.2;
+        const time = Date.now() / 1000;
+        const bounce = Math.sin(time * 2) * 5;
 
-        // Set font for emojis
         this.ctx.font = `${arrowSize}px Arial`;
+        this.ctx.fillText('←', centerX - arrowSpacing * 1.5, centerY + bounce);
+        this.ctx.fillText('↑', centerX - arrowSpacing/2, centerY + bounce);
+        this.ctx.fillText('↓', centerX + arrowSpacing/2, centerY + bounce);
+        this.ctx.fillText('→', centerX + arrowSpacing * 1.5, centerY + bounce);
 
-        // Draw arrows in a row
-        this.ctx.fillText('←', centerX - arrowSpacing * 1.5, centerY);
-        this.ctx.fillText('↑', centerX - arrowSpacing/2, centerY);
-        this.ctx.fillText('↓', centerX + arrowSpacing/2, centerY);
-        this.ctx.fillText('→', centerX + arrowSpacing * 1.5, centerY);
-
-        // Draw "to start" text (slightly smaller)
+        // Draw "to start" text
         this.ctx.font = `${this.gridSize * 0.6}px Arial`;
         this.ctx.fillText('to start', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.5);
     }
 
     drawPauseMessage() {
-        // Draw semi-transparent overlay
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        // Draw semi-transparent overlay with gradient
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, 'rgba(44, 62, 80, 0.9)');
+        gradient.addColorStop(1, 'rgba(52, 73, 94, 0.9)');
+        this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Set text style
+        // Set text style with shadow
         this.ctx.fillStyle = '#fff';
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 5;
+        this.ctx.shadowOffsetX = 2;
+        this.ctx.shadowOffsetY = 2;
 
-        // Draw "Paused" text (biggest)
+        // Draw "Paused" text
         this.ctx.font = `${this.gridSize * 1.2}px Arial`;
         this.ctx.fillText('Paused', this.canvas.width / 2, this.canvas.height / 2 - this.gridSize);
 
-        // Draw "Press SPACE to continue" text (smaller)
+        // Draw "Press SPACE to continue" text
         this.ctx.font = `${this.gridSize * 0.6}px Arial`;
         this.ctx.fillText('Press SPACE to continue', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize);
+
+        // Reset shadow
+        this.ctx.shadowColor = 'transparent';
     }
 
     drawMelodyName() {
-        if (!this.musicManager || !this.musicManager.getCurrentMelody()) return;
+        const melodyElement = document.getElementById('currentMelody');
+        const musicInfoElement = document.querySelector('.music-info');
+
+        if (!this.musicManager || !this.musicManager.getCurrentMelody()) {
+            // Clear the melody display when no melody is playing
+            if (melodyElement) {
+                melodyElement.textContent = '';
+            }
+
+            // Hide the music info element
+            if (musicInfoElement) {
+                musicInfoElement.classList.remove('has-melody');
+            }
+            return;
+        }
 
         const melodyInfo = this.musicManager.getCurrentMelody();
+        if (!melodyInfo) {
+            // This is a redundant check but ensures we always handle the case
+            if (melodyElement) {
+                melodyElement.textContent = '';
+            }
+
+            if (musicInfoElement) {
+                musicInfoElement.classList.remove('has-melody');
+            }
+            return;
+        }
+
         const displayName = melodyInfo.name;
 
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        this.ctx.font = `${this.gridSize * 0.5}px Arial`;
-        this.ctx.textAlign = "right";
-        this.ctx.textBaseline = "top";
-        this.ctx.fillText(`♫ ${displayName}`, this.canvas.width - 10, 10);
-        this.ctx.textAlign = "left"; // Reset text alignment
+        // Update the melody display
+        if (melodyElement) {
+            melodyElement.textContent = displayName;
+        }
+
+        // Show the music info element
+        if (musicInfoElement) {
+            musicInfoElement.classList.add('has-melody');
+        }
     }
 }
 
