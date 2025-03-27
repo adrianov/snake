@@ -4,19 +4,16 @@ class MusicManager {
         this.audioContext = null;
         this.masterGain = null;
         this.melodyGain = null;
-        this.drumGain = null;
 
         // Playback state
         this.currentMelodyId = null;
         this.isPlaying = false;
         this.melodyScheduler = null;
-        this.drumScheduler = null;
         this.activeOscillators = new Set();  // Track all active sound sources
 
         // Timing
         this.nextNoteTime = 0;
         this.currentNoteIndex = 0;
-        this.currentBeatIndex = 0;
 
         // Define frequency map for notes
         this.noteFrequencies = {
@@ -30,13 +27,6 @@ class MusicManager {
             'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
             'C6': 1046.50, 'D6': 1174.66, 'E6': 1318.51,
             'REST': 0
-        };
-
-        // Drums/percussion sounds
-        this.drumTypes = {
-            kick: { freq: 60, type: 'sine', decay: 0.2 },
-            snare: { freq: 150, type: 'triangle', decay: 0.15, noise: true },
-            hihat: { freq: 300, type: 'highpass', decay: 0.1, noise: true }
         };
     }
 
@@ -93,7 +83,6 @@ class MusicManager {
             try {
                 // Modern browsers require user interaction to start AudioContext
                 this.audioContext.resume().then(() => {
-                    console.log('AudioContext successfully resumed');
                     this.startMusicPlayback(musicData);
                 }).catch(err => {
                     console.error('Failed to resume AudioContext:', err);
@@ -127,12 +116,10 @@ class MusicManager {
         // Reset playback state
         this.isPlaying = true;
         this.currentNoteIndex = 0;
-        this.currentBeatIndex = 0;
         this.nextNoteTime = this.audioContext.currentTime;
 
-        // Start schedulers
+        // Start scheduler
         this.scheduleNotes();
-        this.scheduleBeats();
     }
 
     scheduleNotes() {
@@ -175,36 +162,6 @@ class MusicManager {
                 this.scheduleNotes();
             }
         }, Math.max(nextScheduleTime, 100));
-    }
-
-    scheduleBeats() {
-        if (!this.isPlaying) return;
-
-        const musicData = window.MusicData.getMelody(this.currentMelodyId);
-        if (!musicData || !musicData.beats) return;
-
-        const beats = musicData.beats;
-        const secondsPerBeat = 60.0 / musicData.tempo;
-
-        // Define one measure as one complete cycle through the beat pattern
-        const measureLength = 1.0; // In beats
-        const measureDuration = measureLength * secondsPerBeat;
-        let currentTime = this.nextNoteTime;
-
-        // Schedule all beats for one measure
-        for (const beat of beats) {
-            const time = currentTime + beat.time * secondsPerBeat;
-            if (time >= this.audioContext.currentTime) { // Only schedule if in the future
-                this.playDrum(beat.type, time);
-            }
-        }
-
-        // Schedule next batch of beats
-        this.drumScheduler = setTimeout(() => {
-            if (this.isPlaying) {
-                this.scheduleBeats();
-            }
-        }, measureDuration * 1000 * 0.75); // Schedule next batch at 75% through the measure
     }
 
     playNote(noteName, startTime, duration) {
@@ -269,116 +226,6 @@ class MusicManager {
         };
     }
 
-    playDrum(drumType, time) {
-        if (!this.audioContext || !this.isPlaying) return;
-
-        const drumConfig = this.drumTypes[drumType];
-        if (!drumConfig) return;
-
-        if (drumConfig.noise) {
-            // Noise-based drum (hihat, snare)
-            this.playNoiseDrum(drumConfig, time);
-        } else {
-            // Tonal drum (kick)
-            this.playTonalDrum(drumConfig, time);
-        }
-    }
-
-    playNoiseDrum(config, time) {
-        // Create a buffer of white noise
-        const bufferSize = this.audioContext.sampleRate * 0.1; // 100ms of noise
-        const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-
-        // Fill with random values (white noise)
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-
-        // Create and configure noise source
-        const noise = this.audioContext.createBufferSource();
-        noise.buffer = buffer;
-
-        // Create envelope
-        const envelope = this.audioContext.createGain();
-        envelope.gain.setValueAtTime(0, time);
-        envelope.gain.linearRampToValueAtTime(0.3, time + 0.005);
-        envelope.gain.exponentialRampToValueAtTime(0.01, time + config.decay);
-
-        // Create filter based on the drum type
-        const filter = this.audioContext.createBiquadFilter();
-        if (config.type === 'highpass') {
-            filter.type = 'highpass';
-            filter.frequency.value = 5000; // Higher for hihat
-        } else {
-            filter.type = 'bandpass';
-            filter.frequency.value = config.freq;
-            filter.Q.value = 1;
-        }
-
-        // Connect components
-        noise.connect(filter);
-        filter.connect(envelope);
-        envelope.connect(this.drumGain);
-
-        // Track this source
-        this.activeOscillators.add(noise);
-
-        // Play
-        noise.start(time);
-        noise.stop(time + config.decay + 0.05);
-
-        // Clean up
-        noise.onended = () => {
-            this.activeOscillators.delete(noise);
-        };
-    }
-
-    playTonalDrum(config, time) {
-        // Create oscillator for tonal drums like kick
-        const oscillator = this.audioContext.createOscillator();
-        const envelope = this.audioContext.createGain();
-
-        // Configure
-        oscillator.type = config.type || 'sine';
-        oscillator.frequency.setValueAtTime(config.freq, time);
-        oscillator.frequency.exponentialRampToValueAtTime(config.freq * 0.5, time + 0.15);
-
-        // Envelope
-        envelope.gain.setValueAtTime(0, time);
-        envelope.gain.linearRampToValueAtTime(0.5, time + 0.005);
-        envelope.gain.exponentialRampToValueAtTime(0.01, time + config.decay);
-
-        // Connect
-        oscillator.connect(envelope);
-        envelope.connect(this.drumGain);
-
-        // Track
-        this.activeOscillators.add(oscillator);
-
-        // Play
-        oscillator.start(time);
-        oscillator.stop(time + config.decay + 0.05);
-
-        // Clean up
-        oscillator.onended = () => {
-            this.activeOscillators.delete(oscillator);
-        };
-    }
-
-    getNoteFrequency(noteName) {
-        // Extract the note without octave
-        const matches = noteName.match(/^([A-G][#b]?)(\d)$/);
-        if (!matches) return 440; // Default to A4
-
-        const note = matches[1];
-        const octave = parseInt(matches[2]);
-
-        // Calculate base frequency for the note
-        const baseFreq = this.noteFrequencies[note + octave] || 440;
-        return baseFreq;
-    }
-
     stopMusic(fullCleanup = false) {
         // Immediately set playing state to false to prevent scheduled callbacks
         this.isPlaying = false;
@@ -387,11 +234,6 @@ class MusicManager {
         if (this.melodyScheduler) {
             clearTimeout(this.melodyScheduler);
             this.melodyScheduler = null;
-        }
-
-        if (this.drumScheduler) {
-            clearTimeout(this.drumScheduler);
-            this.drumScheduler = null;
         }
 
         // Stop all active oscillators with a gentle fade out
@@ -424,7 +266,6 @@ class MusicManager {
                     // Disconnect all nodes
                     if (this.masterGain) this.masterGain.disconnect();
                     if (this.melodyGain) this.melodyGain.disconnect();
-                    if (this.drumGain) this.drumGain.disconnect();
 
                     // Close the audio context if we created it
                     if (this.audioContext && this.audioContext.state !== 'closed') {
@@ -435,7 +276,6 @@ class MusicManager {
                     this.audioContext = null;
                     this.masterGain = null;
                     this.melodyGain = null;
-                    this.drumGain = null;
                 } catch (e) {
                     console.error('Error closing audio context:', e);
                 }
@@ -459,7 +299,6 @@ class MusicManager {
         // Reset playback state
         this.nextNoteTime = 0;
         this.currentNoteIndex = 0;
-        this.currentBeatIndex = 0;
     }
 
     getCurrentMelody() {

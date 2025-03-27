@@ -470,14 +470,9 @@ class SnakeGame {
         this.isGameOver = false;
         this.lastGameState = null;
 
-        // If there was a previous music manager, ensure it's fully stopped
-        if (this.musicManager) {
-            this.musicManager.stopMusic(true);
-        }
-
         // Create a fresh sound manager with a new audio context
+        // This is important for responsiveness - sound effects need their own context
         this.soundManager = new SoundManager();
-        this.soundManager.init(true);
 
         // Clear melody display initially
         const melodyElement = document.getElementById('currentMelody');
@@ -485,21 +480,23 @@ class SnakeGame {
             melodyElement.textContent = '';
         }
 
-        // Wait a short time to ensure the audio context is properly initialized
-        setTimeout(() => {
-            // Create a fresh music manager with the new audio context
-            this.musicManager = new MusicManager();
-            this.musicManager.init(this.soundManager.getAudioContext());
+        // If there was a previous music manager, stop it completely
+        if (this.musicManager) {
+            this.musicManager.stopMusic(true);
+        }
 
-            // Select a random melody and start music if enabled
-            this.musicManager.selectRandomMelody();
-            if (this.musicEnabled) {
-                this.musicManager.startMusic();
-            }
+        // Create a fresh music manager with its own audio context (no sharing)
+        this.musicManager = new MusicManager();
+        this.musicManager.init(); // Use its own audio context, don't share
 
-            // Update the melody display
-            this.drawMelodyName();
-        }, 100);
+        // Select a random melody and start music if enabled
+        this.musicManager.selectRandomMelody();
+        if (this.musicEnabled) {
+            this.musicManager.startMusic();
+        }
+
+        // Update the melody display
+        this.drawMelodyName();
 
         // Start the game loop
         this.restartGameLoop();
@@ -576,6 +573,7 @@ class SnakeGame {
 
                 // Play sound for the eaten fruit if sound is enabled
                 if (this.soundEnabled) {
+                    // Play immediately without any dependencies on the music system
                     this.soundManager.playSound(eatenFood.type);
                 }
 
@@ -634,27 +632,23 @@ class SnakeGame {
 
         // Handle audio in sequence
         if (this.soundEnabled && this.soundManager) {
-            // Play crash sound first
+            // Play crash sound first - directly
             this.soundManager.playSound('crash');
+        }
 
-            // Stop background music smoothly after crash sound
-            if (this.musicManager) {
-                setTimeout(() => {
-                    this.musicManager.stopMusic(false); // false = don't do full cleanup
-                }, 500); // Wait for crash sound to play
-            }
+        // Handle music separately from sound effects
+        if (this.musicManager) {
+            // Stop background music smoothly
+            setTimeout(() => {
+                this.musicManager.stopMusic(false);
+            }, 100);
+        }
 
-            // Play high score fanfare after a delay if applicable
-            if (isNewHighScore) {
-                setTimeout(() => {
-                    this.soundManager.playHighScoreFanfare();
-                }, 1000); // Wait 1 second after crash sound
-            }
-        } else {
-            // If sound is disabled, just stop the music
-            if (this.musicManager) {
-                this.musicManager.stopMusic(false); // false = don't do full cleanup
-            }
+        // Play high score fanfare after a delay if applicable
+        if (this.soundEnabled && this.soundManager && isNewHighScore) {
+            setTimeout(() => {
+                this.soundManager.playHighScoreFanfare();
+            }, 800);
         }
     }
 
@@ -1305,11 +1299,10 @@ class SnakeGame {
             localStorage.setItem('snakeHighScore', 0);
             this.highScoreElement.textContent = 0;
 
-            // Play sound if sound is enabled
+            // Play sound if sound is enabled - directly using the sound manager
             if (this.soundEnabled && this.soundManager) {
                 this.soundManager.playSound('crash');
             }
-
         }
     }
 }
