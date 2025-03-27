@@ -42,9 +42,11 @@ class SnakeGame {
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
         this.musicEnabled = localStorage.getItem('snakeMusicEnabled') !== 'false'; // Default to enabled
 
-        // Initialize audio managers
+        // Initialize audio managers immediately to prevent delay on first sound
         this.soundManager = new SoundManager();
+        // Initialize audio context immediately
         this.musicManager = new MusicManager();
+        this.musicManager.init(); // Initialize audio context immediately
 
         // Load fruit images
         this.fruitImages = {};
@@ -103,6 +105,11 @@ class SnakeGame {
         this.soundEnabled = !this.soundEnabled;
         localStorage.setItem('snakeSoundEnabled', this.soundEnabled.toString());
         this.updateSoundToggleUI();
+
+        // Play a test sound to wake up the audio context
+        if (this.soundEnabled) {
+            this.soundManager.playSound('click', 0.2); // Play at low volume
+        }
     }
 
     toggleMusic() {
@@ -242,6 +249,9 @@ class SnakeGame {
 
         // Start the fruit loop immediately
         this.startFruitLoop();
+
+        // Wake up audio context with a silent sound to prevent initial delay
+        this.soundManager.playSound('click', 0);
     }
 
     handleKeyPress(e) {
@@ -470,9 +480,10 @@ class SnakeGame {
         this.isGameOver = false;
         this.lastGameState = null;
 
-        // Create a fresh sound manager with a new audio context
-        // This is important for responsiveness - sound effects need their own context
-        this.soundManager = new SoundManager();
+        // Ensure sound manager is ready - don't recreate it to avoid audio context limitations
+        if (!this.soundManager) {
+            this.soundManager = new SoundManager();
+        }
 
         // Clear melody display initially
         const melodyElement = document.getElementById('currentMelody');
@@ -630,10 +641,12 @@ class SnakeGame {
         // Draw game over screen immediately to prevent flashing
         this.drawGameOver();
 
-        // Handle audio in sequence
+        // Handle audio in sequence - use setTimeout with 0ms to prevent audio blocking
         if (this.soundEnabled && this.soundManager) {
-            // Play crash sound first - directly
-            this.soundManager.playSound('crash');
+            // Play crash sound first - directly but in next event loop cycle
+            setTimeout(() => {
+                this.soundManager.playSound('crash');
+            }, 0);
         }
 
         // Handle music separately from sound effects
@@ -804,21 +817,15 @@ class SnakeGame {
         canvas.height = this.gridSize;
         const ctx = canvas.getContext('2d');
 
-        // Draw head body with gradient - using healthier, more vibrant colors
+        // Draw head body with gradient
         const gradient = ctx.createLinearGradient(0, 0, this.gridSize, this.gridSize);
         gradient.addColorStop(0, '#2ecc71'); // Vibrant green
         gradient.addColorStop(1, '#27ae60'); // Emerald green
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, 10);
+        ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, 4);
         ctx.fill();
-
-        // Add a subtle glow/inner shadow effect
-        ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
-        ctx.shadowBlur = 5;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
         // Draw eyes with white eyeballs
         // Left eye
@@ -841,16 +848,12 @@ class SnakeGame {
         ctx.arc(this.gridSize - 8, 8, 1.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw white smile
+        // Draw white smile - lower and wider
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(this.gridSize / 2, this.gridSize / 2, 5, 0, Math.PI);
+        ctx.arc(this.gridSize / 2, this.gridSize / 2 + 2, 8, 0, Math.PI);
         ctx.stroke();
-
-        // Reset shadow
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
 
         return canvas;
     }
