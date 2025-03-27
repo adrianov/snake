@@ -22,12 +22,6 @@ window.marioThemeMelody = {
         { note: 'REST', duration: 0.25 }, { note: 'C4', duration: 0.25 }, { note: 'D4', duration: 0.25 }, { note: 'B3', duration: 0.25 },
         { note: 'REST', duration: 0.5 },
 
-        // Repeat main theme with variation
-        { note: 'E4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'REST', duration: 0.25 }, { note: 'E4', duration: 0.25 },
-        { note: 'REST', duration: 0.25 }, { note: 'C4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'REST', duration: 0.25 },
-        { note: 'G4', duration: 0.5 }, { note: 'REST', duration: 0.5 }, { note: 'G3', duration: 0.5 },
-        { note: 'REST', duration: 0.5 },
-
         // Underground theme section
         { note: 'C4', duration: 0.25 }, { note: 'C5', duration: 0.25 }, { note: 'A3', duration: 0.25 }, { note: 'A4', duration: 0.25 },
         { note: 'A#3', duration: 0.25 }, { note: 'A#4', duration: 0.25 }, { note: 'REST', duration: 0.5 },
@@ -38,12 +32,6 @@ window.marioThemeMelody = {
         { note: 'D#3', duration: 0.25 }, { note: 'D#4', duration: 0.25 }, { note: 'REST', duration: 0.5 },
         { note: 'F3', duration: 0.25 }, { note: 'F4', duration: 0.25 }, { note: 'D3', duration: 0.25 }, { note: 'D4', duration: 0.25 },
         { note: 'D#3', duration: 0.25 }, { note: 'D#4', duration: 0.25 }, { note: 'REST', duration: 0.5 },
-
-        // Return to main theme section 1
-        { note: 'E4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'REST', duration: 0.25 }, { note: 'E4', duration: 0.25 },
-        { note: 'REST', duration: 0.25 }, { note: 'C4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'REST', duration: 0.25 },
-        { note: 'G4', duration: 0.5 }, { note: 'REST', duration: 0.5 }, { note: 'G3', duration: 0.5 },
-        { note: 'REST', duration: 0.5 },
 
         // Underwater theme section
         { note: 'E5', duration: 0.5 }, { note: 'REST', duration: 0.25 }, { note: 'E5', duration: 0.25 },
@@ -73,12 +61,6 @@ window.marioThemeMelody = {
         { note: 'REST', duration: 0.25 }, { note: 'C4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'REST', duration: 0.25 },
         { note: 'G4', duration: 0.5 }, { note: 'REST', duration: 0.5 }, { note: 'G3', duration: 0.5 },
         { note: 'REST', duration: 0.5 }
-    ],
-    beats: [
-        { type: 'kick', time: 0.0 },
-        { type: 'hihat', time: 0.25 },
-        { type: 'snare', time: 0.5 },
-        { type: 'hihat', time: 0.75 }
     ]
 };
 

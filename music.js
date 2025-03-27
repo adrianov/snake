@@ -28,6 +28,7 @@ class MusicManager {
             'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
             'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.26, 'F5': 698.46,
             'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+            'C6': 1046.50, 'D6': 1174.66, 'E6': 1318.51,
             'REST': 0
         };
 
@@ -44,7 +45,7 @@ class MusicManager {
         this.stopMusic(true);
 
         // Create or use provided audio context
-        if (!audioContext) {
+        if (!audioContext || (audioContext && audioContext.state === 'closed')) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         } else {
             this.audioContext = audioContext;
@@ -69,8 +70,12 @@ class MusicManager {
     }
 
     selectRandomMelody() {
-        // Use the new function that ensures a different melody from the previous one
-        this.currentMelodyId = window.MusicData.getRandomMelodyId();
+        // Select a random melody ID from the available melodies
+        const melodyIds = window.MusicData.getAllMelodyIds();
+        if (melodyIds.length > 0) {
+            const randomIndex = Math.floor(Math.random() * melodyIds.length);
+            this.currentMelodyId = melodyIds[randomIndex];
+        }
         return this.currentMelodyId;
     }
 
@@ -96,12 +101,14 @@ class MusicManager {
                     this.startMusicPlayback(musicData);
                 }).catch(err => {
                     console.error('Failed to resume AudioContext:', err);
-                    // Try to start anyway
+                    // Reinitialize AudioContext if needed
+                    this.init();
                     this.startMusicPlayback(musicData);
                 });
             } catch (err) {
                 console.error('Error resuming AudioContext:', err);
-                // Try to start anyway
+                // Reinitialize AudioContext if needed
+                this.init();
                 this.startMusicPlayback(musicData);
             }
         } else {

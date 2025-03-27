@@ -16,18 +16,6 @@ window.furEliseMelody = {
         { note: 'E4', duration: 0.25 }, { note: 'G#4', duration: 0.25 }, { note: 'B4', duration: 0.25 },
         { note: 'C5', duration: 0.5 },
 
-        // Main Theme A - Second statement
-        { note: 'E5', duration: 0.25 }, { note: 'D#5', duration: 0.25 },
-        { note: 'E5', duration: 0.25 }, { note: 'D#5', duration: 0.25 }, { note: 'E5', duration: 0.25 },
-        { note: 'B4', duration: 0.25 }, { note: 'D5', duration: 0.25 }, { note: 'C5', duration: 0.25 },
-        { note: 'A4', duration: 0.5 },
-
-        // Bass arpeggios again
-        { note: 'C4', duration: 0.25 }, { note: 'E4', duration: 0.25 }, { note: 'A4', duration: 0.25 },
-        { note: 'B4', duration: 0.5 },
-        { note: 'E4', duration: 0.25 }, { note: 'C5', duration: 0.25 }, { note: 'B4', duration: 0.25 },
-        { note: 'A4', duration: 0.5 },
-
         // Middle Section B - First part (more intense)
         { note: 'B4', duration: 0.25 }, { note: 'C5', duration: 0.25 }, { note: 'D5', duration: 0.25 },
         { note: 'E5', duration: 0.5 },
@@ -81,12 +69,6 @@ window.furEliseMelody = {
         { note: 'B4', duration: 0.25 }, { note: 'D5', duration: 0.25 }, { note: 'C5', duration: 0.25 },
         { note: 'A4', duration: 0.75 }, { note: 'C5', duration: 0.25 }, { note: 'E5', duration: 0.5 },
         { note: 'A5', duration: 1.0 }
-    ],
-    beats: [
-        { type: 'kick', time: 0.0 },
-        { type: 'hihat', time: 0.25 },
-        { type: 'snare', time: 0.5 },
-        { type: 'hihat', time: 0.75 }
     ]
 };
 

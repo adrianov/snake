@@ -40,18 +40,6 @@ window.greensleevesMelody = {
         { note: 'D5', duration: 0.375 }, { note: 'C5', duration: 0.125 }, { note: 'B4', duration: 0.25 }, { note: 'G4', duration: 0.5 },
         { note: 'A4', duration: 1.0 },
 
-        // Chorus reprise - First phrase with decoration
-        { note: 'C5', duration: 0.5 }, { note: 'D5', duration: 0.25 }, { note: 'E5', duration: 0.375 }, { note: 'F5', duration: 0.125 },
-        { note: 'F5', duration: 0.25 }, { note: 'G5', duration: 0.5 }, { note: 'A5', duration: 0.125 }, { note: 'G5', duration: 0.125 }, { note: 'E5', duration: 0.25 },
-        { note: 'F5', duration: 0.5 }, { note: 'D5', duration: 0.25 }, { note: 'E5', duration: 0.5 },
-        { note: 'C5', duration: 1.0 },
-
-        // Chorus reprise - Second phrase with decoration
-        { note: 'C5', duration: 0.5 }, { note: 'D5', duration: 0.25 }, { note: 'E5', duration: 0.5 },
-        { note: 'F5', duration: 0.25 }, { note: 'G5', duration: 0.375 }, { note: 'A5', duration: 0.125 }, { note: 'G5', duration: 0.25 },
-        { note: 'F5', duration: 0.375 }, { note: 'E5', duration: 0.125 }, { note: 'D5', duration: 0.25 }, { note: 'C5', duration: 0.5 },
-        { note: 'B4', duration: 1.0 },
-
         // Final Verse - First phrase
         { note: 'A4', duration: 0.5 }, { note: 'C5', duration: 0.25 }, { note: 'D5', duration: 0.5 },
         { note: 'E5', duration: 0.25 }, { note: 'F5', duration: 0.5 }, { note: 'E5', duration: 0.25 },
@@ -63,12 +51,6 @@ window.greensleevesMelody = {
         { note: 'E5', duration: 0.25 }, { note: 'F5', duration: 0.5 }, { note: 'E5', duration: 0.25 },
         { note: 'D5', duration: 0.5 }, { note: 'B4', duration: 0.25 }, { note: 'G4', duration: 0.5 },
         { note: 'A4', duration: 1.5 }
-    ],
-    beats: [
-        { type: 'kick', time: 0.0 },
-        { type: 'hihat', time: 0.25 },
-        { type: 'snare', time: 0.5 },
-        { type: 'hihat', time: 0.75 }
     ]
 };
 

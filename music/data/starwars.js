@@ -62,12 +62,6 @@ window.starwarsThemeMelody = {
 
         // Final Chord Progression
         { note: 'C5', duration: 0.5 }, { note: 'G5', duration: 0.5 }, { note: 'C6', duration: 1.0 }
-    ],
-    beats: [
-        { type: 'kick', time: 0.0 },
-        { type: 'hihat', time: 0.25 },
-        { type: 'snare', time: 0.5 },
-        { type: 'hihat', time: 0.75 }
     ]
 };
 

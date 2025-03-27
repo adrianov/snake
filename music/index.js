@@ -3,6 +3,7 @@
 window.MusicData = {
     MELODIES: {},
     previousMelodyId: null,
+    currentMelodyId: null,
 
     /**
      * Gets a melody by its ID
@@ -22,26 +23,43 @@ window.MusicData = {
     },
 
     /**
-     * Selects a random melody that is different from the previous one
+     * Selects a melody by ID or uses the currently selected one
+     * @param {string} [id=null] - Optional melody ID to use
      * @returns {string} The selected melody ID
      */
-    getRandomMelodyId: function() {
-        const melodyIds = this.getAllMelodyIds();
-
-        // If there's only one melody, return it
-        if (melodyIds.length === 1) {
-            this.previousMelodyId = melodyIds[0];
-            return this.previousMelodyId;
+    getSelectedMelodyId: function(id = null) {
+        // If an ID is provided and it exists, use it
+        if (id && this.MELODIES[id]) {
+            this.currentMelodyId = id;
+            return this.currentMelodyId;
         }
 
-        // Filter out the previous melody to ensure we get a different one
-        const availableMelodies = melodyIds.filter(id => id !== this.previousMelodyId);
+        // If we have a current melody, use it
+        if (this.currentMelodyId && this.MELODIES[this.currentMelodyId]) {
+            return this.currentMelodyId;
+        }
 
-        // Get a random melody from the available ones
-        const randomIndex = Math.floor(Math.random() * availableMelodies.length);
-        this.previousMelodyId = availableMelodies[randomIndex];
+        // Otherwise, select first available melody
+        const melodyIds = this.getAllMelodyIds();
+        if (melodyIds.length > 0) {
+            this.currentMelodyId = melodyIds[0];
+            return this.currentMelodyId;
+        }
 
-        return this.previousMelodyId;
+        return null;
+    },
+
+    /**
+     * Set a specific melody to play consistently
+     * @param {string} id - The melody ID to set as current
+     * @returns {boolean} Whether the operation was successful
+     */
+    setCurrentMelody: function(id) {
+        if (this.MELODIES[id]) {
+            this.currentMelodyId = id;
+            return true;
+        }
+        return false;
     },
 
     /**

@@ -47,23 +47,11 @@ window.zeldaThemeMelody = {
         { note: 'A4', duration: 0.25 }, { note: 'D4', duration: 0.25 }, { note: 'F4', duration: 0.25 }, { note: 'G4', duration: 0.25 },
         { note: 'E4', duration: 1.0 },
 
-        // Return to Main Theme with variation
-        { note: 'A3', duration: 0.5 }, { note: 'D4', duration: 0.75 }, { note: 'E4', duration: 0.25 },
-        { note: 'F4', duration: 0.5 }, { note: 'A4', duration: 0.5 }, { note: 'D5', duration: 0.5 },
-        { note: 'F5', duration: 0.5 }, { note: 'E5', duration: 0.5 }, { note: 'F5', duration: 0.25 }, { note: 'E5', duration: 0.25 },
-        { note: 'C5', duration: 0.5 }, { note: 'A4', duration: 0.5 }, { note: 'E4', duration: 0.5 },
-
         // End section
         { note: 'D5', duration: 0.75 }, { note: 'F5', duration: 0.25 }, { note: 'A5', duration: 0.5 }, { note: 'G5', duration: 0.5 },
         { note: 'F5', duration: 0.25 }, { note: 'E5', duration: 0.25 }, { note: 'D5', duration: 0.5 }, { note: 'C5', duration: 0.5 },
         { note: 'D5', duration: 0.25 }, { note: 'C5', duration: 0.25 }, { note: 'A4', duration: 0.5 }, { note: 'C5', duration: 0.5 },
         { note: 'D5', duration: 0.5 }, { note: 'A4', duration: 1.0 }
-    ],
-    beats: [
-        { type: 'kick', time: 0.0 },
-        { type: 'hihat', time: 0.25 },
-        { type: 'snare', time: 0.5 },
-        { type: 'hihat', time: 0.75 }
     ]
 };
 
