@@ -16,7 +16,7 @@ class SnakeGame {
         // Game settings
         this.gridSize = Math.min(40, Math.floor(this.canvas.width / 20)); // Larger cells, max 40px
         this.tileCount = Math.floor(this.canvas.width / this.gridSize);
-        this.snake = [];
+        this.snake = new Snake(5, 5); // Create snake object with initial position
         this.food = []; // Change to array of foods
         this.direction = 'right';
         this.nextDirection = 'right';
@@ -41,6 +41,7 @@ class SnakeGame {
         this.frameInterval = this.baseSpeed; // Current interval between frames
         this.animationFrame = null; // Handle for requestAnimationFrame
         this.boundGameLoop = null; // Bound game loop function
+        this.luckEnabled = true; // Enable 50% luck chance to avoid collisions
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -150,11 +151,7 @@ class SnakeGame {
 
     init() {
         // Initialize game state
-        this.snake = [
-            { x: 5, y: 5 },
-            { x: 4, y: 5 },
-            { x: 3, y: 5 }
-        ];
+        this.snake = new Snake(5, 5);
         this.direction = 'right';
         this.nextDirection = 'right';
         this.score = 0;
@@ -184,6 +181,13 @@ class SnakeGame {
         if (event.key && event.key.toLowerCase() === 'm') {
             event.preventDefault();
             this.toggleMusic();
+            return;
+        }
+
+        // Handle luck toggle with 'L' key
+        if (event.key && event.key.toLowerCase() === 'l') {
+            event.preventDefault();
+            this.toggleLuck();
             return;
         }
 
@@ -368,7 +372,7 @@ class SnakeGame {
     pauseGame() {
         // Store the game state before pausing
         this.lastGameState = {
-            snake: JSON.parse(JSON.stringify(this.snake)), // Deep copy snake
+            snake: JSON.parse(JSON.stringify(this.snake.getSegments())), // Deep copy snake
             direction: this.direction,
             nextDirection: this.nextDirection,
             food: JSON.parse(JSON.stringify(this.food)), // Deep copy food
@@ -415,11 +419,7 @@ class SnakeGame {
         this.nextDirection = 'right';
         this.speed = this.baseSpeed;
         this.frameInterval = this.baseSpeed;
-        this.snake = [
-            { x: 5, y: 5 },
-            { x: 4, y: 5 },
-            { x: 3, y: 5 }
-        ];
+        this.snake = new Snake(5, 5);
         this.food = []; // Clear all food
         this.lastRandomSpawnTime = Date.now();
         this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
@@ -428,6 +428,7 @@ class SnakeGame {
         this.isPaused = false;
         this.isGameOver = false;
         this.lastGameState = null;
+        this.luckEnabled = true; // Reset luck feature to enabled when starting a new game
 
         // Ensure sound manager is ready - don't recreate it to avoid audio context limitations
         if (!this.soundManager) {
@@ -469,7 +470,7 @@ class SnakeGame {
                 spawnTime: Date.now(),
                 lifetime: Math.random() * 15000 // Random lifetime between 0-15 seconds
             };
-        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
+        } while (this.snake.isOccupyingPosition(newFood.x, newFood.y) ||
                 this.food.some(f => f.x === newFood.x && f.y === newFood.y));
 
         this.food.push(newFood);
@@ -497,25 +498,51 @@ class SnakeGame {
             this.direction = this.nextDirection;
 
             // Calculate new head position
-            const head = { ...this.snake[0] };
-            switch (this.direction) {
-                case 'up': head.y--; break;
-                case 'down': head.y++; break;
-                case 'left': head.x--; break;
-                case 'right': head.x++; break;
-            }
+            const nextHeadPos = this.getNextHeadPosition();
 
             // Check for collisions
-            if (this.checkCollision(head)) {
-                this.gameOver();
-                return;
+            if (this.checkCollision(nextHeadPos)) {
+                // Apply luck if enabled (80% chance to avoid collision instead of 50%)
+                if (this.luckEnabled && Math.random() < 0.8) {
+                    // Find a safe direction to avoid collision
+                    const safeDirection = this.snake.findSafeDirection(
+                        this.direction,
+                        this.tileCount,
+                        (x, y) => this.isPositionSafe(x, y)
+                    );
+
+                    if (safeDirection) {
+                        // Apply the safe direction
+                        this.direction = safeDirection;
+                        this.nextDirection = safeDirection;
+
+                        // Recalculate head position with new safe direction
+                        const safeHeadPos = this.getNextHeadPosition();
+
+                        // Play a sound for luck activation if sound is enabled
+                        if (this.soundEnabled) {
+                            this.soundManager.playSound('click', 0.3);
+                        }
+
+                        // Move snake in the safe direction
+                        this.snake.move(safeHeadPos.x, safeHeadPos.y);
+                    } else {
+                        // No safe direction found, game over
+                        this.gameOver();
+                        return;
+                    }
+                } else {
+                    // Bad luck, game over
+                    this.gameOver();
+                    return;
+                }
+            } else {
+                // Normal movement, no collision
+                this.snake.move(nextHeadPos.x, nextHeadPos.y);
             }
 
-            // Add new head
-            this.snake.unshift(head);
-
             // Check if any food is eaten
-            const foodEatenIndex = this.food.findIndex(f => f.x === head.x && f.y === head.y);
+            const foodEatenIndex = this.food.findIndex(f => f.x === this.snake.head().x && f.y === this.snake.head().y);
             if (foodEatenIndex !== -1) {
                 const eatenFood = this.food[foodEatenIndex];
                 const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
@@ -543,6 +570,9 @@ class SnakeGame {
                     this.soundManager.playSound(eatenFood.type);
                 }
 
+                // Snake grows
+                this.snake.grow();
+
                 // Remove eaten food
                 this.food.splice(foodEatenIndex, 1);
 
@@ -550,9 +580,6 @@ class SnakeGame {
                 if (this.food.length === 0) {
                     this.generateFood();
                 }
-            } else {
-                // Remove tail if no food was eaten
-                this.snake.pop();
             }
         }
 
@@ -562,14 +589,41 @@ class SnakeGame {
         this.draw();
     }
 
-    checkCollision(head) {
+    // Helper method to get the next head position based on current direction
+    getNextHeadPosition() {
+        const headPos = this.snake.head();
+        const nextPos = { x: headPos.x, y: headPos.y };
+
+        switch (this.direction) {
+            case 'up': nextPos.y--; break;
+            case 'down': nextPos.y++; break;
+            case 'left': nextPos.x--; break;
+            case 'right': nextPos.x++; break;
+        }
+
+        return nextPos;
+    }
+
+    // Check if a position is safe (within bounds and not colliding with snake)
+    isPositionSafe(x, y) {
+        // Check if within bounds
+        if (x < 0 || x >= this.tileCount || y < 0 || y >= this.tileCount) {
+            return false;
+        }
+
+        // Check if colliding with snake (except tail if not growing)
+        return !this.snake.isOccupyingPosition(x, y, true);
+    }
+
+    checkCollision(headPos) {
         // Wall collision
-        if (head.x < 0 || head.x >= this.tileCount || head.y < 0 || head.y >= this.tileCount) {
+        if (headPos.x < 0 || headPos.x >= this.tileCount ||
+            headPos.y < 0 || headPos.y >= this.tileCount) {
             return true;
         }
 
-        // Self collision (skip the head since it's the same position)
-        return this.snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y);
+        // Self collision
+        return this.snake.isOccupyingPosition(headPos.x, headPos.y, true);
     }
 
     gameOver() {
@@ -633,7 +687,7 @@ class SnakeGame {
 
         // Create a game state object to pass to the drawer
         const gameState = {
-            snake: this.snake,
+            snake: this.snake.getSegments(),
             food: this.food,
             direction: this.direction,
             score: this.score,
@@ -641,7 +695,8 @@ class SnakeGame {
             isGameOver: this.isGameOver,
             isPaused: this.isPaused,
             isGameStarted: this.isGameStarted,
-            lastEatenTime: this.lastEatenTime
+            lastEatenTime: this.lastEatenTime,
+            luckEnabled: this.luckEnabled // Add luck status to game state for UI
         };
 
         // Use the drawer to render the game
@@ -674,11 +729,26 @@ class SnakeGame {
         }
     }
 
+    toggleLuck() {
+        this.luckEnabled = !this.luckEnabled;
+
+        // Play a sound to indicate luck status change
+        if (this.soundEnabled) {
+            this.soundManager.playSound('click', 0.3);
+        }
+
+        // Show a brief message on screen
+        this.uiManager.showTemporaryMessage(
+            this.luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
+            1500
+        );
+    }
+
     // Add new method to spawn fruit in snake's direction
     spawnFruitInSnakeDirection() {
-        if (this.snake.length === 0) return;
+        if (!this.snake) return;
 
-        const head = this.snake[0];
+        const head = this.snake.head();
         let newFruitPos = { x: head.x, y: head.y };
 
         // Calculate position in front of snake head based on current direction
@@ -705,7 +775,7 @@ class SnakeGame {
 
         // Check if the position is already occupied by snake or another food
         const positionOccupied =
-            this.snake.some(segment => segment.x === newFruitPos.x && segment.y === newFruitPos.y) ||
+            this.snake.isOccupyingPosition(newFruitPos.x, newFruitPos.y) ||
             this.food.some(f => f.x === newFruitPos.x && f.y === newFruitPos.y);
 
         // Only spawn if position is free
@@ -726,6 +796,92 @@ class SnakeGame {
                 this.soundManager.playSound('click');
             }
         }
+    }
+}
+
+// Snake class to encapsulate snake logic
+class Snake {
+    constructor(startX, startY) {
+        // Initialize snake with 3 segments
+        this.segments = [
+            { x: startX, y: startY },
+            { x: startX - 1, y: startY },
+            { x: startX - 2, y: startY }
+        ];
+        this.growing = false;
+    }
+
+    // Get all segments of the snake
+    getSegments() {
+        return this.segments;
+    }
+
+    // Get the head segment
+    head() {
+        return this.segments[0];
+    }
+
+    // Move the snake to a new head position
+    move(x, y) {
+        // Add new head
+        this.segments.unshift({ x, y });
+
+        // If not growing, remove tail
+        if (!this.growing) {
+            this.segments.pop();
+        } else {
+            // Reset growing flag
+            this.growing = false;
+        }
+    }
+
+    // Set the snake to grow on next move
+    grow() {
+        this.growing = true;
+    }
+
+    // Check if the snake occupies a specific position
+    isOccupyingPosition(x, y, skipHead = false) {
+        const startIndex = skipHead ? 1 : 0;
+        return this.segments.slice(startIndex).some(segment =>
+            segment.x === x && segment.y === y
+        );
+    }
+
+    // Find a safe direction to move (automatically avoiding collisions)
+    findSafeDirection(currentDirection, boardSize, isPositionSafeCallback) {
+        // Determine all valid directions (excluding opposite of current direction)
+        const possibleDirections = ['up', 'down', 'left', 'right'].filter(d => {
+            // Can't move in the opposite direction of current movement
+            return !((currentDirection === 'up' && d === 'down') ||
+                   (currentDirection === 'down' && d === 'up') ||
+                   (currentDirection === 'left' && d === 'right') ||
+                   (currentDirection === 'right' && d === 'left'));
+        });
+
+        // Shuffle the directions to add randomness
+        possibleDirections.sort(() => Math.random() - 0.5);
+
+        // Check each direction for safety
+        for (const direction of possibleDirections) {
+            // Calculate potential new head position
+            const newHead = { x: this.head().x, y: this.head().y };
+
+            switch (direction) {
+                case 'up': newHead.y--; break;
+                case 'down': newHead.y++; break;
+                case 'left': newHead.x--; break;
+                case 'right': newHead.x++; break;
+            }
+
+            // Use the callback to check if this position is safe
+            if (isPositionSafeCallback(newHead.x, newHead.y)) {
+                return direction;
+            }
+        }
+
+        // No safe direction found
+        return null;
     }
 }
 
