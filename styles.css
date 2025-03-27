@@ -87,7 +87,7 @@ body {
 /* Score Container - Positioned below game field */
 .score-container {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(80px, 1fr) minmax(200px, 2fr) minmax(80px, 1fr);
     gap: 20px;
     padding: 8px 16px;
     background: rgba(30, 41, 59, 0.8);
@@ -136,30 +136,91 @@ body {
     padding: 6px 12px;
     background: rgba(46, 204, 113, 0.1);
     border-radius: var(--radius-sm);
-    min-width: 120px;
+    width: 100%;
     text-align: center;
-    visibility: hidden;
-    opacity: 0;
+    visibility: visible;
+    opacity: 1;
     transition: all var(--transition-normal);
     border: 1px solid rgba(46, 204, 113, 0.3);
 }
 
-.music-info.has-melody {
-    visibility: visible;
-    opacity: 1;
-    transform: translateY(0);
+.melody-display {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+    min-width: 0; /* Allow for proper text overflow */
+}
+
+.music-info.has-melody #currentMelody {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    flex: 1;
+}
+
+#currentMelody {
+    display: none;
 }
 
 .music-icon {
     color: var(--color-primary);
     font-size: 1rem;
     animation: pulse 2s infinite;
+    flex-shrink: 0;
+}
+
+/* Control toggles */
+.control-toggle {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    background-color: rgba(46, 204, 113, 0.1);
+    min-width: 30px;
+    flex-shrink: 0;
+}
+
+.control-toggle:hover {
+    background-color: rgba(46, 204, 113, 0.25);
+    transform: translateY(-1px);
+}
+
+.control-toggle.disabled {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.control-icon {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.control-label {
+    font-size: 9px;
+    color: var(--color-text-dim);
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
 }
 
 @keyframes pulse {
     0% { opacity: 0.7; }
     50% { opacity: 1; }
     100% { opacity: 0.7; }
+}
+
+/* Remove the separate controls container styles */
+.controls-container {
+    display: none;
 }
 
 /* Mobile Responsive */
@@ -180,6 +241,7 @@ body {
     .score-container {
         padding: 8px;
         gap: 10px;
+        grid-template-columns: minmax(60px, 1fr) minmax(140px, 2fr) minmax(60px, 1fr);
     }
 
     .score-label {
@@ -193,7 +255,6 @@ body {
 
     .music-info {
         font-size: 0.7rem;
-        min-width: 0;
         padding: 4px 8px;
     }
 }

@@ -17,8 +17,20 @@
                 <span class="score-value" id="score">0</span>
             </div>
             <div class="music-info">
-                <span class="music-icon">♫</span>
-                <span id="currentMelody"></span>
+                <div id="soundToggle" class="control-toggle" title="Toggle Sound (S key)">
+                    <span class="control-icon sound-on">🔊</span>
+                    <span class="control-icon sound-off hidden">🔇</span>
+                    <span class="control-label">S</span>
+                </div>
+                <div class="melody-display">
+                    <span class="music-icon">♫</span>
+                    <span id="currentMelody"></span>
+                </div>
+                <div id="musicToggle" class="control-toggle" title="Toggle Music (M key)">
+                    <span class="control-icon music-on">♫</span>
+                    <span class="control-icon music-off hidden">♪</span>
+                    <span class="control-label">M</span>
+                </div>
             </div>
             <div class="score-item">
                 <span class="score-label">High Score</span>
