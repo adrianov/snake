@@ -1,434 +1,205 @@
 class SoundManager {
     constructor() {
-        // Create an immediate audio context on instantiation
         try {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            // Force immediate activation of audio context
-            this.activateAudioContext();
+            // Create audio context with options to keep it running if possible
+            const contextOptions = {
+                latencyHint: 'interactive',
+                sampleRate: 44100
+            };
 
-            // Pre-create and cache basic sound nodes for faster playback
-            this.soundCache = {};
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
 
-            // Pre-warm the audio context with a silent sound
-            this.warmupAudioContext();
+            // Force resume the context immediately
+            if (this.audioContext.state !== 'running') {
+                this.audioContext.resume();
+
+                // Add user interaction listeners to ensure the context stays active
+                const resumeAudioContext = () => {
+                    if (this.audioContext.state !== 'running') {
+                        this.audioContext.resume();
+                    }
+                };
+
+                // These will auto-trigger on first user interaction with the page
+                window.addEventListener('click', resumeAudioContext, { once: true });
+                window.addEventListener('touchstart', resumeAudioContext, { once: true });
+                window.addEventListener('keydown', resumeAudioContext, { once: true });
+            }
+
+            // Create sound templates
+            this.initSoundTemplates();
+
+            // Keep the context alive with a silent audio node if needed
+            this.keepContextAlive();
+
         } catch (e) {
             console.error('Error creating AudioContext:', e);
             this.audioContext = null;
         }
-
-        // Flag for initialization
-        this.isInitialized = !!this.audioContext;
     }
 
-    warmupAudioContext() {
+    // Keep audio context alive with a silent node
+    keepContextAlive() {
         if (!this.audioContext) return;
 
-        // Create a silent sound to warm up the audio context
-        const silentOsc = this.audioContext.createOscillator();
-        const silentGain = this.audioContext.createGain();
-        silentGain.gain.value = 0.001; // Nearly silent
-        silentOsc.connect(silentGain);
-        silentGain.connect(this.audioContext.destination);
-        silentOsc.start();
-        silentOsc.stop(this.audioContext.currentTime + 0.001);
+        // Create a silent oscillator that runs continuously
+        this.silentNode = this.audioContext.createGain();
+        this.silentNode.gain.value = 0; // Completely silent
+        this.silentNode.connect(this.audioContext.destination);
     }
 
-    activateAudioContext() {
-        if (!this.audioContext) return;
-
-        // Force context to running state immediately
-        if (this.audioContext.state !== 'running') {
-            this.audioContext.resume().catch(err => {
-                console.error('Error activating AudioContext:', err);
-            });
-        }
-    }
-
-    init(forceNewContext = false) {
-        // If forcing a new context, close the existing one first
-        if (forceNewContext && this.audioContext) {
-            try {
-                if (this.audioContext.state === 'running') {
-                    this.audioContext.suspend();
-                }
-
-                if (this.audioContext.state !== 'closed') {
-                    this.audioContext.close();
-                }
-
-                this.audioContext = null;
-                this.isInitialized = false;
-                this.soundCache = {}; // Clear sound cache
-            } catch (e) {
-                console.error('Error closing previous AudioContext:', e);
-            }
-        }
-
-        if (this.isInitialized && !forceNewContext) return;
-
-        // Create a new audio context
-        if (!this.audioContext) {
-            try {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                this.activateAudioContext();
-                this.isInitialized = true;
-            } catch (e) {
-                console.error('Error creating new AudioContext:', e);
-                return;
-            }
-        }
-    }
-
-    getAudioContext() {
-        if (!this.audioContext) {
-            this.init();
-        }
-        return this.audioContext;
-    }
-
-    playSound(fruitType) {
-        // Fast return if no audio context available
-        if (!this.audioContext) {
-            this.init();
-            if (!this.audioContext) return;
-        }
-
-        // Force wake the audio context immediately if suspended
-        if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
-        }
-
-        // Create or retrieve the sound
-        let sound;
-        const now = this.audioContext.currentTime;
-
-        // Use pre-cached sound or create a new one
-        if (this.soundCache[fruitType]) {
-            // Clone the cached nodes for reuse
-            sound = this.cloneSound(this.soundCache[fruitType], now);
-        } else {
-            // Create a new sound
-            switch (fruitType) {
-                case 'apple':
-                    sound = this.createAppleSound(now);
-                    break;
-                case 'banana':
-                    sound = this.createBananaSound(now);
-                    break;
-                case 'orange':
-                    sound = this.createOrangeSound(now);
-                    break;
-                case 'strawberry':
-                    sound = this.createStrawberrySound(now);
-                    break;
-                case 'cherry':
-                    sound = this.createCherrySound(now);
-                    break;
-                case 'crash':
-                    sound = this.createCrashSound(now);
-                    break;
-                case 'highscore':
-                    sound = this.createHighScoreSound(now);
-                    break;
-                case 'disappear':
-                    sound = this.createDisappearSound(now);
-                    break;
-                default:
-                    return;
-            }
-
-            // Cache the sound configuration
-            this.soundCache[fruitType] = this.createCacheableSound(sound);
-        }
-
-        // Play immediately with minimal latency
-        sound.oscillator.start(now);
-        sound.oscillator.stop(now + 0.3);
-
-        // Clean up nodes automatically after playback
-        setTimeout(() => {
-            try {
-                sound.oscillator.disconnect();
-                sound.gainNode.disconnect();
-            } catch (e) {
-                // Ignore errors from already disconnected nodes
-            }
-        }, 400);
-    }
-
-    // Create a template for caching
-    createCacheableSound(sound) {
-        return {
-            type: sound.oscillator.type,
-            frequency: sound.oscillator.frequency.value,
-            gainValue: sound.gainNode.gain.value,
-            envelopeSettings: {
-                attack: 0.01,
-                decay: 0.1,
-                sustain: 0.5,
-                release: 0.1
+    // Initialize all sound templates
+    initSoundTemplates() {
+        this.soundTemplates = {
+            'apple': {
+                type: 'sine',
+                frequency: 880,
+                gainValue: 0.3,
+                frequencyEnvelope: { targetFreq: 440, duration: 0.1 },
+                duration: 0.2
             },
-            frequencyEnvelope: sound.frequencyEnvelope || null
+            'banana': {
+                type: 'triangle',
+                frequency: 660,
+                gainValue: 0.3,
+                frequencyEnvelope: { targetFreq: 330, duration: 0.15 },
+                duration: 0.2
+            },
+            'orange': {
+                type: 'square',
+                frequency: 550,
+                gainValue: 0.3,
+                frequencyEnvelope: { targetFreq: 275, duration: 0.2 },
+                duration: 0.25
+            },
+            'strawberry': {
+                type: 'sine',
+                frequency: 1100,
+                gainValue: 0.3,
+                frequencyEnvelope: { targetFreq: 550, duration: 0.25 },
+                duration: 0.3
+            },
+            'cherry': {
+                type: 'sine',
+                frequency: 784,
+                gainValue: 0.25,
+                frequencyEnvelope: { targetFreq: 392, duration: 0.15 },
+                duration: 0.2
+            },
+            'crash': {
+                type: 'sawtooth',
+                frequency: 440,
+                gainValue: 0.3,
+                frequencyEnvelope: { targetFreq: 55, duration: 0.6 },
+                duration: 0.8
+            },
+            'highscore': {
+                type: 'triangle',
+                frequency: 523.25,
+                gainValue: 0.4,
+                frequencyEnvelope: { targetFreq: 1046.50, duration: 0.3 },
+                duration: 0.3
+            },
+            'disappear': {
+                type: 'sine',
+                frequency: 440,
+                gainValue: 0.08,
+                frequencyEnvelope: { targetFreq: 220, duration: 0.15 },
+                duration: 0.2
+            },
+            'click': {
+                type: 'sine',
+                frequency: 800,
+                gainValue: 0.1,
+                duration: 0.1
+            }
         };
     }
 
-    // Clone a cached sound for reuse
-    cloneSound(cachedSound, startTime) {
+    // Play sound from template - always force resume context
+    playSound(soundType) {
+        if (!this.audioContext || !this.soundTemplates[soundType]) return;
+
+        // Always force resume before playing
+        if (this.audioContext.state !== 'running') {
+            this.audioContext.resume();
+        }
+
+        // Get template and create sound
+        const template = this.soundTemplates[soundType];
+        const now = this.audioContext.currentTime;
         const oscillator = this.audioContext.createOscillator();
         const gainNode = this.audioContext.createGain();
 
-        // Set basic properties
-        oscillator.type = cachedSound.type;
-        oscillator.frequency.value = cachedSound.frequency;
+        // Apply template values
+        oscillator.type = template.type;
+        oscillator.frequency.value = template.frequency;
+        gainNode.gain.value = template.gainValue;
 
-        // Apply frequency envelope if any
-        if (cachedSound.frequencyEnvelope) {
-            const targetFreq = cachedSound.frequencyEnvelope.targetFreq;
-            const duration = cachedSound.frequencyEnvelope.duration;
-            oscillator.frequency.exponentialRampToValueAtTime(targetFreq, startTime + duration);
+        const soundDuration = template.duration || 0.3;
+
+        // Apply frequency envelope
+        if (template.frequencyEnvelope) {
+            oscillator.frequency.exponentialRampToValueAtTime(
+                template.frequencyEnvelope.targetFreq,
+                now + template.frequencyEnvelope.duration
+            );
         }
 
         // Apply gain envelope
-        gainNode.gain.setValueAtTime(cachedSound.gainValue, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + soundDuration);
 
-        // Connect
+        // Connect and play
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
-
-        return { oscillator, gainNode };
-    }
-
-    createAppleSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, startTime); // A5 note
-        oscillator.frequency.exponentialRampToValueAtTime(440, startTime + 0.1); // A4 note
-
-        gainNode.gain.setValueAtTime(0.3, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.1);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 440, duration: 0.1 }
-        };
-    }
-
-    createBananaSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(660, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(330, startTime + 0.15);
-
-        gainNode.gain.setValueAtTime(0.3, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 330, duration: 0.15 }
-        };
-    }
-
-    createOrangeSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(550, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(275, startTime + 0.2);
-
-        gainNode.gain.setValueAtTime(0.3, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 275, duration: 0.2 }
-        };
-    }
-
-    createStrawberrySound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1100, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(550, startTime + 0.25);
-
-        gainNode.gain.setValueAtTime(0.3, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.25);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 550, duration: 0.25 }
-        };
-    }
-
-    createCherrySound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(784, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(392, startTime + 0.15);
-
-        gainNode.gain.setValueAtTime(0.25, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 392, duration: 0.15 }
-        };
-    }
-
-    createCrashSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'sawtooth';
-        oscillator.frequency.setValueAtTime(440, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(55, startTime + 0.3);
-
-        gainNode.gain.setValueAtTime(0.3, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 55, duration: 0.3 }
-        };
-    }
-
-    createHighScoreSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(523.25, startTime); // C5
-
-        // Create an ascending victorious pattern
-        oscillator.frequency.setValueAtTime(523.25, startTime); // C5
-        oscillator.frequency.setValueAtTime(659.25, startTime + 0.1); // E5
-        oscillator.frequency.setValueAtTime(783.99, startTime + 0.2); // G5
-        oscillator.frequency.setValueAtTime(1046.50, startTime + 0.3); // C6
-
-        // Set envelope
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.05);
-        gainNode.gain.setValueAtTime(0.4, startTime + 0.1);
-        gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.15);
-        gainNode.gain.setValueAtTime(0.3, startTime + 0.2);
-        gainNode.gain.linearRampToValueAtTime(0.4, startTime + 0.25);
-        gainNode.gain.setValueAtTime(0.4, startTime + 0.3);
-        gainNode.gain.linearRampToValueAtTime(0.5, startTime + 0.35);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return { oscillator, gainNode };
-    }
-
-    createDisappearSound(startTime) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(440, startTime);
-        oscillator.frequency.exponentialRampToValueAtTime(220, startTime + 0.15);
-
-        gainNode.gain.setValueAtTime(0.08, startTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        return {
-            oscillator,
-            gainNode,
-            frequencyEnvelope: { targetFreq: 220, duration: 0.15 }
-        };
+        oscillator.start(now);
+        oscillator.stop(now + soundDuration + 0.05);
     }
 
     playHighScoreFanfare() {
-        if (!this.audioContext) {
-            this.init();
-            if (!this.audioContext) return;
-        }
+        if (!this.audioContext) return;
 
-        if (this.audioContext.state === 'suspended') {
+        // Always force resume before playing
+        if (this.audioContext.state !== 'running') {
             this.audioContext.resume();
         }
 
         const now = this.audioContext.currentTime;
 
-        // Direct scheduling for immediate playback
-        this.playSimpleNote(392.00, now, 0.15, 0.5);       // G4
-        this.playSimpleNote(523.25, now + 0.15, 0.15, 0.5); // C5
-        this.playSimpleNote(659.25, now + 0.3, 0.15, 0.5);  // E5
-        this.playSimpleNote(783.99, now + 0.45, 0.3, 0.6);  // G5
+        // Define notes
+        const notes = [
+            { freq: 392.00, time: 0.00, duration: 0.15, volume: 0.5 },  // G4
+            { freq: 523.25, time: 0.15, duration: 0.15, volume: 0.5 },  // C5
+            { freq: 659.25, time: 0.30, duration: 0.15, volume: 0.5 },  // E5
+            { freq: 783.99, time: 0.45, duration: 0.30, volume: 0.6 },  // G5
+            // Final chord
+            { freq: 783.99, time: 0.80, duration: 0.50, volume: 0.4 },  // G5
+            { freq: 987.77, time: 0.80, duration: 0.50, volume: 0.4 },  // B5
+            { freq: 1174.66, time: 0.80, duration: 0.50, volume: 0.4 }  // D6
+        ];
 
-        // Final chord
-        this.playSimpleNote(783.99, now + 0.8, 0.5, 0.4);   // G5
-        this.playSimpleNote(987.77, now + 0.8, 0.5, 0.4);   // B5
-        this.playSimpleNote(1174.66, now + 0.8, 0.5, 0.4);  // D6
-    }
+        // Schedule all notes
+        for (const note of notes) {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
 
-    playSimpleNote(frequency, startTime, duration, volume) {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = note.freq;
 
-        oscillator.type = 'triangle';
-        oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0, now + note.time);
+            gain.gain.linearRampToValueAtTime(note.volume, now + note.time + 0.05);
+            gain.gain.setValueAtTime(note.volume, now + note.time + note.duration - 0.05);
+            gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
 
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(volume, startTime + 0.05);
-        gainNode.gain.setValueAtTime(volume, startTime + duration - 0.05);
-        gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
 
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-
-        // Automatic cleanup
-        setTimeout(() => {
-            try {
-                oscillator.disconnect();
-                gainNode.disconnect();
-            } catch (e) {
-                // Ignore errors from already disconnected nodes
-            }
-        }, (startTime + duration - this.audioContext.currentTime) * 1000 + 100);
+            osc.start(now + note.time);
+            osc.stop(now + note.time + note.duration);
+        }
     }
 }
 
 // Make SoundManager a global variable
 window.SoundManager = SoundManager;
+
