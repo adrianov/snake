@@ -609,12 +609,6 @@ class SnakeGame {
     }
 
     gameOver() {
-        // First stop the game loop
-        if (this.gameLoop) {
-            clearInterval(this.gameLoop);
-            this.gameLoop = null;
-        }
-
         // Set game over state immediately
         this.isGameOver = true;
         this.isGameStarted = false;
@@ -629,27 +623,39 @@ class SnakeGame {
             this.highScoreElement.textContent = this.highScore;
         }
 
-        // Play crash sound first before stopping music, but only if sound is enabled
-        if (this.soundEnabled && this.soundManager) {
-            this.soundManager.playSound('crash');
+        // Stop the game loop
+        if (this.gameLoop) {
+            clearInterval(this.gameLoop);
+            this.gameLoop = null;
         }
 
-        // Stop only the music after a short delay
-        setTimeout(() => {
-            // Stop background music but keep sound manager active
+        // Draw game over screen immediately to prevent flashing
+        this.drawGameOver();
+
+        // Handle audio in sequence
+        if (this.soundEnabled && this.soundManager) {
+            // Play crash sound first
+            this.soundManager.playSound('crash');
+
+            // Stop background music smoothly after crash sound
             if (this.musicManager) {
-                this.musicManager.stopMusic(false); // false = don't fully clean up
+                setTimeout(() => {
+                    this.musicManager.stopMusic(false); // false = don't do full cleanup
+                }, 500); // Wait for crash sound to play
             }
 
-            // Draw game over screen
-            this.drawGameOver();
-
-            // Play triumph sound for new high score after game over screen appears
-            if (isNewHighScore && this.soundEnabled && this.soundManager) {
-                console.log("Playing high score fanfare!");
-                this.soundManager.playHighScoreFanfare();
+            // Play high score fanfare after a delay if applicable
+            if (isNewHighScore) {
+                setTimeout(() => {
+                    this.soundManager.playHighScoreFanfare();
+                }, 1000); // Wait 1 second after crash sound
             }
-        }, 500); // Short delay to ensure crash sound starts properly
+        } else {
+            // If sound is disabled, just stop the music
+            if (this.musicManager) {
+                this.musicManager.stopMusic(false); // false = don't do full cleanup
+            }
+        }
     }
 
     drawGameOver() {
@@ -1298,6 +1304,7 @@ class SnakeGame {
             if (this.soundEnabled && this.soundManager) {
                 this.soundManager.playSound('crash');
             }
+
         }
     }
 }
@@ -1306,3 +1313,4 @@ class SnakeGame {
 window.addEventListener('load', () => {
     new SnakeGame();
 });
+

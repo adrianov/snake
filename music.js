@@ -378,12 +378,21 @@ class MusicManager {
             this.drumScheduler = null;
         }
 
-        // Stop all active oscillators immediately
+        // Stop all active oscillators with a quick fade out
         if (this.audioContext) {
-            // Immediately kill all playing sounds
+            const currentTime = this.audioContext.currentTime;
+
+            // Fade out master gain over 50ms
+            if (this.masterGain) {
+                this.masterGain.gain.cancelScheduledValues(currentTime);
+                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, currentTime);
+                this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.05);
+            }
+
+            // Stop all active oscillators with a quick fade
             for (const source of this.activeOscillators) {
                 try {
-                    source.stop(0);
+                    source.stop(currentTime + 0.05);
                     source.disconnect();
                 } catch (e) {
                     // Ignore errors from already stopped oscillators
@@ -392,19 +401,6 @@ class MusicManager {
 
             // Clear the set
             this.activeOscillators.clear();
-
-            // Silence all gain nodes immediately
-            if (this.masterGain) {
-                this.masterGain.gain.cancelScheduledValues(this.audioContext.currentTime);
-                this.masterGain.gain.setValueAtTime(0, this.audioContext.currentTime);
-            }
-
-            // Suspend the audio context to stop processing
-            try {
-                this.audioContext.suspend();
-            } catch (e) {
-                console.error('Error suspending audio context:', e);
-            }
 
             // Full cleanup for when we're completely done with this audio context
             if (fullCleanup) {
