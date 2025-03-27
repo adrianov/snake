@@ -19,12 +19,13 @@ class SnakeGame {
         this.gridSize = Math.min(40, Math.floor(this.canvas.width / 20)); // Larger cells, max 40px
         this.tileCount = Math.floor(this.canvas.width / this.gridSize);
         this.snake = [];
-        this.food = { x: 0, y: 0, type: 'apple' };
+        this.food = []; // Change to array of foods
         this.direction = 'right';
         this.nextDirection = 'right';
         this.score = 0;
         this.highScore = localStorage.getItem('snakeHighScore') || 0;
         this.gameLoop = null;
+        this.fruitLoop = null; // Add new loop for fruit spawning
         this.baseSpeed = 100; // Base speed in milliseconds
         this.speed = this.baseSpeed;
         this.speedMultiplier = 0.8; // Speed up by 20% when pressing same direction
@@ -34,6 +35,8 @@ class SnakeGame {
         this.isPaused = false;
         this.isGameOver = false;
         this.lastGameState = null; // Store the state of the game before pausing
+        this.lastRandomSpawnTime = Date.now();
+        this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -236,6 +239,9 @@ class SnakeGame {
 
         // Add event listeners
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+
+        // Start the fruit loop immediately
+        this.startFruitLoop();
     }
 
     handleKeyPress(e) {
@@ -335,10 +341,6 @@ class SnakeGame {
         ) {
             // Slow down when pressing opposite direction
             this.speed *= this.slowMultiplier;
-        } else if (!validDirectionChange) {
-            // If we couldn't change direction and it's not the same or opposite,
-            // reset to base speed (happens when trying to go backwards)
-            this.speed = this.baseSpeed;
         }
 
         // Ensure speed doesn't get too extreme
@@ -360,6 +362,37 @@ class SnakeGame {
 
         // Start a new game loop with the current speed
         this.gameLoop = setInterval(() => this.update(), this.speed);
+    }
+
+    startFruitLoop() {
+        // Clear any existing fruit loop
+        if (this.fruitLoop) {
+            clearInterval(this.fruitLoop);
+            this.fruitLoop = null;
+        }
+
+        // Start a new fruit loop with fixed interval
+        this.fruitLoop = setInterval(() => {
+            // Check for expired fruits and remove them
+            const currentTime = Date.now();
+            this.food = this.food.filter(food => {
+                const age = currentTime - food.spawnTime;
+                if (age >= food.lifetime) {
+                    // Only play sound if game is active (not game over or not started)
+                    if (this.soundEnabled && this.isGameStarted && !this.isGameOver) {
+                        this.soundManager.playSound('disappear');
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            // Try to spawn random food
+            this.spawnRandomFood();
+
+            // Update the display
+            this.draw();
+        }, 100); // Fixed interval for smooth updates
     }
 
     togglePause() {
@@ -384,7 +417,7 @@ class SnakeGame {
             snake: JSON.parse(JSON.stringify(this.snake)), // Deep copy snake
             direction: this.direction,
             nextDirection: this.nextDirection,
-            food: {...this.food},
+            food: JSON.parse(JSON.stringify(this.food)), // Deep copy food
             score: this.score,
             speed: this.speed
         };
@@ -428,7 +461,10 @@ class SnakeGame {
             { x: 4, y: 5 },
             { x: 3, y: 5 }
         ];
-        this.generateFood();
+        this.food = []; // Clear all food
+        this.lastRandomSpawnTime = Date.now();
+        this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+        this.generateFood(); // Generate initial food
         this.isGameStarted = true;
         this.isPaused = false;
         this.isGameOver = false;
@@ -475,11 +511,24 @@ class SnakeGame {
             newFood = {
                 x: Math.floor(Math.random() * this.tileCount),
                 y: Math.floor(Math.random() * this.tileCount),
-                type: this.getRandomFruit()
+                type: this.getRandomFruit(),
+                spawnTime: Date.now(),
+                lifetime: Math.random() * 15000 // Random lifetime between 0-15 seconds
             };
-        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+        } while (this.snake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
+                this.food.some(f => f.x === newFood.x && f.y === newFood.y));
 
-        this.food = newFood;
+        this.food.push(newFood);
+    }
+
+    spawnRandomFood() {
+        const currentTime = Date.now();
+        if (currentTime - this.lastRandomSpawnTime >= this.randomSpawnInterval) {
+            this.generateFood();
+            this.lastRandomSpawnTime = currentTime;
+            // Set new random interval for next spawn
+            this.randomSpawnInterval = 3333 + Math.random() * 1667; // 3.3-5 seconds
+        }
     }
 
     update() {
@@ -488,44 +537,59 @@ class SnakeGame {
             return;
         }
 
-        // Update direction
-        this.direction = this.nextDirection;
+        // Update direction and snake movement only if game is running
+        if (this.isGameStarted && !this.isGameOver) {
+            // Update direction
+            this.direction = this.nextDirection;
 
-        // Calculate new head position
-        const head = { ...this.snake[0] };
-        switch (this.direction) {
-            case 'up': head.y--; break;
-            case 'down': head.y++; break;
-            case 'left': head.x--; break;
-            case 'right': head.x++; break;
-        }
-
-        // Check for collisions
-        if (this.checkCollision(head)) {
-            this.gameOver();
-            return;
-        }
-
-        // Add new head
-        this.snake.unshift(head);
-
-        // Check if food is eaten
-        const foodEaten = head.x === this.food.x && head.y === this.food.y;
-        if (foodEaten) {
-            const fruitConfig = window.FRUIT_CONFIG[this.food.type];
-            this.score += fruitConfig.score;
-            this.scoreElement.textContent = this.score;
-
-            // Play sound for the eaten fruit if sound is enabled
-            if (this.soundEnabled) {
-                this.soundManager.playSound(this.food.type);
+            // Calculate new head position
+            const head = { ...this.snake[0] };
+            switch (this.direction) {
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+                case 'left': head.x--; break;
+                case 'right': head.x++; break;
             }
 
-            // Generate new food
-            this.generateFood();
-        } else {
-            // Remove tail if no food was eaten
-            this.snake.pop();
+            // Check for collisions
+            if (this.checkCollision(head)) {
+                this.gameOver();
+                return;
+            }
+
+            // Add new head
+            this.snake.unshift(head);
+
+            // Check if any food is eaten
+            const foodEatenIndex = this.food.findIndex(f => f.x === head.x && f.y === head.y);
+            if (foodEatenIndex !== -1) {
+                const eatenFood = this.food[foodEatenIndex];
+                const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
+                this.score += fruitConfig.score;
+                this.scoreElement.textContent = this.score;
+
+                // Increase speed by 5% when food is eaten
+                this.speed *= 0.95; // 0.95 means 95% of current speed (5% faster)
+
+                // Ensure speed doesn't get too fast
+                this.speed = Math.max(this.speed, this.baseSpeed * 0.25); // No faster than 4x base speed
+
+                // Play sound for the eaten fruit if sound is enabled
+                if (this.soundEnabled) {
+                    this.soundManager.playSound(eatenFood.type);
+                }
+
+                // Remove eaten food
+                this.food.splice(foodEatenIndex, 1);
+
+                // Only generate new food if there are no fruits left
+                if (this.food.length === 0) {
+                    this.generateFood();
+                }
+            } else {
+                // Remove tail if no food was eaten
+                this.snake.pop();
+            }
         }
 
         // Make sure melody name is always updated
@@ -911,6 +975,12 @@ class SnakeGame {
         // Draw snake
         this.drawSnake();
 
+        // If game is over, show game over message
+        if (this.isGameOver) {
+            this.drawGameOver();
+            return;
+        }
+
         // If paused, show paused message
         if (this.isPaused) {
             this.drawPauseMessage();
@@ -919,12 +989,6 @@ class SnakeGame {
         // If game is not started, show start message
         if (!this.isGameStarted) {
             this.drawStartMessage();
-            return;
-        }
-
-        // If game is over, show game over message
-        if (this.isGameOver) {
-            this.drawGameOver();
             return;
         }
 
@@ -985,14 +1049,32 @@ class SnakeGame {
     }
 
     drawFood() {
-        if (this.imagesLoaded && this.fruitImages[this.food.type]) {
-            this.ctx.drawImage(
-                this.fruitImages[this.food.type],
-                this.food.x * this.gridSize,
-                this.food.y * this.gridSize,
-                this.gridSize,
-                this.gridSize
-            );
+        if (this.imagesLoaded) {
+            this.food.forEach(food => {
+                if (this.fruitImages[food.type]) {
+                    // Calculate fade out effect based on remaining lifetime
+                    const age = Date.now() - food.spawnTime;
+                    const remainingLifetime = food.lifetime - age;
+                    const fadeOutDuration = 5000; // 5 seconds fade out
+
+                    this.ctx.save();
+
+                    // Apply fade out effect if close to disappearing
+                    if (remainingLifetime < fadeOutDuration) {
+                        this.ctx.globalAlpha = remainingLifetime / fadeOutDuration;
+                    }
+
+                    this.ctx.drawImage(
+                        this.fruitImages[food.type],
+                        food.x * this.gridSize,
+                        food.y * this.gridSize,
+                        this.gridSize,
+                        this.gridSize
+                    );
+
+                    this.ctx.restore();
+                }
+            });
         }
     }
 

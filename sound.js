@@ -89,6 +89,9 @@ class SoundManager {
             case 'highscore':
                 sound = this.createHighScoreSound();
                 break;
+            case 'disappear':
+                sound = this.createDisappearSound();
+                break;
             default:
                 return;
         }
@@ -235,6 +238,25 @@ class SoundManager {
         gainNode.gain.setValueAtTime(0.4, now + 0.3);
         gainNode.gain.linearRampToValueAtTime(0.5, now + 0.35);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+
+        return { oscillator, gainNode };
+    }
+
+    createDisappearSound() {
+        if (!this.audioContext) this.init();
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+
+        // Create a very soft, descending "poof" sound at higher pitch
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4 note (higher pitch)
+        oscillator.frequency.exponentialRampToValueAtTime(220, this.audioContext.currentTime + 0.15); // A3 note
+
+        gainNode.gain.setValueAtTime(0.08, this.audioContext.currentTime); // Much lower volume for subtlety
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
 
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
