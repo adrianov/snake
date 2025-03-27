@@ -37,6 +37,11 @@ class SnakeGame {
         this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
         this.lastEatenTime = 0; // Track when snake last ate
         this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
+        this.snakeColor = {
+            primary: '#2ecc71',   // Default vibrant green
+            secondary: '#27ae60'  // Default emerald green
+        };
+        this.oldDrawer = null;  // Keep track of previous drawer for preserving darkness level
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -59,6 +64,12 @@ class SnakeGame {
             // Initialize the drawer after images are loaded
             this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
 
+            // Set initial snake colors
+            this.drawer.updateSnakeColors(this.snakeColor);
+
+            // Store reference to current drawer
+            this.oldDrawer = this.drawer;
+
             this.init();
         });
     }
@@ -80,6 +91,17 @@ class SnakeGame {
         // Update drawer if it exists
         if (this.drawer) {
             this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
+
+            // Pass current snake colors to the new drawer and preserve darkness level
+            if (this.oldDrawer) {
+                this.drawer.updateSnakeColors(this.snakeColor);
+                this.drawer.darknessLevel = this.oldDrawer.darknessLevel;
+            } else {
+                this.drawer.updateSnakeColors(this.snakeColor);
+            }
+
+            // Store reference to current drawer before it gets replaced
+            this.oldDrawer = this.drawer;
         }
 
         // Redraw if game is initialized
@@ -361,6 +383,9 @@ class SnakeGame {
             return;
         }
 
+        // Generate new random snake color
+        this.generateRandomSnakeColor();
+
         // Reset game state first
         this.score = 0;
         this.uiManager.updateScore(this.score);
@@ -409,6 +434,46 @@ class SnakeGame {
 
         // Start the game loop
         this.restartGameLoop();
+    }
+
+    generateRandomSnakeColor() {
+        // Array of bright, visually appealing color pairs (primary, secondary)
+        const colorPairs = [
+            // Greens
+            { primary: '#2ecc71', secondary: '#27ae60' }, // Default emerald
+            // Blues
+            { primary: '#3498db', secondary: '#2980b9' }, // Bright blue
+            // Purples
+            { primary: '#9b59b6', secondary: '#8e44ad' }, // Amethyst
+            // Reds
+            { primary: '#e74c3c', secondary: '#c0392b' }, // Alizarin
+            // Oranges
+            { primary: '#e67e22', secondary: '#d35400' }, // Carrot
+            // Yellows
+            { primary: '#f1c40f', secondary: '#f39c12' }, // Sunflower
+            // Teals
+            { primary: '#1abc9c', secondary: '#16a085' }, // Turquoise
+            // Pinks
+            { primary: '#e84393', secondary: '#d81b60' }, // Pink
+            // Gradients with better contrast
+            { primary: '#6a11cb', secondary: '#2575fc' }, // Purple to blue
+            { primary: '#ff0844', secondary: '#ffb199' }, // Red to pink
+            { primary: '#09c6f9', secondary: '#045de9' }, // Light blue to blue
+            { primary: '#13547a', secondary: '#80d0c7' }, // Dark blue to teal
+            { primary: '#ff9a9e', secondary: '#fad0c4' }, // Light pink
+            { primary: '#ffecd2', secondary: '#fcb69f' }, // Light orange
+        ];
+
+        // Pick a random color pair
+        const randomPair = colorPairs[Math.floor(Math.random() * colorPairs.length)];
+        this.snakeColor = randomPair;
+
+        // Recreate snake sprites with new colors if the drawer exists
+        if (this.drawer) {
+            // Reset darkness level when starting a new game with a new color
+            this.drawer.resetDarknessLevel();
+            this.drawer.updateSnakeColors(this.snakeColor);
+        }
     }
 
     generateFood() {
@@ -480,6 +545,11 @@ class SnakeGame {
 
                 // Ensure speed doesn't get too fast
                 this.speed = Math.max(this.speed, this.baseSpeed * 0.25); // No faster than 4x base speed
+
+                // Increase the darkness level in the drawer
+                if (this.drawer) {
+                    this.drawer.incrementDarknessLevel();
+                }
 
                 // Play sound for the eaten fruit if sound is enabled
                 if (this.soundEnabled) {
