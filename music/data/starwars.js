@@ -73,5 +73,5 @@ window.starwarsThemeMelody = {
 
 // Register the melody so it's available at page load
 if (window.MusicData && window.MusicData.MELODIES) {
-    window.MusicData.MELODIES.starwarsTheme = window.starwarsThemeMelody;
+    window.MusicData.MELODIES.starwars = window.starwarsThemeMelody;
 }

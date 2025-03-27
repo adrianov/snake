@@ -92,5 +92,5 @@ window.furEliseMelody = {
 
 // Register the melody so it's available at page load
 if (window.MusicData && window.MusicData.MELODIES) {
-    window.MusicData.MELODIES.furElise = window.furEliseMelody;
+    window.MusicData.MELODIES.furelise = window.furEliseMelody;
 }

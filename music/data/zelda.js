@@ -69,5 +69,5 @@ window.zeldaThemeMelody = {
 
 // Register the melody so it's available at page load
 if (window.MusicData && window.MusicData.MELODIES) {
-    window.MusicData.MELODIES.zeldaTheme = window.zeldaThemeMelody;
+    window.MusicData.MELODIES.zelda = window.zeldaThemeMelody;
 }

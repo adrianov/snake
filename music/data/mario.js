@@ -84,5 +84,5 @@ window.marioThemeMelody = {
 
 // Register the melody so it's available at page load
 if (window.MusicData && window.MusicData.MELODIES) {
-    window.MusicData.MELODIES.marioTheme = window.marioThemeMelody;
+    window.MusicData.MELODIES.mario = window.marioThemeMelody;
 }
