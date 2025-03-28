@@ -95,7 +95,8 @@ window.MusicData.MELODIES = {
             [0.5, ['E5', 'C3']], [0.5, ['E5', 'G3']], [0.5, ['E5', 'C4']], [0.5, ['C5', 'E3']],
             [0.5, ['G4', 'C3']], [0.5, ['G#4', 'C#3']], [0.5, ['A4', 'D3']], [0.5, ['F5', 'D3']],
             // Final chord
-            [1.0, ['C5', 'E5', 'G5', 'C4']] // C major chord with full harmony
+            [1.0, ['C5', 'E5', 'G5', 'C4']], // C major chord
+            [1.0, ['C3', 'G3', 'C4', 'E4', 'G4']] // C major full orchestral chord
         ]
     },
     'zelda': {
@@ -161,6 +162,131 @@ window.MusicData.MELODIES = {
             [1.0, ['F4', 'A4', 'C5', 'F3']], // F major chord with bass
             [1.0, ['G4', 'B4', 'D5', 'G3']], // G major chord with bass
             [1.0, ['F4', 'A4', 'C5', 'F3']]  // F major chord with bass
+        ]
+    },
+    'chicken-dance': {
+        name: 'Chicken Dance',
+        tempo: 125,
+        melody: [
+            // Main theme with separated melody and bass
+            [0.25, ['C5', 'C3']], [0.25, 'C5'], [0.25, 'C5'], [0.25, 'C5'], [0.5, 'D5'], [0.5, 'C5'],
+            [0.25, ['B4', 'G3']], [0.25, 'B4'], [0.25, 'B4'], [0.25, 'B4'], [0.5, 'C5'], [0.5, 'B4'],
+            [0.25, ['A4', 'F3']], [0.25, 'A4'], [0.25, 'A4'], [0.25, 'A4'], [0.5, 'B4'], [0.5, 'A4'],
+            [0.5, ['G4', 'G3']], [0.5, 'G4'], [0.5, 'G4'], [0.5, 'G4'],
+
+            // Second part (clap part) with rhythm - clearer separation
+            [0.25, ['C5', 'C3']], [0.25, 'REST'], [0.25, 'C5'], [0.25, 'REST'], [0.5, 'C5'], [0.5, 'REST'],
+            [0.25, ['C5', 'C3']], [0.25, 'REST'], [0.25, 'C5'], [0.25, 'REST'], [0.5, 'C5'], [0.5, 'REST'],
+
+            // Third part (wing flapping) - separated notes
+            [0.25, ['C5', 'C3']], [0.25, 'B4'], [0.25, 'A4'], [0.25, 'G4'], [0.25, 'A4'], [0.25, 'B4'], [0.5, 'C5'],
+            [0.25, ['C5', 'C3']], [0.25, 'B4'], [0.25, 'A4'], [0.25, 'G4'], [0.25, 'A4'], [0.25, 'B4'], [0.5, 'C5'],
+
+            // Final part with twisting motion - fixed separation
+            [0.125, ['C5', 'C3']], [0.125, 'C5'], [0.125, 'C5'], [0.125, 'C5'], [0.125, 'B4'], [0.125, 'B4'], [0.125, 'B4'], [0.125, 'B4'],
+            [0.125, ['A4', 'F3']], [0.125, 'A4'], [0.125, 'A4'], [0.125, 'A4'], [0.125, 'G4'], [0.125, 'G4'], [0.125, 'G4'], [0.125, 'G4'],
+
+            // Final chord
+            [1.0, ['C4', 'E4', 'G4', 'C5']], // C major chord
+            [1.0, ['C3', 'G3', 'C4', 'E4', 'G4']] // Full C major chord
+        ]
+    },
+    'rossiya': {
+        name: 'Rossiya by Laibach',
+        tempo: 90,
+        melody: [
+            // Dramatic opening with bass - separate melody from bass
+            [0.5, ['G4', 'G2']], [0.5, 'C5'], [0.5, 'D5'], [0.5, 'E5'],
+            [0.75, 'D5'], [0.25, 'C5'], [1.0, ['B4', 'G3']],
+            [0.5, ['G4', 'G2']], [0.5, 'C5'], [0.5, 'D5'], [0.5, 'E5'],
+            [0.75, 'D5'], [0.25, 'C5'], [1.0, ['B4', 'G3']],
+
+            // Main theme with industrial bass - clearer note separation
+            [0.5, ['G4', 'G2']], [0.5, 'G4'], [0.5, 'C5'], [0.5, 'C5'],
+            [0.5, 'D5'], [0.5, 'D5'], [0.5, 'E5'], [0.5, 'E5'],
+            [0.5, 'D5'], [0.5, 'C5'], [1.0, ['B4', 'G3']], [1.0, 'G4'],
+
+            // Second phrase with intense rhythm - proper separation
+            [0.5, ['G4', 'G2']], [0.5, 'A4'], [0.5, 'B4'], [0.5, 'C5'],
+            [0.5, 'D5'], [0.5, 'E5'], [1.0, 'D5'], [1.0, 'C5'],
+            [0.5, ['B4', 'G3']], [0.5, 'A4'], [0.5, 'G4'], [0.5, 'F4'],
+            [0.5, 'E4'], [0.5, 'D4'], [1.0, 'C4'], [1.0, 'G4'],
+
+            // Final build with powerful bass - separated notes
+            [0.5, ['G4', 'G2']], [0.5, 'C5'], [0.5, 'G4'], [0.5, 'D5'],
+            [0.5, 'G4'], [0.5, 'E5'], [0.5, 'D5'], [0.5, 'C5'],
+
+            // Climactic ending
+            [1.0, ['G4', 'B4', 'D5', 'G3']], // G major chord
+            [1.0, ['G3', 'B3', 'D4', 'G4']], // G major chord lower
+            [1.0, ['G2', 'G3', 'B3', 'D4', 'G4']] // Full G major chord
+        ]
+    },
+    'russian-anthem': {
+        name: 'Russian National Anthem',
+        tempo: 76,
+        melody: [
+            // Solemn introduction with bass
+            [1.0, ['C4', 'C3']], [0.5, 'G4'], [0.5, 'A4'],
+            [1.0, ['B4', 'G2']], [0.5, 'E4'], [0.5, 'E4'],
+            [1.0, ['A4', 'F3']], [0.5, 'G4'], [0.5, 'F4'],
+
+            // Main theme with strong bass line - notes kept separate from bass
+            [1.0, ['E4', 'C3']], [0.5, 'D4'], [0.5, 'C4'],
+            [1.0, ['D4', 'G2']], [1.0, 'E4'],
+            [1.0, ['F4', 'F3']], [0.5, 'A4'], [0.5, 'G4'],
+            [1.0, ['C5', 'C3']], [1.0, 'G4'],
+
+            // Second part with harmony - notes kept separate from bass
+            [1.0, ['A4', 'F3']], [0.5, 'B4'], [0.5, 'C5'],
+            [1.0, ['D5', 'G3']], [1.0, 'C5'],
+            [1.0, ['B4', 'G3']], [0.5, 'A4'], [0.5, 'G4'],
+            [1.0, ['F4', 'F3']], [1.0, 'G4'],
+
+            // Final phrase with full orchestration - notes kept separate
+            [1.0, ['C5', 'C3']], [0.5, 'G4'], [0.5, 'E4'],
+            [1.0, ['F4', 'F3']], [1.0, 'D4'],
+            [1.0, ['C4', 'C3']], [1.0, 'C4'],
+
+            // Concluding majestic chords
+            [1.0, ['C4', 'E4', 'G4', 'C5']], // C major chord
+            [1.0, ['G3', 'C4', 'E4', 'G4']], // C major chord with lower bass
+            [1.0, ['C3', 'G3', 'C4', 'E4', 'G4']] // Full C major chord
+        ]
+    },
+    'pacman': {
+        name: 'Pacman Theme',
+        tempo: 120,
+        melody: [
+            // Iconic opening theme with bass - keeping notes separate
+            [0.25, ['B4', 'G3']], [0.25, 'B5'], [0.25, 'F#5'], [0.25, 'D#5'],
+            [0.25, 'F#5'], [0.25, 'D#5'], [0.25, 'C5'], [0.25, 'C5'],
+            [0.25, ['G4', 'C3']], [0.25, 'G4'], [0.25, 'REST'], [0.25, 'G4'],
+
+            // Repeat with variation - notes separated for clarity
+            [0.25, ['C5', 'C3']], [0.25, 'C5'], [0.25, 'REST'], [0.25, 'G4'],
+            [0.25, ['E4', 'C3']], [0.25, 'E4'], [0.25, 'REST'], [0.25, 'G4'],
+
+            // Power pellet sequence - fixed rhythm and separation
+            [0.125, ['B4', 'G3']], [0.125, 'B4'], [0.125, 'F#5'], [0.125, 'F#5'],
+            [0.125, 'D#5'], [0.125, 'D#5'], [0.125, 'C5'], [0.125, 'C5'],
+            [0.125, ['G4', 'C3']], [0.125, 'G4'], [0.125, 'E4'], [0.125, 'E4'],
+
+            // Ghost chase theme - separated melody from bass
+            [0.25, ['C5', 'C3']], [0.25, 'D5'], [0.25, ['E5', 'E3']], [0.25, 'F5'],
+            [0.25, 'G5'], [0.25, 'A5'], [0.25, 'B5'], [0.25, 'C6'],
+
+            // Game over sequence - proper separation
+            [0.25, ['C5', 'C3']], [0.25, 'G4'], [0.25, 'E4'], [0.25, 'C4'],
+            [0.5, ['G3', 'G2']], [0.5, 'G3'], [0.5, 'REST'],
+
+            // Victory sound - fixed timing
+            [0.25, ['C5', 'C3']], [0.25, 'C5'], [0.25, 'G5'], [0.25, 'G5'],
+            [0.25, 'E5'], [0.25, 'E5'], [0.25, 'C6'], [0.25, 'C6'],
+
+            // Final chord
+            [1.0, ['C4', 'E4', 'G4', 'C5']], // C major chord
+            [1.0, ['C3', 'G3', 'C4', 'E4', 'G4']] // Full C major chord
         ]
     }
 };
