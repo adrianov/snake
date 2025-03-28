@@ -92,9 +92,9 @@ window.MusicData.MELODIES = {
             0.5:G#5+G#3 0.5:REST // d2 z2 - 7th measure
 
             // Final chord progression
-            1.0:A4+C5+E5+A3 // A minor chord with bass
-            1.0:E4+G#4+B4+E3 // E major chord with bass
-            1.0:A4+C5+E5+A2 // A minor chord with bass
+            1.0:A4+C5+E5+A3 // A minor chord
+            1.0:E4+G#4+B4+E3 // E major chord
+            1.0:A4+C5+E5+A2 // A minor chord
         `
     },
     'fur-elise': {
@@ -337,41 +337,79 @@ window.MusicData.MELODIES = {
         name: 'La Marseillaise (French Anthem)',
         tempo: 84,
         melody: `
-            // First section - bold and patriotic opening
-            0.25:C5+C3 0.125:C5 0.125:C5 0.25:E5+C3 0.25:G5+E3
-            0.25:C5+C3 0.125:C5 0.125:C5 0.25:E5+C3 0.25:G5+E3
-            0.5:C6+C4 0.25:G5 0.25:E5 0.25:C5+C3 0.25:E5
-            0.5:G5+G3 0.5:REST
+            // First section - D>D|G2G>GA2A>A|d3B GGBG
+            0.125:D4+D3 0.125:D4 0.25:G4+G2 0.125:G4 0.125:G4 0.25:A4+A2 0.125:A4 0.125:A4
+            0.375:D5+D3 0.125:B4 0.25:G4+G2 0.25:G4 0.25:B4+G2 0.25:G4
 
-            // Second section - "Allons enfants de la Patrie"
-            0.25:G5+G3 0.25:G5 0.25:A5+F3 0.25:A5
-            0.25:G5+C3 0.25:F5 0.25:E5+C3 0.25:D5
-            0.25:C5+C3 0.25:C5 0.25:D5+G2 0.25:D5
-            0.25:E5+C3 0.25:F5 0.25:G5+G3 0.25:G5
+            // E2c4AF|G2G>GG2G>A
+            0.25:E4+E2 0.25:C5+C3 0.5:C5+C3 0.25:A4+A2 0.25:F4+F2
+            0.25:G4+G2 0.125:G4 0.125:G4 0.25:G4+G2 0.125:G4 0.125:A4
 
-            // Third section - "Le jour de gloire est arrivé"
-            0.25:C6+E3 0.125:B5 0.125:A5 0.25:G5+C3 0.25:F5
-            0.25:E5+C3 0.25:D5 0.25:C5+C3 0.25:D5
-            0.25:E5+C3 0.25:F5 0.25:G5+G3 0.25:A5
-            0.25:G5+G3 0.25:F5 0.5:E5+C3 0.5:REST
+            // B2B>B B2c>B|B2A>A A2A>B
+            0.25:B4+G2 0.125:B4 0.125:B4 0.25:B4+G2 0.125:C5 0.125:B4
+            0.25:B4+G2 0.125:A4 0.125:A4 0.25:A4+A2 0.125:A4 0.125:B4
 
-            // Fourth section - "Contre nous de la tyrannie"
-            0.25:G5+E3 0.25:G5 0.25:F5+F3 0.25:E5
-            0.25:D5+G3 0.25:C5 0.5:D5+G3
-            0.25:E5+C3 0.25:E5 0.25:D5+G3 0.25:C5
-            0.25:B4+G3 0.25:A4 0.5:B4+G3
+            // c2c>c c2d>c|B2z2z2d>d
+            0.25:C5+C3 0.125:C5 0.125:C5 0.25:C5+C3 0.125:D5 0.125:C5
+            0.25:B4+G2 0.25:REST 0.5:REST 0.125:D5+D3 0.125:D5
 
-            // Fifth section - "Aux armes, citoyens!" - triumphant chorus
-            0.5:C5+C3 0.25:G4 0.25:C5 0.5:E5+C3 0.5:G5+G3
-            0.5:C6+C4 0.5:G5+G3 0.5:E5+C3 0.5:C5+C3
+            // d2B>G d2B>G|D2D>DD2D>D
+            0.25:D5+D3 0.125:B4 0.125:G4 0.25:D5+D3 0.125:B4 0.125:G4
+            0.25:D4+D2 0.125:D4 0.125:D4 0.25:D4+D2 0.125:D4 0.125:D4
 
-            // Final chords - rousing finish
-            0.5:C5+E5+G5+C4 // C major chord
-            0.5:G4+C5+E5+G3 // C/G chord
-            0.5:C5+E5+G5+C4 // C major chord
-            0.5:G4+C5+E5+G3 // C/G chord
-            1.0:C5+E5+G5+C4 // Final C major chord
-            1.0:C3+G3+C4+E4+G4 // Full orchestral C major chord
+            // A4c2A>F|G2G2=F2F2
+            0.5:A4+A2 0.25:C5+C3 0.125:A4 0.125:F4
+            0.25:G4+G2 0.25:G4 0.25:F4+F2 0.25:F4
+
+            // E2G2G2^F>G|A4z2A>A
+            0.25:E4+E2 0.25:G4+G2 0.25:G4+G2 0.125:F#4 0.125:G4
+            0.5:A4+A2 0.25:REST 0.125:A4+A2 0.125:A4
+
+            // _B4 Bcd"(1)"e|A2A4_BA
+            0.5:Bb4+Bb2 0.25:B4+B2 0.25:C5+C3 0.25:D5+D3 0.25:E5+E3
+            0.25:A4+A2 0.25:A4 0.5:A4+A2 0.25:Bb4 0.25:A4
+
+            // G4 G_BAG|F2D>DD2d>d
+            0.5:G4+G2 0.25:G4 0.25:Bb4 0.25:A4 0.25:G4
+            0.25:F4+F2 0.125:D4 0.125:D4 0.25:D4+D2 0.125:D5 0.125:D5
+
+            // d4 d_BAG|A2D>D D2d>d
+            0.5:D5+D3 0.25:D5 0.25:Bb4 0.25:A4 0.25:G4
+            0.25:A4+A2 0.125:D4 0.125:D4 0.25:D4+D2 0.125:D5 0.125:D5
+
+            // d4 d_BAG|A2D>D D2D>D
+            0.5:D5+D3 0.25:D5 0.25:Bb4 0.25:A4 0.25:G4
+            0.25:A4+A2 0.125:D4 0.125:D4 0.25:D4+D2 0.125:D4 0.125:D4
+
+            // G6GF/G/|B2B>BB2B2
+            0.75:G4+G2 0.125:G4 0.0625:F4 0.0625:G4
+            0.25:B4+G2 0.125:B4 0.125:B4 0.25:B4+G2 0.25:B4
+
+            // c4d2e2|A6e2
+            0.5:C5+C3 0.25:D5+D3 0.25:E5+E3
+            0.75:A4+A2 0.25:E5+E3
+
+            // d4 dBcA|G2G>G G2D>D
+            0.5:D5+D3 0.25:D5 0.25:B4 0.25:C5 0.25:A4
+            0.25:G4+G2 0.125:G4 0.125:G4 0.25:G4+G2 0.125:D4 0.125:D4
+
+            // G6GF/G/|B2B>B B2B2
+            0.75:G4+G2 0.125:G4 0.0625:F4 0.0625:G4
+            0.25:B4+G2 0.125:B4 0.125:B4 0.25:B4+G2 0.25:B4
+
+            // c4d2e2|A6e2
+            0.5:C5+C3 0.25:D5+D3 0.25:E5+E3
+            0.75:A4+A2 0.25:E5+E3
+
+            // d4 dBcA|G2G>GG2
+            0.5:D5+D3 0.25:D5 0.25:B4 0.25:C5 0.25:A4
+            0.25:G4+G2 0.125:G4 0.125:G4 0.25:G4+G2
+
+            // Final chord progression
+            0.5:G4+B4+D5+G2 // G major chord
+            0.5:D4+G4+B4+D3 // G/D chord
+            0.5:G4+B4+D5+G2 // G major chord
+            1.0:G3+D4+G4+B4+D5+G5 // Full orchestral G major chord
         `
     },
     'stranger-in-moscow': {
