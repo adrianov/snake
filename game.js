@@ -344,8 +344,8 @@ class SnakeGame {
             this.food = this.food.filter(food => {
                 const age = currentTime - food.spawnTime;
                 if (age >= food.lifetime) {
-                    // Only play sound if game is active (not game over or not started)
-                    if (this.soundEnabled && this.isGameStarted && !this.isGameOver) {
+                    // Only play sound if game is active (not paused, not game over, and started)
+                    if (this.soundEnabled && this.isGameStarted && !this.isPaused && !this.isGameOver) {
                         this.soundManager.playSound('disappear');
                     }
                     return false;
