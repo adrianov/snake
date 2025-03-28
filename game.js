@@ -63,6 +63,9 @@ class SnakeGame {
         this.canvas.width = adjustedSize;
         this.canvas.height = adjustedSize;
 
+        // Ensure the canvas container maintains its border-radius after resize
+        container.style.borderRadius = 'var(--radius-md)';
+
         if (this.foodManager) {
             this.foodManager.tileCount = this.tileCount;
         }

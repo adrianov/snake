@@ -146,31 +146,47 @@ body {
 
 .melody-display {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    flex: 1;
     justify-content: center;
-    min-width: 0; /* Allow for proper text overflow */
-}
-
-.music-info.has-melody #currentMelody {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
     flex: 1;
+    min-width: 0; /* Allow for proper text overflow */
+    position: relative;
 }
 
-#currentMelody {
-    display: none;
+.melody-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    max-width: 100%;
+    overflow: hidden;
 }
 
-.music-icon {
+.melody-display .music-icon {
     color: var(--color-primary);
     font-size: 1rem;
     animation: pulse 2s infinite;
     flex-shrink: 0;
+}
+
+.melody-display .control-label {
+    font-size: 9px;
+    color: var(--color-text-dim);
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.music-info.has-melody #currentMelody {
+    display: inline-block;
+}
+
+#currentMelody {
+    display: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
 }
 
 /* Control toggles */
