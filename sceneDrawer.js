@@ -37,6 +37,10 @@ class SceneDrawer {
 
         // Performance tracking
         this.lastFrameTime = 0;
+
+        // Tip display properties
+        this.currentTip = null;
+        this.tipLines = [];
     }
 
     // Update gridSize (for responsive design)
@@ -46,6 +50,39 @@ class SceneDrawer {
         // Invalidate star cache when size changes
         this.starFieldCache = null;
         this.starsGenerated = false;
+
+        // If we have a tip, recalculate its line breaks for the new size
+        if (this.currentTip !== null) {
+            this.recalculateTipLines();
+        }
+    }
+
+    // Recalculate tip lines based on current screen dimensions
+    recalculateTipLines() {
+        // Calculate maximum width to maintain whitespace on sides
+        const maxWidth = this.canvas.width * 0.8; // 80% of canvas width
+
+        // For long tips, break them into multiple lines
+        const words = this.currentTip.split(' ');
+        this.tipLines = [];
+        let currentLine = words[0];
+
+        // Set the font for text measurement
+        this.ctx.font = `${this.gridSize * 0.6}px 'Poppins', sans-serif`;
+
+        // Build lines by measuring text width
+        for (let i = 1; i < words.length; i++) {
+            const testLine = currentLine + ' ' + words[i];
+            const testWidth = this.ctx.measureText(testLine).width;
+
+            if (testWidth > maxWidth) {
+                this.tipLines.push(currentLine);
+                currentLine = words[i];
+            } else {
+                currentLine = testLine;
+            }
+        }
+        this.tipLines.push(currentLine);
     }
 
     // Reset darkness level when starting a new game
@@ -862,7 +899,7 @@ class SceneDrawer {
         // Draw arrow keys with animation and colors in the green/blue family
         const arrowSize = this.gridSize * 0.9;
         const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
+        const centerY = this.canvas.height / 2 - this.gridSize * 0.4; // Move arrows up
         const arrowSpacing = arrowSize * 1.4;
         const time = Date.now() / 1000;
         const bounce = Math.sin(time * 3) * 5;
@@ -896,7 +933,41 @@ class SceneDrawer {
         // Draw "to start" text
         this.ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        this.ctx.fillText('to start', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 1.5);
+        this.ctx.fillText('to start', this.canvas.width / 2, this.canvas.height / 2 + this.gridSize * 0.8);
+
+        // ======= Add a single game tip =======
+        this.ctx.save();
+
+        // Only generate a new tip if we don't have one already
+        if (this.currentTip === null) {
+            // Get a completely random tip each time
+            this.currentTip = this.getRandomTip();
+
+            // Calculate line breaks for the new tip
+            this.recalculateTipLines();
+        }
+
+        // Draw the tip text with nice styling but no background
+        this.ctx.font = `${this.gridSize * 0.6}px 'Poppins', sans-serif`;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        this.ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.shadowBlur = 4;
+
+        // Draw each line - moved down to create more space
+        const lineHeight = this.gridSize * 0.8;
+        const startY = this.canvas.height / 2 + this.gridSize * 3.5 - ((this.tipLines.length - 1) * lineHeight / 2);
+
+        for (let i = 0; i < this.tipLines.length; i++) {
+            this.ctx.fillText(this.tipLines[i], this.canvas.width / 2, startY + (i * lineHeight));
+        }
+
+        this.ctx.restore();
+    }
+
+    // Reset the current tip - call this when starting a new game to get a fresh tip next time
+    resetTip() {
+        this.currentTip = null;
+        this.tipLines = [];
     }
 
     // Draw food items with appropriate effects
@@ -944,6 +1015,27 @@ class SceneDrawer {
                 this.ctx.restore();
             }
         });
+    }
+
+    // Get the list of game tips for sharing between classes
+    static getTips() {
+        return [
+            "Snakes love fruit! Each one gobbled makes them happier and faster.",
+            "Need to slow down? Press the opposite direction arrow to hit the brakes.",
+            "As your snake grows, it sheds its cheerful attitude - and its skin gets darker.",
+            "The moon's phase reflects the real astronomical day. Accurate astronomy in a snake game!",
+            "Scientists confirm: No one has ever seen the dark side of this moon either!",
+            "Your snake is quite clever - it can avoid collisions 8 out of 10 times on its own.",
+            "Different fruits have different scores: Apple (10), Banana (15), Orange (20), Strawberry (25).",
+            "Press 'L' to toggle luck mode, 'V' for vibration, 'S' for sound, and 'M' for music."
+        ];
+    }
+
+    // Get a random tip
+    getRandomTip() {
+        const tips = SceneDrawer.getTips();
+        const tipIndex = Math.floor(Math.random() * tips.length);
+        return tips[tipIndex];
     }
 }
 

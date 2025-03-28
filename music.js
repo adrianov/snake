@@ -1,4 +1,7 @@
 class MusicManager {
+    // Static property to store melody ID across instances
+    static currentMelodyId = null;
+
     constructor() {
         // Audio context and nodes
         this.audioContext = null;
@@ -6,7 +9,7 @@ class MusicManager {
         this.melodyGain = null;
 
         // Playback state
-        this.currentMelodyId = null;
+        this.currentMelodyId = MusicManager.currentMelodyId; // Initialize from static property
         this.isPlaying = false;
         this.melodyScheduler = null;
         this.activeOscillators = new Set();  // Track all active sound sources
@@ -55,12 +58,30 @@ class MusicManager {
         this.activeOscillators.clear();
     }
 
+    // Save melody ID to static property
+    saveMelodyId() {
+        if (this.currentMelodyId) {
+            MusicManager.currentMelodyId = this.currentMelodyId;
+        }
+    }
+
+    // Restore melody ID from static property
+    restoreMelodyId() {
+        if (MusicManager.currentMelodyId) {
+            this.currentMelodyId = MusicManager.currentMelodyId;
+            return true;
+        }
+        return false;
+    }
+
     selectRandomMelody() {
         // Select a random melody ID from the available melodies
         const melodyIds = window.MusicData.getAllMelodyIds();
         if (melodyIds.length > 0) {
             const randomIndex = Math.floor(Math.random() * melodyIds.length);
             this.currentMelodyId = melodyIds[randomIndex];
+            // Save to static property
+            MusicManager.currentMelodyId = this.currentMelodyId;
         }
         return this.currentMelodyId;
     }

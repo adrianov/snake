@@ -49,7 +49,8 @@ class SnakeGame {
         this.musicEnabled = localStorage.getItem('snakeMusicEnabled') !== 'false'; // Default to enabled
 
         // Initialize audio managers immediately to prevent delay on first sound
-        this.soundManager = new SoundManager();
+        this.soundManager = SoundManager.getInstance();
+
         // Initialize audio context immediately
         this.musicManager = new MusicManager();
         this.musicManager.init(); // Initialize audio context immediately
@@ -395,17 +396,25 @@ class SnakeGame {
             this.animationFrame = null;
         }
 
-        // Stop background music without full cleanup
+        // Save melody ID and stop music before we clean up
         if (this.musicManager) {
-            this.musicManager.stopMusic(false);
+            this.musicManager.saveMelodyId();
+            this.musicManager.stopMusic(true);
         }
+
+        // Close sound manager's audio context after a small delay
+        MusicManagerUtils.cleanupAudioResources(this, 200);
     }
 
     unpauseGame() {
-        // Restart music from where it was, but only if music is enabled
-        if (this.musicManager && this.musicEnabled) {
-            this.musicManager.startMusic();
-        }
+        // Get sound manager instance (will reinitialize if needed)
+        this.soundManager = SoundManager.getInstance();
+
+        // Initialize music manager (will automatically pick up saved melody ID)
+        this.musicManager = MusicManagerUtils.initializeMusicManager(this);
+
+        // Start music if enabled
+        MusicManagerUtils.startMusicIfEnabled(this);
 
         // Restart the game loop
         this.startGameLoop();
@@ -439,28 +448,17 @@ class SnakeGame {
         this.luckEnabled = true; // Reset luck feature to enabled when starting a new game
         this.shakeEnabled = true; // Reset shake effect to enabled when starting a new game
 
-        // Ensure sound manager is ready - don't recreate it to avoid audio context limitations
-        if (!this.soundManager) {
-            this.soundManager = new SoundManager();
-        }
+        // Get the sound manager instance (will reinitialize if needed)
+        this.soundManager = SoundManager.getInstance();
 
         // Clear melody display initially
         this.uiManager.clearMelodyDisplay();
 
-        // If there was a previous music manager, stop it completely
-        if (this.musicManager) {
-            this.musicManager.stopMusic(true);
-        }
+        // Initialize music manager with a random melody
+        this.musicManager = MusicManagerUtils.initializeMusicManager(this, true);
 
-        // Create a fresh music manager with its own audio context (no sharing)
-        this.musicManager = new MusicManager();
-        this.musicManager.init(); // Use its own audio context, don't share
-
-        // Select a random melody and start music if enabled
-        this.musicManager.selectRandomMelody();
-        if (this.musicEnabled) {
-            this.musicManager.startMusic();
-        }
+        // Start music if enabled
+        MusicManagerUtils.startMusicIfEnabled(this);
 
         // Update the melody display
         this.uiManager.updateMelodyDisplay();
@@ -669,6 +667,17 @@ class SnakeGame {
         // Draw game over screen immediately to prevent flashing
         this.draw();
 
+        // Play final sounds with cleanup scheduled after they finish
+
+        // Calculate cleanup delay time based on if sounds need to play
+        let cleanupDelayTime = 100; // Base minimum delay
+
+        if (this.soundEnabled && isNewHighScore) {
+            cleanupDelayTime = 2500; // Allow for crash + high score fanfare (increased from 1500)
+        } else if (this.soundEnabled) {
+            cleanupDelayTime = 900; // Allow for crash sound
+        }
+
         // Handle audio in sequence - use setTimeout with 0ms to prevent audio blocking
         if (this.soundEnabled && this.soundManager) {
             // Play crash sound first - directly but in next event loop cycle
@@ -691,11 +700,17 @@ class SnakeGame {
                 this.soundManager.playHighScoreFanfare();
             }, 800);
         }
+
+        // Clean up audio contexts after all sounds have played
+        MusicManagerUtils.cleanupAudioResources(this, cleanupDelayTime);
     }
 
     resetGame() {
         // Reset game state for a new game
         this.isGameOver = false;
+
+        // Get the sound manager instance (will reinitialize if needed)
+        this.soundManager = SoundManager.getInstance();
     }
 
     draw() {

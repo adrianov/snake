@@ -1,5 +1,25 @@
 class SoundManager {
+    // Static reference to the current instance
+    static instance = null;
+
+    /**
+     * Get or create a SoundManager instance
+     * Will initialize a new instance if none exists or reinitialize if needed
+     * @returns {SoundManager} The SoundManager instance
+     */
+    static getInstance() {
+        if (!SoundManager.instance) {
+            SoundManager.instance = new SoundManager();
+        } else if (!SoundManager.instance.audioContext || SoundManager.instance.audioContext.state === 'closed') {
+            SoundManager.instance.reinitialize();
+        }
+        return SoundManager.instance;
+    }
+
     constructor() {
+        // Register this instance as the singleton
+        SoundManager.instance = this;
+
         try {
             // Create audio context with options to keep it running if possible
             const contextOptions = {
@@ -47,6 +67,46 @@ class SoundManager {
         this.silentNode = this.audioContext.createGain();
         this.silentNode.gain.value = 0; // Completely silent
         this.silentNode.connect(this.audioContext.destination);
+    }
+
+    // Close the audio context to free up resources
+    closeAudioContext() {
+        if (!this.audioContext) return;
+
+        try {
+            // Disconnect any silent node if it exists
+            if (this.silentNode) {
+                this.silentNode.disconnect();
+                this.silentNode = null;
+            }
+
+            // Close the audio context
+            if (this.audioContext.state !== 'closed') {
+                this.audioContext.close();
+            }
+            this.audioContext = null;
+        } catch (e) {
+            console.error('Error closing audio context:', e);
+        }
+    }
+
+    // Reinitialize audio context if needed
+    reinitialize() {
+        if (this.audioContext && this.audioContext.state !== 'closed') return;
+
+        try {
+            const contextOptions = {
+                latencyHint: 'interactive',
+                sampleRate: 44100
+            };
+
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+            this.resumeAudioContext();
+            this.keepContextAlive();
+        } catch (e) {
+            console.error('Error reinitializing AudioContext:', e);
+            this.audioContext = null;
+        }
     }
 
     // Initialize all sound templates
@@ -119,6 +179,11 @@ class SoundManager {
 
     // Play sound from template - always force resume context
     playSound(soundType) {
+        // Reinitialize audio context if it's closed or null
+        if (!this.audioContext || this.audioContext.state === 'closed') {
+            this.reinitialize();
+        }
+
         if (!this.audioContext || !this.soundTemplates[soundType]) return;
 
         // Always force resume before playing
@@ -156,6 +221,11 @@ class SoundManager {
     }
 
     playHighScoreFanfare() {
+        // Reinitialize audio context if it's closed or null
+        if (!this.audioContext || this.audioContext.state === 'closed') {
+            this.reinitialize();
+        }
+
         if (!this.audioContext) return;
 
         // Always force resume before playing
