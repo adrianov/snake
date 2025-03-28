@@ -50,11 +50,18 @@ class SnakeGame {
         const container = this.canvas.parentElement;
         const size = Math.min(container.clientWidth, container.clientHeight);
 
-        this.canvas.width = size;
-        this.canvas.height = size;
-
+        // Calculate grid size based on container
         this.gridSize = Math.min(40, Math.floor(size / 20));
+
+        // Ensure tileCount is an integer
         this.tileCount = Math.floor(size / this.gridSize);
+
+        // Adjust canvas size to be exactly a multiple of gridSize
+        // This eliminates partial cells at the edges
+        const adjustedSize = this.tileCount * this.gridSize;
+
+        this.canvas.width = adjustedSize;
+        this.canvas.height = adjustedSize;
 
         if (this.foodManager) {
             this.foodManager.tileCount = this.tileCount;

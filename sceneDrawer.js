@@ -605,16 +605,22 @@ class SceneDrawer {
         this.ctx.strokeStyle = `rgba(${gridColorRGB.r}, ${gridColorRGB.g}, ${gridColorRGB.b}, ${gridAlpha})`;
         this.ctx.lineWidth = 1.5;
 
-        // Draw vertical lines
-        for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
+        // Calculate the number of grid cells that fit perfectly in the canvas
+        const horizontalCells = Math.floor(this.canvas.width / this.gridSize);
+        const verticalCells = Math.floor(this.canvas.height / this.gridSize);
+
+        // Draw vertical lines up to the last full cell
+        for (let i = 0; i <= horizontalCells; i++) {
+            const x = i * this.gridSize;
             this.ctx.beginPath();
             this.ctx.moveTo(x, 0);
             this.ctx.lineTo(x, this.canvas.height);
             this.ctx.stroke();
         }
 
-        // Draw horizontal lines
-        for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
+        // Draw horizontal lines up to the last full cell
+        for (let i = 0; i <= verticalCells; i++) {
+            const y = i * this.gridSize;
             this.ctx.beginPath();
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.canvas.width, y);
@@ -640,10 +646,10 @@ class SceneDrawer {
 
         // Create gradient for game over text - using a red that complements green
         const gameOverGradient = this.ctx.createLinearGradient(
-            this.canvas.width/2 - 120,
-            this.canvas.height/2 - 60,
-            this.canvas.width/2 + 120,
-            this.canvas.height/2 - 20
+            this.canvas.width / 2 - 120,
+            this.canvas.height / 2 - 60,
+            this.canvas.width / 2 + 120,
+            this.canvas.height / 2 - 20
         );
         gameOverGradient.addColorStop(0, '#e74c3c');
         gameOverGradient.addColorStop(1, '#c0392b');
@@ -684,10 +690,10 @@ class SceneDrawer {
         this.ctx.save();
 
         const scoreGradient = this.ctx.createLinearGradient(
-            this.canvas.width/2 - 60,
-            this.canvas.height/2,
-            this.canvas.width/2 + 60,
-            this.canvas.height/2
+            this.canvas.width / 2 - 60,
+            this.canvas.height / 2,
+            this.canvas.width / 2 + 60,
+            this.canvas.height / 2
         );
         scoreGradient.addColorStop(0, '#2ecc71');
         scoreGradient.addColorStop(1, '#27ae60');
@@ -706,10 +712,10 @@ class SceneDrawer {
         this.ctx.save();
 
         const highScoreGradient = this.ctx.createLinearGradient(
-            this.canvas.width/2 - 80,
-            this.canvas.height/2 + 60,
-            this.canvas.width/2 + 80,
-            this.canvas.height/2 + 60
+            this.canvas.width / 2 - 80,
+            this.canvas.height / 2 + 60,
+            this.canvas.width / 2 + 80,
+            this.canvas.height / 2 + 60
         );
         highScoreGradient.addColorStop(0, '#3498db');
         highScoreGradient.addColorStop(1, '#2980b9');
@@ -829,10 +835,10 @@ class SceneDrawer {
 
         // Create gradient for text using snake colors
         const textGradient = this.ctx.createLinearGradient(
-            this.canvas.width/2 - 80,
-            this.canvas.height/2,
-            this.canvas.width/2 + 80,
-            this.canvas.height/2
+            this.canvas.width / 2 - 80,
+            this.canvas.height / 2,
+            this.canvas.width / 2 + 80,
+            this.canvas.height / 2
         );
         textGradient.addColorStop(0, '#2ecc71');
         textGradient.addColorStop(1, '#27ae60');
@@ -878,10 +884,10 @@ class SceneDrawer {
 
         // Create gradient for title - using snake greens
         const titleGradient = this.ctx.createLinearGradient(
-            this.canvas.width/2 - 150,
-            this.canvas.height/2 - 80,
-            this.canvas.width/2 + 150,
-            this.canvas.height/2 - 40
+            this.canvas.width / 2 - 150,
+            this.canvas.height / 2 - 80,
+            this.canvas.width / 2 + 150,
+            this.canvas.height / 2 - 40
         );
         titleGradient.addColorStop(0, '#2ecc71');
         titleGradient.addColorStop(1, '#27ae60');
@@ -916,12 +922,12 @@ class SceneDrawer {
         // Up arrow - green
         this.ctx.fillStyle = '#2ecc71';
         this.ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
-        this.ctx.fillText('↑', centerX - arrowSpacing/2, centerY + bounce);
+        this.ctx.fillText('↑', centerX - arrowSpacing / 2, centerY + bounce);
 
         // Down arrow - darker blue
         this.ctx.fillStyle = '#2980b9';
         this.ctx.shadowColor = 'rgba(41, 128, 185, 0.6)';
-        this.ctx.fillText('↓', centerX + arrowSpacing/2, centerY + bounce);
+        this.ctx.fillText('↓', centerX + arrowSpacing / 2, centerY + bounce);
 
         // Right arrow - darker green
         this.ctx.fillStyle = '#27ae60';
