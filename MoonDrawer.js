@@ -6,6 +6,10 @@ class MoonDrawer {
         this.synodicPeriod = 29.53059;
         // Default sky color in case no color is provided
         this.skyColor = 'rgb(10, 15, 40)';
+
+        // Reset animation properties
+        this.resetDuration = 3000; // 3 seconds for reset animation
+        this.spinsInReset = 5; // How many full phase spins during reset
     }
 
     // Calculate the current moon phase (0-1)
@@ -27,9 +31,54 @@ class MoonDrawer {
         return phase;
     }
 
+    // Calculate moon position based on animation state
+    calculatePosition(canvas, animation) {
+        // Default values
+        let x, y;
+
+        if (animation && animation.isResetting) {
+            // The moon is in reset animation
+            const resetProgress = animation.progress; // 0-1
+            const reverseProgress = 1 - resetProgress;
+
+            // Start position is at the end of normal cycle (right side)
+            const startX = canvas.width * 0.9;
+            const startY = canvas.height * 0.25;
+
+            // End position is at beginning of normal cycle (left side)
+            const endX = canvas.width * 0.1;
+            const endY = canvas.height * 0.25;
+
+            // Transition with an exaggerated bouncy sine wave
+            // For the X position, move faster at first then slow down (ease-out)
+            const xEasing = 1 - Math.pow(reverseProgress, 3); // Cubic ease-out
+            x = startX + (endX - startX) * xEasing;
+
+            // For the Y position, add a wild sinusoidal path with decreasing amplitude
+            // This creates a bouncy, wavy motion that settles down
+            const baseY = startY + (endY - startY) * resetProgress;
+            const amplitude = canvas.height * 0.4 * (1 - resetProgress); // Decreasing amplitude
+            const oscillations = 3; // Complete 3 full oscillations
+            const wave = Math.sin(resetProgress * Math.PI * 2 * oscillations);
+            y = baseY + amplitude * wave;
+        } else {
+            // Normal moon cycle animation
+            const cycleProgress = animation ? animation.cycleProgress : 0;
+
+            // X coordinate moves from 0.1 to 0.9 across width
+            x = canvas.width * (0.1 + (0.8 * cycleProgress));
+
+            // Y coordinate follows a simple sine wave arc (higher in middle)
+            y = canvas.height * (0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)));
+        }
+
+        return { x, y };
+    }
+
     // Draw the moon with accurate phase at specified position
-    draw(ctx, x, y, radius, alpha = 1.0, skyColor = null) {
-        // Calculate current phase
+    // resetAnimation parameter: object with {isResetting: boolean, progress: 0-1} for reset animation
+    draw(ctx, x, y, radius, alpha = 1.0, skyColor = null, resetAnimation = null) {
+        // Calculate current phase - normal calculation regardless of reset animation
         const phase = this.calculatePhase();
 
         // Don't draw very thin crescents or new moon

@@ -31,6 +31,9 @@ class SceneDrawer {
         // Moon animation properties
         this.moonStartTime = Date.now();
         this.moonCycleDuration = 120000; // 2 minutes for a full moon cycle across the sky
+        this.moonResetStartTime = 0; // When the moon reset animation started
+        this.moonResetDuration = 3000; // 3 seconds for the reset animation
+        this.isMoonResetting = false; // Is the moon currently in reset animation
 
         // Performance tracking
         this.lastFrameTime = 0;
@@ -105,21 +108,45 @@ class SceneDrawer {
         // Show moon earlier in the darkness transition for a more gradual appearance
         // Start at 25% darkness instead of 40%
         if (this.darknessLevel > 25) {
-            // Calculate time-based moon position for smooth animation
+            // Get current time for animation calculations
             const currentTime = Date.now();
+
+            // Calculate normal cycle progress
             const elapsedTime = currentTime - this.moonStartTime;
+            let cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
 
-            // Calculate cyclic time position (0 to 1) for current moon cycle
-            const cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
+            // Create animation state object for MoonDrawer
+            let moonAnimation = {
+                cycleProgress: cycleProgress,
+                isResetting: this.isMoonResetting,
+                progress: 0
+            };
 
-            // X coordinate moves from 0.1 to 0.9 across width following time
-            const moonX = this.canvas.width * (0.1 + (0.8 * cycleProgress));
+            // Check if we need to start reset animation at end of cycle
+            if (!this.isMoonResetting && cycleProgress > 0.99) {
+                // Start the reset animation
+                this.isMoonResetting = true;
+                this.moonResetStartTime = currentTime;
+                moonAnimation.isResetting = true;
+            }
 
-            // Y coordinate follows a parabolic arc (higher in middle)
-            // Using a simple parabola: y = a*(x-h)^2 + k where (h,k) is the vertex
-            const arcHeight = 0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)); // Creates an arc that peaks in the middle
-            const moonY = this.canvas.height * arcHeight;
+            // Update reset animation progress if active
+            if (this.isMoonResetting) {
+                const resetElapsedTime = currentTime - this.moonResetStartTime;
+                moonAnimation.progress = Math.min(1, resetElapsedTime / this.moonResetDuration);
 
+                // If reset animation is complete, go back to normal cycle
+                if (resetElapsedTime >= this.moonResetDuration) {
+                    this.isMoonResetting = false;
+                    this.moonStartTime = currentTime - 100; // Small offset to ensure we start at beginning
+                    moonAnimation = {
+                        cycleProgress: 0,
+                        isResetting: false
+                    };
+                }
+            }
+
+            // Calculate moon size
             const moonSize = this.gridSize * 2.5;
 
             // Calculate moon visibility with a more gradual curve based on darkness
@@ -144,8 +171,19 @@ class SceneDrawer {
             // Create an exact RGB color string - no alpha channel to ensure perfect match with the background
             const skyColor = `rgb(${r}, ${g}, ${b})`;
 
+            // Calculate moon position using MoonDrawer's position calculator
+            const moonPosition = this.moonDrawer.calculatePosition(this.canvas, moonAnimation);
+
             // Use the MoonDrawer to draw the moon with the current context, position and exact sky color
-            this.moonDrawer.draw(this.ctx, moonX, moonY, moonSize, moonAlpha, skyColor);
+            this.moonDrawer.draw(
+                this.ctx,
+                moonPosition.x,
+                moonPosition.y,
+                moonSize,
+                moonAlpha,
+                skyColor,
+                this.isMoonResetting ? moonAnimation : null
+            );
         }
 
         // FPS counter for debugging (uncomment if needed)
