@@ -12,6 +12,7 @@ class SnakeDrawer {
         this.darknessLevel = 0;   // 0-100: How dark the snake is, 100 = completely black
         this.glowYellowLevel = 0; // 0-100: How yellow the glow is, 100 = bright yellow
         this.shakeIntensity = 0.15; // Controls how much the snake segments shake (0-1)
+        this.luckGlowTime = 0;    // Timestamp when luck was last triggered
 
         // Define target colors for progression effects
         this.targetColors = {
@@ -120,6 +121,11 @@ class SnakeDrawer {
         this.updateSprites();
     }
 
+    // Set luck trigger time for red glow effect
+    triggerLuckGlow() {
+        this.luckGlowTime = Date.now();
+    }
+
     // Draw snake on the canvas
     drawSnake(ctx, snake, direction, lastEatenTime, glowDuration, isGameOver) {
         // Calculate glow effect with pulsing
@@ -132,6 +138,18 @@ class SnakeDrawer {
 
         // Get current glow color - interpolate between snake primary color and yellow
         const glowColor = this.getYellowishGlowColor();
+
+        // Check for luck glow effect (flashing red glow)
+        const timeSinceLuck = Date.now() - this.luckGlowTime;
+        const luckGlowDuration = 1500; // 1.5 seconds total for 3 pulses
+        let luckGlowIntensity = 0;
+        let luckGlowColor = 'rgba(255, 30, 0, 0.9)'; // More intense flaming red with higher opacity
+
+        if (timeSinceLuck < luckGlowDuration) {
+            // Create 3 pulses over 1.5 seconds
+            const luckPulse = Math.sin((timeSinceLuck / 1000) * Math.PI * 4) * 0.5 + 0.5;
+            luckGlowIntensity = Math.max(0, 1 - (timeSinceLuck / luckGlowDuration)) * luckPulse * 2.5; // Increased multiplier from 1.5 to 2.5
+        }
 
         // Generate persistent shake offsets for each segment (changes every 100ms)
         const shakeTime = Math.floor(Date.now() / 100);
@@ -201,13 +219,34 @@ class SnakeDrawer {
             ctx.translate(x + this.gridSize / 2, y + this.gridSize / 2);
             ctx.rotate(rotation);
 
-            // Add glow effect if recently eaten
-            if (finalGlowIntensity > 0) {
+            // Priority 1: Apply luck glow effect (red) if active
+            if (luckGlowIntensity > 0) {
+                ctx.shadowColor = luckGlowColor;
+                ctx.shadowBlur = 40 * luckGlowIntensity; // Increased from 30 to 40 for stronger blur
+
+                // Add a second shadow for even more intensity on lucky escapes
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            }
+            // Priority 2: Apply normal food glow effect if active
+            else if (finalGlowIntensity > 0) {
                 ctx.shadowColor = glowColor;
-                ctx.shadowBlur = 20 * finalGlowIntensity;
+                ctx.shadowBlur = 25 * finalGlowIntensity; // Increased from 20 to 25
             }
 
             ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
+
+            // For luck glow, add an additional draw pass with composite operation for intense glow
+            if (luckGlowIntensity > 0.4) {
+                // Only add the extra intense effect at higher intensities
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = luckGlowIntensity * 0.4; // Semitransparent
+                ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
+                // Reset composite operation
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = 1;
+            }
+
             ctx.restore();
         });
     }

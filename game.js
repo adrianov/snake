@@ -533,6 +533,11 @@ class SnakeGame {
                             this.soundManager.playSound('click', 0.3);
                         }
 
+                        // Trigger the luck glow effect (red pulsing)
+                        if (this.drawer && this.drawer.snakeDrawer) {
+                            this.drawer.snakeDrawer.triggerLuckGlow();
+                        }
+
                         // Move snake in the safe direction
                         this.snake.move(safeHeadPos.x, safeHeadPos.y);
                     } else {
