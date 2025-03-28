@@ -41,7 +41,7 @@ class SnakeGame {
         this.frameInterval = this.baseSpeed; // Current interval between frames
         this.animationFrame = null; // Handle for requestAnimationFrame
         this.boundGameLoop = null; // Bound game loop function
-        this.luckEnabled = true; // Enable 50% luck chance to avoid collisions
+        this.luckEnabled = true; // Enable 80% luck chance to avoid collisions
         this.shakeEnabled = true; // Enable snake shake effect by default
 
         // Audio settings
@@ -537,6 +537,11 @@ class SnakeGame {
                         if (this.drawer && this.drawer.snakeDrawer) {
                             this.drawer.snakeDrawer.triggerLuckGlow();
                         }
+
+                        // Apply permanent speed reduction when luck is triggered (30% reduction)
+                        this.speed *= 1.3; // Multiply by 1.3 (slows down by making interval longer)
+                        this.speed = Math.min(this.speed, this.baseSpeed * 3); // Ensure speed doesn't get too slow
+                        this.frameInterval = this.speed; // Update frame interval
 
                         // Move snake in the safe direction
                         this.snake.move(safeHeadPos.x, safeHeadPos.y);
