@@ -501,8 +501,75 @@ class SnakeGame {
     }
 
     applyLuckEffect(safeDirection) {
-        this.direction = safeDirection;
-        this.nextDirection = safeDirection;
+        // Get available safe directions
+        const safeDirections = [];
+        const directions = ['up', 'down', 'left', 'right'];
+        const oppositeDirections = {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        };
+
+        // Only check directions that aren't opposite to current direction
+        const possibleDirections = directions.filter(d =>
+            d !== oppositeDirections[this.direction]
+        );
+
+        // Check which directions are safe
+        for (const direction of possibleDirections) {
+            const headPos = this.snake.head();
+            const testPos = { x: headPos.x, y: headPos.y };
+
+            switch (direction) {
+                case 'up': testPos.y--; break;
+                case 'down': testPos.y++; break;
+                case 'left': testPos.x--; break;
+                case 'right': testPos.x++; break;
+            }
+
+            if (this.isPositionSafe(testPos.x, testPos.y)) {
+                safeDirections.push({
+                    direction,
+                    position: testPos
+                });
+            }
+        }
+
+        // If no safe directions found, use the provided safeDirection
+        if (safeDirections.length === 0) {
+            this.direction = safeDirection;
+            this.nextDirection = safeDirection;
+        } else {
+            // Find the closest fruit from all safe positions
+            let closestDirection = null;
+            let minDistance = Infinity;
+
+            // If no fruits exist, just use the first safe direction
+            if (this.food.length === 0 && safeDirections.length > 0) {
+                closestDirection = safeDirections[0].direction;
+            } else {
+                for (const option of safeDirections) {
+                    // Calculate distance to each fruit from this position
+                    for (const fruit of this.food) {
+                        const distance = Math.sqrt(
+                            Math.pow(option.position.x - fruit.x, 2) +
+                            Math.pow(option.position.y - fruit.y, 2)
+                        );
+
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestDirection = option.direction;
+                        }
+                    }
+                }
+            }
+
+            // If we found a direction leading toward a fruit, use it
+            // Otherwise use the provided safeDirection as fallback
+            this.direction = closestDirection || safeDirection;
+            this.nextDirection = this.direction;
+        }
 
         const safeHeadPos = this.getNextHeadPosition();
 
