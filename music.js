@@ -172,12 +172,25 @@ class MusicManager {
             const note = melody[noteIndex];
 
             const duration = note[0] * secondsPerBeat;
-            const noteName = note[1];
+            const noteData = note[1];
 
-            if (noteName !== 'REST') {
+            // Handle both single notes and chords (arrays of notes)
+            if (noteData !== 'REST') {
                 // Calculate legato overlap with next note - notes overlap by 10% of their duration
                 const overlapDuration = duration * 0.1;
-                this.playNote(noteName, this.nextNoteTime + schedulingTime, duration + overlapDuration);
+
+                if (Array.isArray(noteData)) {
+                    // This is a chord - play all notes in the chord
+                    const isChord = true;
+                    for (const chordNote of noteData) {
+                        if (chordNote !== 'REST') {
+                            this.playNote(chordNote, this.nextNoteTime + schedulingTime, duration + overlapDuration, isChord);
+                        }
+                    }
+                } else {
+                    // This is a single note
+                    this.playNote(noteData, this.nextNoteTime + schedulingTime, duration + overlapDuration, false);
+                }
             }
 
             schedulingTime += duration;
@@ -196,7 +209,7 @@ class MusicManager {
         }, Math.max(nextScheduleTime, 100));
     }
 
-    playNote(noteName, startTime, duration) {
+    playNote(noteName, startTime, duration, isPartOfChord = false) {
         if (!this.audioContext || !this.isPlaying) return;
 
         // Skip if the note is a rest
@@ -224,8 +237,12 @@ class MusicManager {
 
         // Create a mixer for the oscillators
         const mixer = this.audioContext.createGain();
-        mixer.gain.setValueAtTime(0.7, startTime); // Sine wave at 70%
-        mixer.gain.setValueAtTime(0.3, startTime); // Square wave at 30%
+
+        // For chords, reduce the gain to avoid clipping
+        const gainMultiplier = isPartOfChord ? 0.5 : 1.0;
+
+        mixer.gain.setValueAtTime(0.7 * gainMultiplier, startTime); // Sine wave at 70%
+        mixer.gain.setValueAtTime(0.3 * gainMultiplier, startTime); // Square wave at 30%
 
         // Crisper envelope with stronger attack
         envelope.gain.setValueAtTime(0, startTime);
