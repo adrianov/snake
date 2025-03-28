@@ -3,53 +3,8 @@ window.MusicData = window.MusicData || {};
 
 // Define all melodies in a single object
 window.MusicData.MELODIES = {
-    'bomberman': {
-        name: 'Bomberman Theme',
-        tempo: 125,
-        melody: `
-            // Main theme with bass
-            0.25:C5+C3 0.25:E5 0.25:G5 0.25:C6
-            0.5:B5+G3 0.5:G5
-            0.5:A5+F3 0.25:G5 0.25:F5
-            0.5:E5+C3 0.5:C5
-
-            0.25:C5+C3 0.25:E5 0.25:G5 0.25:C6
-            0.5:B5+G3 0.5:G5
-            0.5:A5+F3 0.25:G5 0.25:A5
-            0.5:G5+C3 0.5:REST
-
-            // Second section
-            0.5:E5+C3 0.25:F5 0.25:G5
-            0.5:A5+F3 0.25:G5 0.25:F5
-            0.5:E5+G3 0.25:D5 0.25:C5
-            0.5:D5+G3 0.5:G4
-
-            0.5:E5+C3 0.25:F5 0.25:G5
-            0.5:A5+F3 0.25:G5 0.25:F5
-            0.5:E5+C3 0.5:D5
-            0.5:C5+C3 0.5:REST
-
-            // Fast-paced section
-            0.25:C6+C4 0.25:B5 0.25:A5 0.25:G5
-            0.25:F5+F3 0.25:E5 0.25:D5 0.25:C5
-            0.25:B4+G3 0.25:C5 0.25:D5 0.25:E5
-            0.5:C5+C3 0.5:REST
-
-            0.25:G5+G3 0.25:F5 0.25:E5 0.25:D5
-            0.25:C5+C3 0.25:B4 0.25:A4 0.25:G4
-            0.25:F4+F3 0.25:G4 0.25:A4 0.25:B4
-            0.5:G4+G3 0.5:REST
-
-            // Final section with chords
-            0.5:C5+E5+G5+C3 0.5:C4+E4+G4
-            0.5:F4+A4+C5+F3 0.5:F3+A3+C4
-            0.5:G4+B4+D5+G3 0.5:G3+B3+D4
-            0.5:C5+E5+G5+C3 0.5:C4+E4+G4
-            1.0:C3+G3+C4+E4+G4+C5
-        `
-    },
     'tetris': {
-        name: 'Korobeiniki (Tetris Theme)',
+        name: 'Korobeiniki',
         tempo: 120,
         melody: `
             // Main Theme with integrated bass - measure by measure from ABC notation
@@ -122,7 +77,7 @@ window.MusicData.MELODIES = {
         `
     },
     'dubinushka': {
-        name: 'Dubinushka (Russian Folk Song)',
+        name: 'Dubinushka',
         tempo: 108,
         melody: `
             // Main theme with bass - authentic Russian folk pattern
@@ -154,7 +109,7 @@ window.MusicData.MELODIES = {
         `
     },
     'mario': {
-        name: 'Super Mario Bros. Theme',
+        name: 'Mario',
         tempo: 100,
         melody: `
             // Koji Kondo's iconic theme with bass accompaniment
@@ -176,7 +131,7 @@ window.MusicData.MELODIES = {
         `
     },
     'star-wars': {
-        name: 'Star Wars Main Theme',
+        name: 'Star Wars',
         tempo: 108,
         melody: `
             // John Williams' iconic theme with orchestral bass
@@ -198,7 +153,7 @@ window.MusicData.MELODIES = {
         `
     },
     'imperial-march': {
-        name: 'Imperial March (Darth Vader\'s Theme)',
+        name: 'Darth',
         tempo: 104,
         melody: `
             // John Williams' Imperial March with bass accompaniment
@@ -257,45 +212,63 @@ window.MusicData.MELODIES = {
         `
     },
     'siem-sorok': {
-        name: 'Siem Sorok (7:40 Dance)',
+        name: 'Siem Sorok (7:40)',
         tempo: 120,
         melody: `
-            // First section - lively klezmer melody in D minor
-            0.25:D5+D3 0.25:E5 0.25:F5+F3 0.25:G5
-            0.5:A5+D3 0.25:G5 0.25:F5
-            0.5:E5+A3 0.25:D5 0.25:C#5
-            0.5:D5+D3 0.5:REST
+            // First section - Freilakhs "Sem Sorok" (Seven Forty) in E minor
+            0.125:G4+E3 0.125:A4 0.25:B4+E3 0.25:B4 0.125:A4 0.125:G4 // (ga)b2- b2ag - opening phrase
+            0.125:B4+E3 0.125:E5 0.25:B4+B3 0.5:B4+B3 // (be')b2 b2b2 - characteristic leap
+            0.125:G4+E3 0.125:A4 0.25:B4+E3 0.25:B4 0.125:A4 0.125:G4 // (ga)b2- b2ag - repeat of opening
+            0.125:F4+E3 0.125:G4 0.25:E4+E3 0.5:E4+E3 // (fg)e2 e2e2 - cadential phrase
+            0.125:G4+E3 0.125:A4 0.25:B4+E3 0.25:B4 0.125:A4 0.125:G4 // (ga)b2- b2ag - third repetition
+            0.125:B4+E3 0.125:E5 0.25:B4+B3 0.5:B4+B3 // (be')b2 b2b2 - characteristic leap again
+            0.125:G#4+E3 0.125:F4 0.125:E4 0.125:G4 0.125:F4 0.125:E4 0.125:D#4 0.125:F4 // (^gfeg fe^df - chromatic run
+            0.5:E4+E3 0.25:REST 0.75:REST // e2)z2 z4 - end of section
 
-            0.25:D5+D3 0.25:E5 0.25:F5+F3 0.25:G5
-            0.5:A5+D3 0.25:G5 0.25:F5
-            0.5:E5+A3 0.25:D5 0.25:C#5
-            0.5:D5+D3 0.5:REST
+            // Second section - modulation with characteristic klezmer ornaments
+            0.125:D#4+B3 0.125:F4 0.25:E4+E3 0.25:B3+B2 0.25:E4+E3 // (^df)e2 B2e2 - modal shift
+            0.25:B3+B2 0.25:E4+E3 0.25:B3+B2 0.25:E4+E3 // B2e2 B2e2 - repeated pattern
+            0.125:F4+D3 0.125:A4 0.25:G4+G3 0.25:D4+D3 0.25:G4+G3 // (fa)g2 d2g2 - new motif
+            0.25:D4+D3 0.25:G4+G3 0.25:D4+D3 0.25:G4+G3 // d2g2 d2g2 - repeated pattern
+            0.5:B4+B3 0.25:G4 0.25:B4 // ~b4 g2b2 - ornamental trill
+            0.5:A4+A3 0.25:F4 0.25:A4 // ~a4 f2a2 - descending sequence
+            0.5:G4+G3 0.25:E4 0.25:G4 // ~g4 e2g2 - continuing pattern
+            0.5:F4+F3 0.5:B4+B3 // f4 b4 - first ending
 
-            // Second section - traditional Jewish progression
-            0.25:A5+F3 0.25:A5 0.25:A5+F3 0.25:G5
-            0.5:F5+Bb3 0.25:E5 0.25:D5
-            0.5:E5+A3 0.25:F5 0.25:G5
-            0.5:A5+D3 0.5:REST
+            // Third section - lyrical middle section
+            0.25:REST 0.25:B3+B2 0.25:C4 0.25:D4 // z2B2c2d2 - gentle beginning
+            0.25:C4+C3 0.25:B3 0.25:A3+A2 0.25:G3 // ~c2B2 A2G2 - descending line
+            0.25:REST 0.25:B3+B2 0.25:C4 0.25:D4 // z2B2c2d2 - repeat of phrase
+            0.25:C4+C3 0.25:B3 0.25:A3+A2 0.25:G3 // ~c2B2 A2G2 - descending line again
+            0.25:REST 0.25:B3+B2 0.25:C4 0.25:D4 // z2B2c2d2 - third repetition
+            0.25:E4+E3 0.25:D4 0.25:C4+C3 0.25:B3 // e2d2 c2B2 - extended descending line
+            0.5:A3+A2 0.25:E3 0.25:A3 // A4 E2A2- - cadential figure
+            1.0:A3+A2 // A8 - sustained note
 
-            0.25:A5+F3 0.25:A5 0.25:A5+F3 0.25:G5
-            0.5:F5+Bb3 0.25:E5 0.25:D5
-            0.5:C#5+A3 0.25:D5 0.25:E5
-            0.5:D5+D3 0.5:REST
+            // Fourth section - virtuosic development
+            0.25:A4+A3 0.25:G4 0.25:F4+F3 0.25:E4 // a2g2 ~f2e2 - descending pattern with ornament
+            0.25:A4+A3 0.25:G4 0.25:F4+F3 0.25:E4 // a2g2 ~f2e2 - repetition for emphasis
+            0.125:F4+F3 0.125:A4 0.25:G4+G3 0.5:G4+G3 // (fa)g2- g4- - sustained note with ornament
+            0.25:G4+G3 0.25:E4 0.25:F4+F3 0.25:G4 // g2e2 f2g2 - ascending scale
+            0.25:A4+A3 0.25:G4 0.25:F4+F3 0.25:E4 // a2g2 ~f2e2 - return to descending pattern
+            0.25:A4+A3 0.25:G4 0.25:F4+F3 0.25:E4 // a2g2 ~f2e2 - repetition
+            0.125:A#4+B3 0.125:C#5 0.25:B4+B3 0.5:B4+B3 // (^a^c')b2- b4- - chromatic approach
+            0.25:B4+B3 0.25:E4 0.25:F4+F3 0.25:G4 // b2e2 f2g2 - ascending scale
 
-            // Third section - rhythmic variation
-            0.25:F5+Bb3 0.125:F5 0.125:F5 0.25:F5+Bb3 0.25:E5
-            0.25:D5+F3 0.125:D5 0.125:D5 0.25:D5+F3 0.25:C5
-            0.25:Bb4+Bb3 0.125:Bb4 0.125:Bb4 0.25:C5+A3 0.25:D5
-            0.5:C#5+A3 0.5:D5+D3
+            // Final section - climactic ending
+            0.25:E4+E3 0.25:F4 0.25:G4+G3 0.25:A4 // e2f2g2a2 - ascending scale
+            0.5:B4+B3 0.5:B4+B3 // b8- b8 - sustained note
+            0.25:E4+E3 0.25:F4 0.25:G4+G3 0.25:F4 // e2f2 g2f2 - melodic turn
+            0.25:E4+E3 0.25:D4 0.25:C4+C3 0.25:B3 // e2d2 c2B2 - descending line
+            0.5:A3+A2 0.5:A3+A2 // A8- - sustained note
+            0.25:A3+A2 0.25:A4 0.25:G#4 0.25:G4 // A2 a2^g2=g2 - chromatic descent
 
-            // Final section with traditional Jewish cadence
-            0.5:D5+F5+A5+D3 // D minor chord
-            0.5:A4+C#5+E5+A3 // A major chord
-            0.5:Bb4+D5+F5+Bb3 // Bb major chord
-            0.5:A4+C#5+E5+A3 // A major chord
-            0.5:D5+F5+A5+D3 // D minor chord
-            0.5:A4+C#5+E5+A3 // A major chord
-            1.0:D4+A4+D5+F5+A5 // Final D minor chord
+            // Final cadence with full harmonies
+            0.5:B4+E4+G4+B3 // B minor chord
+            0.5:E4+G4+B4+E3 // E minor chord
+            0.5:A4+C5+E5+A3 // A minor chord
+            0.5:B4+D5+F#5+B3 // B major chord
+            1.0:E4+G4+B4+E3 // Final E minor chord
         `
     },
     'kirby-item-bounce': {
@@ -334,7 +307,7 @@ window.MusicData.MELODIES = {
         `
     },
     'marseillaise': {
-        name: 'La Marseillaise (French Anthem)',
+        name: 'La Marseillaise',
         tempo: 84,
         melody: `
             // First section - D>D|G2G>GA2A>A|d3B GGBG
@@ -409,51 +382,7 @@ window.MusicData.MELODIES = {
             0.5:G4+B4+D5+G2 // G major chord
             0.5:D4+G4+B4+D3 // G/D chord
             0.5:G4+B4+D5+G2 // G major chord
-            1.0:G3+D4+G4+B4+D5+G5 // Full orchestral G major chord
-        `
-    },
-    'stranger-in-moscow': {
-        name: 'Stranger in Moscow (Michael Jackson)',
-        tempo: 66,
-        melody: `
-            // Introduction - haunting opening
-            0.5:E4+A2 0.5:A4+A2 0.5:C5+A3 0.5:E5+E3
-            1.0:D5+F3 0.5:C5+A3 0.5:A4+A2
-            0.5:E4+E3 0.5:A4+A2 0.5:C5+A3 0.5:E5+E3
-            0.5:D5+F3 0.5:C5+A3 1.0:A4+A2
-
-            // First verse - "I was wandering in the rain"
-            0.5:A4+A2 0.5:C5+C3 0.5:D5+D3 0.5:E5+E3
-            0.5:D5+F3 0.5:C5+A3 1.0:A4+A2 0.5:REST
-            0.5:A4+A2 0.5:C5+C3 0.5:D5+D3 0.5:F5+F3
-            0.5:E5+E3 0.5:D5+F3 1.0:C5+C3 0.5:REST
-
-            // Pre-chorus - "How does it feel"
-            0.25:E5+C3 0.25:E5 0.5:E5+C3 0.25:D5+D3 0.25:D5 0.5:D5+D3
-            0.25:C5+E3 0.25:C5 0.5:C5+E3 0.25:B4+G3 0.25:B4 0.5:B4+G3
-            0.25:C5+A3 0.25:C5 0.5:C5+A3 0.25:D5+F3 0.25:D5 0.5:D5+F3
-            0.5:C5+E3 0.5:B4+G3 1.0:A4+A2 0.5:REST
-
-            // Chorus - "I'm livin' lonely"
-            0.5:E5+A3 0.5:E5+A3 0.5:D5+F3 0.5:C5+A3
-            1.0:D5+F3 1.0:C5+A3
-            0.5:E5+A3 0.5:E5+A3 0.5:D5+F3 0.5:C5+A3
-            0.5:D5+F3 0.5:C5+A3 1.0:A4+A2
-
-            // Final bridge - "Stranger in Moscow"
-            0.5:A4+A2 0.25:C5 0.25:D5 0.5:E5+E3 0.5:D5+F3
-            0.5:C5+A3 0.5:A4+A2 1.0:B4+E3
-            0.5:C5+A3 0.25:B4 0.25:A4 0.5:B4+E3 0.5:C5+A3
-            0.5:D5+D3 0.5:E5+C3 1.0:A4+A2
-
-            // Final chord progression
-            0.75:A4+C5+E5+A3 // A minor chord
-            0.75:D4+F4+A4+D3 // D minor chord
-            0.75:E4+G4+B4+E3 // E minor chord
-            0.75:A4+C5+E5+A3 // A minor chord
-            0.75:F4+A4+C5+F3 // F major chord
-            0.75:E4+G4+B4+E3 // E minor chord
-            1.5:A3+E4+A4+C5+E5 // Final A minor chord with full harmonics
+            1.0:G3+D4+G4+B4+D5+G5 // Full G major chord
         `
     },
     'god-save-tsar': {
@@ -535,58 +464,63 @@ window.MusicData.MELODIES = {
         `
     },
     'personal-jesus': {
-        name: 'Personal Jesus (Depeche Mode)',
-        tempo: 120,
+        name: 'Personal Jesus',
+        tempo: 135,
         melody: `
-            // Intro - iconic guitar riff in E minor
+            // Intro - iconic guitar riff with distinctive bass pattern from ABC
             0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST
             0.25:G4+E2 0.25:REST 0.25:G4+E2 0.25:REST 0.25:G4+E2 0.25:REST 0.25:G4+E2 0.25:REST
             0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST
-            0.25:G4+E2 0.25:REST 0.25:G4+E2 0.25:REST 0.25:A4+A2 0.25:REST 0.25:B4+E2 0.25:REST
+            0.25:G4+E2 0.25:REST 0.25:G4+E2 0.25:REST 0.25:A4+A2 0.25:REST 0.25:B4+B2 0.25:REST
 
-            // Verse - "Reach out and touch faith"
-            0.5:E4+E2 0.25:G4 0.25:A4 0.5:B4+E3 0.5:B4+E3
-            0.5:D5+D3 0.25:B4 0.25:A4 0.5:G4+E3 0.5:G4+E3
-            0.5:E4+E2 0.25:G4 0.25:A4 0.5:B4+E3 0.5:B4+E3
-            0.5:G4+E3 0.25:E4 0.25:D4 1.0:E4+E2 0.5:REST
+            // Main bass pattern with G-C-G chord from ABC voice 3
+            0.5:G3+G2 0.5:A#3+A#2 0.5:G3+G2 0.5:A#3+A#2
+            0.5:G3+G2 0.25:G3 0.25:A#3+A#2 0.5:G3+G2 0.5:A#3+A#2
+            0.5:G3+G2 0.5:A#3+A#2 0.5:G3+G2 0.5:A#3+A#2
+            0.5:G3+G2 0.25:G3 0.25:A#3+A#2 0.5:G3+G2 0.5:A#3+A#2
 
-            // Chorus - "Your own personal Jesus"
-            0.5:E4+E2 0.5:G4+E3 0.5:A4+C3 0.5:B4+G3
-            0.5:E5+E3 0.5:D5+G3 1.0:B4+E3 0.5:REST
-            0.5:E4+E2 0.5:G4+E3 0.5:A4+C3 0.5:B4+G3
-            0.5:G4+E3 0.5:A4+A2 1.0:E4+E2 0.5:REST
+            // "Reach out and touch faith" - melody from ABC voice 5
+            0.25:G4+G2 0.25:G4 0.5:F4+F2 0.5:G4+G2 0.5:REST
+            0.5:REST 0.25:D4+D2 0.25:F4 0.25:G4+G2 0.5:G4
+            0.5:REST 0.5:G4+G2 0.25:G4 0.5:G4+G2 0.5:REST
+            0.5:G4+G2 0.5:G4+G2 0.5:F4+F2 0.5:A#3+A#2 0.5:REST
 
-            // Bridge - distinctive instrumental section
-            0.25:E4+E2 0.25:REST 0.25:G4+E3 0.25:REST 0.25:A4+A2 0.25:REST 0.25:B4+E3 0.25:REST
-            0.25:E4+E2 0.25:REST 0.25:G4+E3 0.25:REST 0.25:A4+A2 0.25:REST 0.25:B4+E3 0.25:REST
-            0.25:E5+E3 0.25:D5 0.25:B4+E3 0.25:A4 0.25:G4+E3 0.25:A4 0.25:B4+E3 0.25:A4
-            0.25:G4+E3 0.25:E4 0.25:G4+E3 0.25:A4 0.5:B4+E3 0.5:B4+E3
+            // Chorus pattern with chord progression from ABC
+            0.25:G4+G2 0.25:G4 0.25:G4 0.25:A#4+A#2 0.5:A4+A2 0.25:G4 0.25:G4
+            0.5:A4+A2 0.5:G4+G2 0.5:D4+D2 0.5:REST
+            0.25:G4+G2 0.25:F4 0.25:A#3+A#2 0.25:F4 0.25:F4 0.25:G4+G2
+            0.5:G4+G2 0.5:F4+F2 0.5:A#3+A#2 0.5:REST
 
-            // Second Verse - "Feeling unknown and you're all alone"
-            0.5:E4+E2 0.25:G4 0.25:A4 0.5:B4+E3 0.5:B4+E3
-            0.5:D5+D3 0.25:B4 0.25:A4 0.5:G4+E3 0.5:G4+E3
-            0.5:E4+E2 0.25:G4 0.25:A4 0.5:B4+E3 0.5:B4+E3
-            0.5:G4+E3 0.25:E4 0.25:D4 1.0:E4+E2 0.5:REST
+            // Instrumental bridge with distinctive rhythm
+            0.5:G4+G2 0.5:G4+G2 0.5:A#4+A#2 0.5:G4+G2
+            0.5:G4+G2 0.5:G4+G2 0.5:A#4+A#2 0.5:A4+A2
+            0.5:E4+E2 0.5:REST 0.5:E4+E2 0.5:REST
+            0.5:G4+G2 0.5:REST 0.5:D#4+D#2 0.5:REST
 
-            // Second Chorus - with stronger instrumentation
-            0.5:E4+E2 0.5:G4+E3 0.5:A4+C3 0.5:B4+G3
-            0.5:E5+E3 0.5:D5+G3 1.0:B4+E3 0.5:REST
-            0.5:E4+E2 0.5:G4+E3 0.5:A4+C3 0.5:B4+G3
-            0.5:G4+E3 0.5:A4+A2 1.0:E4+E2 0.5:REST
+            // Main riff returns with Em-A-B sequence
+            0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST 0.25:E4+E2 0.25:REST
+            0.25:A4+A2 0.25:REST 0.25:A4+A2 0.25:REST 0.25:A4+A2 0.25:REST 0.25:A4+A2 0.25:REST
+            0.25:D#4+D#2 0.25:REST 0.25:D#4+D#2 0.25:REST 0.25:D#4+D#2 0.25:REST 0.25:D#4+D#2 0.25:REST
 
-            // Outro - "Reach out, touch faith"
-            0.25:B4+E3 0.25:A4 0.25:G4+E3 0.25:E4 0.5:G4+E3 0.5:A4+A2
-            0.5:B4+E3 0.25:A4 0.25:G4 0.5:E4+E2 0.5:G4+E3
-            0.5:A4+A2 0.25:G4 0.25:E4 0.5:G4+E3 0.5:A4+A2
-            0.5:B4+E3 0.25:A4 0.25:G4 1.0:E4+E2 0.5:REST
+            // "Your own personal Jesus" with triplet feel from ABC
+            0.25:G4+G2 0.25:G4 0.25:G4 0.25:A#4+A#2 0.5:A4+A2 0.25:A4 0.25:G4+G2
+            0.5:A4+A2 0.5:G4+G2 0.5:D4+D2 0.5:REST
+            0.25:G4+G2 0.25:G4 0.25:G4 0.25:A#4+A#2 0.5:A4+A2 0.25:A4 0.25:G4+G2
+            0.5:G4+G2 0.5:F4+F2 0.5:REST
 
-            // Final chord progression - powerful resolution
+            // Outro with descending pattern from ABC
+            0.25:G4+G2 0.25:G4 0.5:F4+F2 0.5:G4+G2 0.5:REST
+            0.5:G4+G2 0.25:G4 0.25:G4 0.5:A#4+A#2 0.5:A4+A2 0.5:G4+G2
+            0.5:G4+G2 0.5:F4+F2 0.5:A#3+A#2 0.5:F4+F2
+            0.5:G4+G2 0.5:G4+G2 0.5:A#4+A#2 0.5:G4+G2
+
+            // Final chord progression based on ABC chord voicings
             0.5:E4+G4+B4+E2 // E minor chord
             0.5:A4+C5+E5+A2 // A minor chord
             0.5:G4+B4+D5+G2 // G major chord
-            0.5:B4+D5+F#5+B2 // B major chord
+            0.5:B4+D#5+F#5+B2 // B major chord
             0.5:E4+G4+B4+E2 // E minor chord
-            0.5:D4+F#4+A4+D2 // D major chord
+            0.5:A4+C5+E5+A2 // A minor chord
             1.0:E3+B3+E4+G4+B4+E5 // Final E minor chord with full harmonics
         `
     },
@@ -637,8 +571,48 @@ window.MusicData.MELODIES = {
             0.5:C5+Eb5+G5+C3 0.5:G4+C5+Eb5+G2 // C minor chords
             1.0:C3+G3+C4+Eb4+G4+C5 // Final C minor chord with full harmonics
         `
+    },
+    'moscow-evenings': {
+        name: 'Podmoscow Evenings',
+        tempo: 90,
+        melody: `
+            // First section - "Dm"DFAF|"Gm"G2FE|"A7"A2G2|"Dm"D3 z
+            0.25:D4+D3 0.25:F4 0.25:A4 0.25:F4 // DFAF - Dm chord
+            0.5:G4+G3 0.25:F4 0.25:E4 // G2FE - Gm chord
+            0.5:A4+A3 0.5:G4 // A2G2 - A7 chord
+            0.75:D4+D3 0.25:REST // D3 z - Dm chord
+
+            // Second section - "F"FAcc|"Gm"d2"C7"cB|"F"A4
+            0.25:F4+F3 0.25:A4 0.25:C5 0.25:C5 // FAcc - F chord
+            0.5:D5+G3 0.25:C5 0.25:B4 // d2cB - Gm to C7 chord
+            1.0:A4+F3 // A4 - F chord
+
+            // Third section - "E7"=B2^c2|:"Dm"edA2
+            0.5:B4+E3 0.5:C#5 // =B2^c2 - E7 chord
+            0.25:E5+D3 0.25:D5 0.5:A4 // edA2 - Dm chord
+
+            // Middle section - "Dm"z FED|"Gm"AGB2-|"Gm"B z cB
+            0.25:REST 0.25:F4+D3 0.25:E4 0.25:D4 // z FED - Dm chord
+            0.25:A4+G3 0.25:G4 0.5:B4 // AGB2- - Gm chord
+            0.25:B4+G3 0.25:REST 0.25:C5 0.25:B4 // B z cB - Gm chord
+
+            // Outro section - "Dm"A2GF|"Em7"A2 "A7"G2|"Dm"D4
+            0.5:A4+D3 0.25:G4 0.25:F4 // A2GF - Dm chord
+            0.5:A4+E3 0.5:G4+A3 // A2 G2 - Em7 to A7 chord
+            1.0:D4+D3 // D4 - Dm chord (first ending)
+
+            // Repeat to the E7 chord - "E7"=B2^c2
+            0.5:B4+E3 0.5:C#5 // =B2^c2 - E7 chord
+
+            // Alternative ending - "Dm"D4-|"Dm"D z z2|]
+            1.0:D4+D3 // D4- - Dm chord (second ending)
+            0.25:D4+D3 0.75:REST // D z z2 - Dm chord
+
+            // Final chord
+            1.0:D3+A3+D4+F4+A4 // Final Dm chord with full harmonics
+        `
     }
-};
+}
 
 // Add helper methods to MusicData
 window.MusicData.getAllMelodyIds = function () {
