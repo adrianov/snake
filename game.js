@@ -580,7 +580,11 @@ class SnakeGame {
         this.uiManager.updateScore(score);
         this.lastEatenTime = Date.now();
 
+        // Ensure the game loop continues smoothly after eating
         this.gameLoop.adjustSpeedAfterFoodEaten();
+
+        // Force an immediate frame update to avoid pauses
+        this.gameLoop.lastFrameTime = performance.now() - this.gameLoop.frameInterval;
 
         if (this.drawer) {
             this.drawer.incrementDarknessLevel();
