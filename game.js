@@ -2,58 +2,24 @@ class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.removeStartButton();
         this.initializeGameSettings();
         this.setupEventListeners();
-    }
-
-    removeStartButton() {
-        const startButton = document.getElementById('startButton');
-        if (startButton) {
-            startButton.remove();
-        }
     }
 
     initializeGameSettings() {
         // Canvas and grid settings
         this.resizeCanvas();
 
-        // Game state
+        // Game components and managers
+        this.gameStateManager = new GameStateManager();
         this.snake = new Snake(5, 5);
-        this.food = [];
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.score = 0;
-        this.highScore = localStorage.getItem('snakeHighScore') || 0;
-        this.isGameStarted = false;
-        this.isPaused = false;
-        this.isGameOver = false;
-        this.lastGameState = null;
-
-        // Speed settings
-        this.baseSpeed = 100;
-        this.speed = this.baseSpeed;
-        this.speedMultiplier = 0.8;
-        this.slowMultiplier = 1.2;
-        this.frameInterval = this.baseSpeed;
+        this.gameLoop = new GameLoop(this.update.bind(this));
+        this.foodManager = new FoodManager(this.tileCount);
 
         // Time tracking
-        this.lastFrameTime = 0;
-        this.lastRandomSpawnTime = Date.now();
-        this.randomSpawnInterval = 1667 + Math.random() * 833; // 1.7-2.5 seconds
         this.lastEatenTime = 0;
-        this.glowDuration = 3000;
-
-        // Animation and loop handles
-        this.fruitLoop = null;
-        this.animationFrame = null;
-        this.boundGameLoop = null;
-
-        // Feature toggles
-        this.luckEnabled = true;
-        this.shakeEnabled = true;
-        this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false';
-        this.musicEnabled = localStorage.getItem('snakeMusicEnabled') !== 'false';
 
         // Managers initialization
         this.soundManager = SoundManager.getInstance();
@@ -63,7 +29,6 @@ class SnakeGame {
 
         // Drawing
         this.imagesLoaded = false;
-        this.oldDrawer = null;
         this.loadImages();
     }
 
@@ -77,7 +42,6 @@ class SnakeGame {
         this.loadFruitImages().then(() => {
             this.imagesLoaded = true;
             this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
-            this.oldDrawer = this.drawer;
             this.init();
         });
     }
@@ -92,14 +56,12 @@ class SnakeGame {
         this.gridSize = Math.min(40, Math.floor(size / 20));
         this.tileCount = Math.floor(size / this.gridSize);
 
-        this.updateDrawerAfterResize();
-    }
+        if (this.foodManager) {
+            this.foodManager.tileCount = this.tileCount;
+        }
 
-    updateDrawerAfterResize() {
         if (this.drawer) {
-            const oldDrawer = this.drawer;
-            this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
-            this.oldDrawer = this.drawer;
+            this.drawer.updateGridSize(this.gridSize);
         }
 
         if (this.imagesLoaded) {
@@ -151,14 +113,13 @@ class SnakeGame {
         this.snake = new Snake(5, 5);
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.score = 0;
-        this.speed = this.baseSpeed;
-        this.frameInterval = this.baseSpeed;
-        this.uiManager.updateScore(this.score);
-        this.uiManager.updateHighScore(this.highScore);
-        this.generateFood();
+        this.gameLoop.resetSpeed();
+        this.uiManager.updateScore(this.gameStateManager.getScore());
+        this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
+        this.foodManager.resetFood();
+        this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
         this.draw();
-        this.startFruitLoop();
+        this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
     }
 
     handleKeyDown(event) {
@@ -178,13 +139,15 @@ class SnakeGame {
         }
 
         // Direction controls (only if game is running)
-        if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             this.handleDirectionKeys(event);
         }
     }
 
     handleFeatureToggleKeys(event) {
         const key = event.key && event.key.toLowerCase();
+        const gameState = this.gameStateManager.getGameState();
 
         if (key === 's') {
             event.preventDefault();
@@ -206,20 +169,44 @@ class SnakeGame {
 
         if (key === 'l') {
             event.preventDefault();
-            this.toggleLuck();
+            const luckEnabled = this.gameStateManager.toggleLuck();
+            if (gameState.soundEnabled) {
+                this.soundManager.playSound('click', 0.3);
+            }
+            this.uiManager.showTemporaryMessage(
+                luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
+                1500
+            );
             return true;
         }
 
         if (key === 'v') {
             event.preventDefault();
-            this.toggleShake();
+            const shakeEnabled = this.gameStateManager.toggleShake();
+
+            // No need to modify the intensity here
+            // The draw method will set it to 0 if disabled, or leave it as is if enabled
+
+            if (gameState.soundEnabled) {
+                this.soundManager.playSound('click', 0.3);
+            }
+            this.uiManager.showTemporaryMessage(
+                shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF",
+                1500
+            );
             return true;
         }
 
         if (key === 'a') {
             event.preventDefault();
-            if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
-                this.spawnFruitInSnakeDirection();
+            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+                this.foodManager.spawnFruitInSnakeDirection(
+                    this.snake,
+                    this.direction,
+                    this.getRandomFruit.bind(this),
+                    gameState.soundEnabled,
+                    this.soundManager
+                );
             }
             return true;
         }
@@ -228,12 +215,14 @@ class SnakeGame {
     }
 
     handleGameStateKeys(event) {
+        const gameState = this.gameStateManager.getGameState();
+
         if (event.keyCode === 32) { // Spacebar
-            if (this.isGameOver) {
+            if (gameState.isGameOver) {
                 this.resetGame();
                 this.startGame();
                 return true;
-            } else if (this.isGameStarted) {
+            } else if (gameState.isGameStarted) {
                 this.togglePause();
                 return true;
             } else {
@@ -243,7 +232,7 @@ class SnakeGame {
         }
 
         // Start game with arrow keys if not started
-        if (!this.isGameStarted && !this.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
+        if (!gameState.isGameStarted && !gameState.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
             this.startGame();
             return true;
         }
@@ -263,7 +252,7 @@ class SnakeGame {
             if (validDirectionChange) {
                 this.nextDirection = keyDirection;
             }
-            this.updateGameSpeed(keyDirection, validDirectionChange);
+            this.gameLoop.updateGameSpeed(keyDirection, this.direction, validDirectionChange);
         }
     }
 
@@ -278,83 +267,22 @@ class SnakeGame {
         return newDirection !== oppositeDirections[this.direction];
     }
 
-    updateGameSpeed(keyDirection, validDirectionChange) {
-        const previousSpeed = this.speed;
-        const isCurrentDirection = keyDirection === this.direction;
-        const isOppositeDirection = keyDirection === {
-            'up': 'down',
-            'down': 'up',
-            'left': 'right',
-            'right': 'left'
-        }[this.direction];
-
-        if (isCurrentDirection) {
-            this.speed *= this.speedMultiplier;
-        } else if (isOppositeDirection) {
-            this.speed *= this.slowMultiplier;
-        }
-
-        // Ensure speed stays within reasonable bounds
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
-        this.frameInterval = this.speed;
-    }
-
-    startGameLoop() {
-        this.lastFrameTime = performance.now();
-        this.boundGameLoop = this.gameLoop.bind(this);
-        this.animationFrame = requestAnimationFrame(this.boundGameLoop);
-    }
-
-    gameLoop(timestamp) {
-        const elapsed = timestamp - this.lastFrameTime;
-
-        if (elapsed >= this.frameInterval) {
-            this.update();
-            this.lastFrameTime = timestamp - (elapsed % this.frameInterval);
-        }
-
-        if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
-            this.animationFrame = requestAnimationFrame(this.boundGameLoop);
-        }
-    }
-
-    startFruitLoop() {
-        if (this.fruitLoop) {
-            clearInterval(this.fruitLoop);
-            this.fruitLoop = null;
-        }
-
-        this.fruitLoop = setInterval(() => {
-            this.manageFruits();
-            this.draw();
-        }, 100);
-    }
-
-    manageFruits() {
-        // Remove expired fruits
-        const currentTime = Date.now();
-        this.food = this.food.filter(food => {
-            const age = currentTime - food.spawnTime;
-            if (age >= food.lifetime) {
-                if (this.soundEnabled && this.isGameStarted && !this.isPaused && !this.isGameOver) {
-                    this.soundManager.playSound('disappear');
-                }
-                return false;
-            }
-            return true;
-        });
-
-        // Spawn new food
-        this.spawnRandomFood();
-    }
-
     togglePause() {
-        this.isPaused = !this.isPaused;
+        const gameState = this.gameStateManager.getGameState();
 
-        if (this.isPaused) {
+        if (!gameState.isPaused) {
+            this.gameStateManager.pauseGame(
+                this.snake,
+                this.direction,
+                this.nextDirection,
+                this.foodManager.getAllFood(),
+                this.gameStateManager.getScore(),
+                this.gameLoop.getSpeed(),
+                this.gameLoop.getFrameInterval()
+            );
             this.pauseGame();
         } else {
+            this.gameStateManager.unpauseGame();
             this.unpauseGame();
         }
 
@@ -362,20 +290,7 @@ class SnakeGame {
     }
 
     pauseGame() {
-        this.lastGameState = {
-            snake: JSON.parse(JSON.stringify(this.snake.getSegments())),
-            direction: this.direction,
-            nextDirection: this.nextDirection,
-            food: JSON.parse(JSON.stringify(this.food)),
-            score: this.score,
-            speed: this.speed,
-            frameInterval: this.frameInterval
-        };
-
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
-        }
+        this.gameLoop.stopGameLoop();
 
         if (this.musicManager) {
             this.musicManager.saveMelodyId();
@@ -389,7 +304,7 @@ class SnakeGame {
         this.soundManager = SoundManager.getInstance();
         this.musicManager = MusicManagerUtils.initializeMusicManager(this);
         MusicManagerUtils.startMusicIfEnabled(this);
-        this.startGameLoop();
+        this.gameLoop.startGameLoop();
     }
 
     startGame() {
@@ -400,28 +315,24 @@ class SnakeGame {
 
         this.resetGameState();
         this.setupAudio();
-        this.startGameLoop();
+        this.gameLoop.startGameLoop();
     }
 
     resetGameState() {
         this.drawer.generateNewSnakeColor();
-        this.score = 0;
-        this.uiManager.updateScore(this.score);
+        this.gameStateManager.resetGameState();
+        this.uiManager.updateScore(this.gameStateManager.getScore());
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.speed = this.baseSpeed;
-        this.frameInterval = this.baseSpeed;
+        this.gameLoop.resetSpeed();
         this.snake = new Snake(5, 5);
-        this.food = [];
-        this.lastRandomSpawnTime = Date.now();
-        this.randomSpawnInterval = 1667 + Math.random() * 833;
-        this.generateFood();
-        this.isGameStarted = true;
-        this.isPaused = false;
-        this.isGameOver = false;
-        this.lastGameState = null;
-        this.luckEnabled = true;
-        this.shakeEnabled = true;
+        this.foodManager.resetFood();
+        this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
+
+        // Reset shake intensity to default value
+        if (this.drawer && this.drawer.snakeDrawer) {
+            this.drawer.snakeDrawer.resetLevels();
+        }
     }
 
     setupAudio() {
@@ -432,37 +343,27 @@ class SnakeGame {
         this.uiManager.updateMelodyDisplay();
     }
 
-    generateFood() {
-        let newFood;
-        do {
-            newFood = {
-                x: Math.floor(Math.random() * this.tileCount),
-                y: Math.floor(Math.random() * this.tileCount),
-                type: this.getRandomFruit(),
-                spawnTime: Date.now(),
-                lifetime: Math.random() * 15000 // Random lifetime between 0-15 seconds
-            };
-        } while (this.snake.isOccupyingPosition(newFood.x, newFood.y) ||
-                this.food.some(f => f.x === newFood.x && f.y === newFood.y));
-
-        this.food.push(newFood);
-    }
-
-    spawnRandomFood() {
-        const currentTime = Date.now();
-        if (currentTime - this.lastRandomSpawnTime >= this.randomSpawnInterval) {
-            this.generateFood();
-            this.lastRandomSpawnTime = currentTime;
-            this.randomSpawnInterval = 1667 + Math.random() * 833;
-        }
+    manageFruits() {
+        const gameState = this.gameStateManager.getGameState();
+        this.foodManager.manageFruits(
+            this.snake,
+            this.getRandomFruit.bind(this),
+            gameState.soundEnabled,
+            gameState.isGameStarted,
+            gameState.isPaused,
+            gameState.isGameOver,
+            this.soundManager
+        );
+        this.draw();
     }
 
     update() {
-        if (this.isPaused) {
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.isPaused) {
             return;
         }
 
-        if (this.isGameStarted && !this.isGameOver) {
+        if (gameState.isGameStarted && !gameState.isGameOver) {
             this.direction = this.nextDirection;
             this.moveSnake();
             this.checkFoodCollision();
@@ -483,7 +384,9 @@ class SnakeGame {
     }
 
     handleCollision(nextHeadPos) {
-        if (this.luckEnabled && Math.random() < 0.8) {
+        const gameState = this.gameStateManager.getGameState();
+
+        if (gameState.luckEnabled && Math.random() < 0.8) {
             const safeDirection = this.snake.findSafeDirection(
                 this.direction,
                 this.tileCount,
@@ -546,12 +449,13 @@ class SnakeGame {
             let minDistance = Infinity;
 
             // If no fruits exist, just use the first safe direction
-            if (this.food.length === 0 && safeDirections.length > 0) {
+            const food = this.foodManager.getAllFood();
+            if (food.length === 0 && safeDirections.length > 0) {
                 closestDirection = safeDirections[0].direction;
             } else {
                 for (const option of safeDirections) {
                     // Calculate distance to each fruit from this position
-                    for (const fruit of this.food) {
+                    for (const fruit of food) {
                         const distance = Math.sqrt(
                             Math.pow(option.position.x - fruit.x, 2) +
                             Math.pow(option.position.y - fruit.y, 2)
@@ -572,8 +476,9 @@ class SnakeGame {
         }
 
         const safeHeadPos = this.getNextHeadPosition();
+        const gameState = this.gameStateManager.getGameState();
 
-        if (this.soundEnabled) {
+        if (gameState.soundEnabled) {
             this.soundManager.playSound('click', 0.3);
         }
 
@@ -581,17 +486,12 @@ class SnakeGame {
             this.drawer.snakeDrawer.triggerLuckGlow();
         }
 
-        this.speed *= 1.3;
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
-        this.frameInterval = this.speed;
-
+        this.gameLoop.adjustSpeedAfterLuckEffect();
         this.snake.move(safeHeadPos.x, safeHeadPos.y);
     }
 
     checkFoodCollision() {
-        const foodEatenIndex = this.food.findIndex(f =>
-            f.x === this.snake.head().x && f.y === this.snake.head().y
-        );
+        const foodEatenIndex = this.foodManager.checkFoodCollision(this.snake);
 
         if (foodEatenIndex !== -1) {
             this.handleFoodEaten(foodEatenIndex);
@@ -599,30 +499,30 @@ class SnakeGame {
     }
 
     handleFoodEaten(foodEatenIndex) {
-        const eatenFood = this.food[foodEatenIndex];
-        const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
+        const eatenFood = this.foodManager.removeFood(foodEatenIndex);
+        if (!eatenFood) return;
 
-        this.score += fruitConfig.score;
-        this.uiManager.updateScore(this.score);
+        const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
+        const gameState = this.gameStateManager.getGameState();
+
+        const score = this.gameStateManager.updateScore(fruitConfig.score);
+        this.uiManager.updateScore(score);
         this.lastEatenTime = Date.now();
 
-        this.speed *= 0.95;
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
-        this.frameInterval = this.speed;
+        this.gameLoop.adjustSpeedAfterFoodEaten();
 
         if (this.drawer) {
             this.drawer.incrementDarknessLevel();
         }
 
-        if (this.soundEnabled) {
+        if (gameState.soundEnabled) {
             this.soundManager.playSound(eatenFood.type);
         }
 
         this.snake.grow();
-        this.food.splice(foodEatenIndex, 1);
 
-        if (this.food.length === 0) {
-            this.generateFood();
+        if (this.foodManager.getAllFood().length === 0) {
+            this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
         }
     }
 
@@ -658,36 +558,28 @@ class SnakeGame {
     }
 
     gameOver() {
-        this.isGameOver = true;
-        this.isGameStarted = false;
-
-        const isNewHighScore = this.score > this.highScore;
+        const isNewHighScore = this.gameStateManager.gameOver();
         if (isNewHighScore) {
-            this.highScore = this.score;
-            localStorage.setItem('snakeHighScore', this.highScore);
-            this.uiManager.updateHighScore(this.highScore);
+            this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
         }
 
-        if (this.animationFrame) {
-            cancelAnimationFrame(this.animationFrame);
-            this.animationFrame = null;
-        }
-
+        this.gameLoop.stopGameLoop();
         this.draw();
 
         this.handleGameOverAudio(isNewHighScore);
     }
 
     handleGameOverAudio(isNewHighScore) {
+        const gameState = this.gameStateManager.getGameState();
         let cleanupDelayTime = 100;
 
-        if (this.soundEnabled && isNewHighScore) {
+        if (isNewHighScore) {
             cleanupDelayTime = 2500;
-        } else if (this.soundEnabled) {
+        } else {
             cleanupDelayTime = 900;
         }
 
-        if (this.soundEnabled && this.soundManager) {
+        if (this.soundManager) {
             setTimeout(() => {
                 this.soundManager.playSound('crash');
             }, 0);
@@ -699,7 +591,7 @@ class SnakeGame {
             }, 100);
         }
 
-        if (this.soundEnabled && this.soundManager && isNewHighScore) {
+        if (this.soundManager && isNewHighScore) {
             setTimeout(() => {
                 this.soundManager.playHighScoreFanfare();
             }, 800);
@@ -709,7 +601,7 @@ class SnakeGame {
     }
 
     resetGame() {
-        this.isGameOver = false;
+        this.gameStateManager.resetGame();
         this.soundManager = SoundManager.getInstance();
     }
 
@@ -718,46 +610,46 @@ class SnakeGame {
             return;
         }
 
-        const gameState = {
+        const gameState = this.gameStateManager.getGameState();
+        const drawState = {
             snake: this.snake.getSegments(),
-            food: this.food,
+            food: this.foodManager.getAllFood(),
             direction: this.direction,
-            score: this.score,
-            highScore: this.highScore,
-            isGameOver: this.isGameOver,
-            isPaused: this.isPaused,
-            isGameStarted: this.isGameStarted,
+            score: gameState.score,
+            highScore: gameState.highScore,
+            isGameOver: gameState.isGameOver,
+            isPaused: gameState.isPaused,
+            isGameStarted: gameState.isGameStarted,
             lastEatenTime: this.lastEatenTime,
-            luckEnabled: this.luckEnabled,
-            shakeEnabled: this.shakeEnabled
+            luckEnabled: gameState.luckEnabled,
+            shakeEnabled: gameState.shakeEnabled
         };
 
-        this.drawer.draw(gameState);
+        this.drawer.draw(drawState);
 
-        if (this.drawer && this.drawer.snakeDrawer) {
-            this.drawer.snakeDrawer.setShakeIntensity(
-                this.shakeEnabled ? this.drawer.snakeDrawer.shakeIntensity : 0
-            );
+        // Only turn off shaking if shakeEnabled is false
+        // Don't override the intensity value when it's enabled - let the SnakeDrawer handle it
+        if (this.drawer && this.drawer.snakeDrawer && !gameState.shakeEnabled) {
+            this.drawer.snakeDrawer.setShakeIntensity(0);
         }
     }
 
     toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        localStorage.setItem('snakeSoundEnabled', this.soundEnabled.toString());
+        const soundEnabled = this.soundManager.toggleSound();
         this.uiManager.updateSoundToggleUI();
 
-        if (this.soundEnabled) {
-            this.soundManager.playSound('click', 0.2);
+        if (soundEnabled) {
+            this.soundManager.playSound('click');
         }
     }
 
     toggleMusic() {
-        this.musicEnabled = !this.musicEnabled;
-        localStorage.setItem('snakeMusicEnabled', this.musicEnabled.toString());
+        const musicEnabled = this.gameStateManager.toggleMusic();
         this.uiManager.updateMusicToggleUI();
 
-        if (this.musicEnabled) {
-            if (this.isGameStarted && !this.isPaused && !this.isGameOver) {
+        if (musicEnabled) {
+            const gameState = this.gameStateManager.getGameState();
+            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
                 this.musicManager.startMusic();
             }
         } else {
@@ -771,170 +663,8 @@ class SnakeGame {
 
         if (newMelody) {
             // Play a sound to indicate music change
-            if (this.soundEnabled) {
-                this.soundManager.playSound('click', 0.3);
-            }
-
-            // Show a brief message with the new melody name
-            this.uiManager.showTemporaryMessage(
-                `Music: ${newMelody.name}`,
-                2000
-            );
+            this.soundManager.playSound('click');
         }
-    }
-
-    toggleLuck() {
-        this.luckEnabled = !this.luckEnabled;
-
-        if (this.soundEnabled) {
-            this.soundManager.playSound('click', 0.3);
-        }
-
-        this.uiManager.showTemporaryMessage(
-            this.luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
-            1500
-        );
-    }
-
-    toggleShake() {
-        this.shakeEnabled = !this.shakeEnabled;
-
-        if (this.drawer && this.drawer.snakeDrawer) {
-            this.drawer.snakeDrawer.setShakeIntensity(this.shakeEnabled ? 0.15 : 0);
-        }
-
-        if (this.soundEnabled) {
-            this.soundManager.playSound('click', 0.3);
-        }
-
-        this.uiManager.showTemporaryMessage(
-            this.shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF",
-            1500
-        );
-    }
-
-    spawnFruitInSnakeDirection() {
-        if (!this.snake) return;
-
-        const head = this.snake.head();
-        let newFruitPos = { x: head.x, y: head.y };
-
-        const offsets = {
-            'up': { x: 0, y: -2 },
-            'down': { x: 0, y: 2 },
-            'left': { x: -2, y: 0 },
-            'right': { x: 2, y: 0 }
-        };
-
-        // Apply offset based on direction
-        const offset = offsets[this.direction];
-        newFruitPos.x += offset.x;
-        newFruitPos.y += offset.y;
-
-        // Clamp positions to game bounds
-        newFruitPos.x = Math.max(0, Math.min(this.tileCount - 1, newFruitPos.x));
-        newFruitPos.y = Math.max(0, Math.min(this.tileCount - 1, newFruitPos.y));
-
-        // Check if position is occupied
-        const positionOccupied =
-            this.snake.isOccupyingPosition(newFruitPos.x, newFruitPos.y) ||
-            this.food.some(f => f.x === newFruitPos.x && f.y === newFruitPos.y);
-
-        if (!positionOccupied) {
-            const specialFruit = {
-                x: newFruitPos.x,
-                y: newFruitPos.y,
-                type: this.getRandomFruit(),
-                spawnTime: Date.now(),
-                lifetime: 10000 + Math.random() * 5000 // 10-15 seconds lifetime
-            };
-
-            this.food.push(specialFruit);
-
-            if (this.soundEnabled) {
-                this.soundManager.playSound('click');
-            }
-        }
-    }
-}
-
-class Snake {
-    constructor(startX, startY) {
-        // Initialize snake with 3 segments
-        this.segments = [
-            { x: startX, y: startY },
-            { x: startX - 1, y: startY },
-            { x: startX - 2, y: startY }
-        ];
-        this.growing = false;
-    }
-
-    getSegments() {
-        return this.segments;
-    }
-
-    head() {
-        return this.segments[0];
-    }
-
-    move(x, y) {
-        this.segments.unshift({ x, y });
-
-        if (!this.growing) {
-            this.segments.pop();
-        } else {
-            this.growing = false;
-        }
-    }
-
-    grow() {
-        this.growing = true;
-    }
-
-    isOccupyingPosition(x, y, skipHead = false) {
-        const startIndex = skipHead ? 1 : 0;
-        return this.segments.slice(startIndex).some(segment =>
-            segment.x === x && segment.y === y
-        );
-    }
-
-    findSafeDirection(currentDirection, boardSize, isPositionSafeCallback) {
-        const oppositeDirections = {
-            'up': 'down',
-            'down': 'up',
-            'left': 'right',
-            'right': 'left'
-        };
-
-        // Get all directions except the opposite of current
-        const possibleDirections = ['up', 'down', 'left', 'right'].filter(d =>
-            d !== oppositeDirections[currentDirection]
-        );
-
-        // Shuffle for randomness
-        possibleDirections.sort(() => Math.random() - 0.5);
-
-        // Check each direction
-        for (const direction of possibleDirections) {
-            const newHead = { x: this.head().x, y: this.head().y };
-
-            const directionOffsets = {
-                'up': { x: 0, y: -1 },
-                'down': { x: 0, y: 1 },
-                'left': { x: -1, y: 0 },
-                'right': { x: 1, y: 0 }
-            };
-
-            const offset = directionOffsets[direction];
-            newHead.x += offset.x;
-            newHead.y += offset.y;
-
-            if (isPositionSafeCallback(newHead.x, newHead.y)) {
-                return direction;
-            }
-        }
-
-        return null;
     }
 }
 

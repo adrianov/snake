@@ -60,8 +60,9 @@ class UIManager {
 
         const soundOnIcon = this.soundToggle.querySelector('.sound-on');
         const soundOffIcon = this.soundToggle.querySelector('.sound-off');
+        const gameState = this.game.gameStateManager.getGameState();
 
-        if (this.game.soundEnabled) {
+        if (gameState.soundEnabled) {
             this.soundToggle.classList.remove('disabled');
             this.soundToggle.title = "Sound ON (S key to toggle)";
             soundOnIcon.classList.remove('hidden');
@@ -79,8 +80,9 @@ class UIManager {
 
         const musicOnIcon = this.musicToggle.querySelector('.music-on');
         const musicOffIcon = this.musicToggle.querySelector('.music-off');
+        const gameState = this.game.gameStateManager.getGameState();
 
-        if (this.game.musicEnabled) {
+        if (gameState.musicEnabled) {
             this.musicToggle.classList.remove('disabled');
             this.musicToggle.title = "Music ON (M key to toggle)";
             musicOnIcon.classList.remove('hidden');
@@ -109,12 +111,12 @@ class UIManager {
         // Show confirmation dialog to confirm reset
         if (confirm('Are you sure you want to reset your high score?')) {
             // Reset high score to 0
-            this.game.highScore = 0;
+            this.game.gameStateManager.highScore = 0;
             localStorage.setItem('snakeHighScore', 0);
             this.updateHighScore(0);
 
             // Play sound if sound is enabled
-            if (this.game.soundEnabled && this.game.soundManager) {
+            if (this.game.soundManager) {
                 this.game.soundManager.playSound('crash');
             }
         }
@@ -132,13 +134,14 @@ class UIManager {
 
     updateMelodyDisplay() {
         if (!this.melodyElement || !this.musicInfoElement) return;
+        const gameState = this.game.gameStateManager.getGameState();
 
-        if (!this.game.musicEnabled || !this.game.musicManager || !this.game.musicManager.getCurrentMelody()) {
+        if (!gameState.musicEnabled || !this.game.musicManager || !this.game.musicManager.getCurrentMelody()) {
             // Clear the melody display when no melody is playing or music is disabled
             this.melodyElement.textContent = '';
 
             // If music is enabled but no melody is playing yet, show "Loading..."
-            if (this.game.musicEnabled && this.game.isGameStarted && !this.game.isPaused) {
+            if (gameState.musicEnabled && gameState.isGameStarted && !gameState.isPaused) {
                 this.melodyElement.textContent = 'Loading...';
                 this.musicInfoElement.classList.add('has-melody');
             } else {

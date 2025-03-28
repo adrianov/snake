@@ -57,8 +57,9 @@ class MusicManagerUtils {
     static startMusicIfEnabled(gameInstance) {
         // Cancel any pending cleanup if we're about to start music
         MusicManagerUtils.cancelPendingCleanup(gameInstance);
+        const gameState = gameInstance.gameStateManager.getGameState();
 
-        if (gameInstance.musicManager && gameInstance.musicEnabled) {
+        if (gameInstance.musicManager && gameState.musicEnabled) {
             gameInstance.musicManager.startMusic();
         }
     }
@@ -70,10 +71,11 @@ class MusicManagerUtils {
      */
     static changeToRandomMelody(gameInstance) {
         // Make sure music is enabled and the game is active
-        if (!gameInstance.musicEnabled ||
-            !gameInstance.isGameStarted ||
-            gameInstance.isPaused ||
-            gameInstance.isGameOver) {
+        const gameState = gameInstance.gameStateManager.getGameState();
+        if (!gameState.musicEnabled ||
+            !gameState.isGameStarted ||
+            gameState.isPaused ||
+            gameState.isGameOver) {
             return null;
         }
 
@@ -103,10 +105,11 @@ class MusicManagerUtils {
     static cleanupAudioResources(gameInstance, delay = 0) {
         // Cancel any pending cleanup first
         MusicManagerUtils.cancelPendingCleanup(gameInstance);
+        const gameState = gameInstance.gameStateManager.getGameState();
 
         // Don't schedule cleanup if game is actively playing
         // This prevents accidentally stopping music during gameplay
-        if (gameInstance.isGameStarted && !gameInstance.isPaused && !gameInstance.isGameOver) {
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             console.debug('Cleanup skipped: game is active');
             return;
         }
@@ -115,7 +118,8 @@ class MusicManagerUtils {
             // Store the timeout ID so it can be cancelled if needed
             const timeoutId = setTimeout(() => {
                 // Double-check game state before cleanup in case it changed during the delay
-                if (gameInstance.isGameStarted && !gameInstance.isPaused && !gameInstance.isGameOver) {
+                const currentGameState = gameInstance.gameStateManager.getGameState();
+                if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
                     console.debug('Delayed cleanup aborted: game is now active');
                     MusicManagerUtils.cleanupTimeouts.delete(gameInstance);
                     return;
@@ -140,13 +144,14 @@ class MusicManagerUtils {
     static performCleanup(gameInstance) {
         // Only clean up music manager if game is over or paused
         // This prevents destroying a music manager that might be in use
-        if (gameInstance.musicManager && (gameInstance.isGameOver || gameInstance.isPaused)) {
+        const gameState = gameInstance.gameStateManager.getGameState();
+        if (gameInstance.musicManager && (gameState.isGameOver || gameState.isPaused)) {
             gameInstance.musicManager.stopMusic(true);
             gameInstance.musicManager = null;
         }
 
         // Only clean up sound manager if game is over or paused
-        if (gameInstance.soundManager && (gameInstance.isGameOver || gameInstance.isPaused)) {
+        if (gameInstance.soundManager && (gameState.isGameOver || gameState.isPaused)) {
             gameInstance.soundManager.closeAudioContext();
         }
     }

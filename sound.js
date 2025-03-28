@@ -179,6 +179,10 @@ class SoundManager {
 
     // Play sound from template - always force resume context
     playSound(soundType) {
+        // Check if sound is enabled in localStorage
+        const soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false';
+        if (!soundEnabled) return;
+
         // Reinitialize audio context if it's closed or null
         if (!this.audioContext || this.audioContext.state === 'closed') {
             this.reinitialize();
@@ -264,6 +268,23 @@ class SoundManager {
             osc.start(now + note.time);
             osc.stop(now + note.time + note.duration);
         }
+    }
+
+    // Check if sound is enabled
+    isSoundEnabled() {
+        return localStorage.getItem('snakeSoundEnabled') !== 'false';
+    }
+
+    // Set sound enabled state
+    setSoundEnabled(enabled) {
+        localStorage.setItem('snakeSoundEnabled', enabled.toString());
+    }
+
+    // Toggle sound enabled state
+    toggleSound() {
+        const currentState = this.isSoundEnabled();
+        this.setSoundEnabled(!currentState);
+        return !currentState;
     }
 }
 
