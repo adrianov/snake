@@ -78,34 +78,34 @@ window.MusicData.MELODIES = {
     },
     'dubinushka': {
         name: 'Dubinushka',
-        tempo: 108,
+        tempo: 84,
         melody: `
-            // Main theme with bass - authentic Russian folk pattern
-            0.5:G4+G2 0.25:A4 0.25:B4 0.5:C5+C3 0.5:B4+G2
-            0.5:A4+D3 0.25:G4 0.25:A4 0.5:B4+G3 0.5:A4+D3
-            0.5:G4+G2 0.25:A4 0.25:B4 0.5:C5+C3 0.5:D5+D3
-            0.5:E5+C3 0.25:D5 0.25:C5 0.5:B4+G3 0.5:A4+D3
+            // Main theme - melodic focus for snake game background
+            0.5:F2+F1 0.5:G2+G1 0.75:C3+C2 0.25:REST // F,G,C - opening pattern
+            0.5:C3+C2 0.25:REST 0.25:C3 0.75:C3+C2 0.25:REST // C-C-C - sustained
+            0.5:A2+A1 0.5:G2+G1 0.75:C3+C2 0.25:REST // A,G,C - response
+            0.5:F2+F1 0.25:REST 0.25:F2 0.75:F2+F1 0.25:REST // F-F-F - bass line
 
-            // Second phrase with call and response pattern
-            0.25:G4+G2 0.25:G4 0.25:B4 0.25:D5 0.5:G5+G3 0.5:F5+D3
-            0.25:E5+C3 0.25:E5 0.25:D5 0.25:C5 0.5:B4+G3 0.5:A4+D3
-            0.25:G4+G2 0.25:G4 0.25:B4 0.25:D5 0.5:G5+G3 0.5:F5+D3
-            0.25:E5+C3 0.25:D5 0.25:C5 0.25:B4 0.75:A4+D3 0.25:B4
+            // Second section - more melodic development
+            0.5:F2+F1 0.25:REST 0.25:F2 0.75:C#3+C#2 0.25:REST // F-F-C# - rise
+            0.5:A2+A1 0.25:A2 0.25:C3 0.75:A2+A1 0.25:REST // A-A,C-A - melodic figure
+            0.5:G2+G1 0.25:A2 0.25:C3 0.75:C3+C2 0.25:REST // G-A,C-C - ascending
+            0.75:C3+C2 0.25:REST 0.5:C3+C2 0.5:REST // C- - sustained note
 
-            // Third part with harmonic richness
-            0.5:C5+C3 0.25:C5 0.25:D5 0.5:E5+C3 0.5:G5+G3
-            0.5:F5+D3 0.25:E5 0.25:D5 0.5:C5+C3 0.5:E5+C3
-            0.5:D5+G2 0.25:C5 0.25:B4 0.5:A4+D3 0.5:C5+C3
-            0.5:B4+G2 0.25:A4 0.25:G4 1.0:G4+B4+D5+G2 0.5:REST
+            // Harmonic section - simplified chords
+            0.5:C3+F3+A3 0.5:C#3+F3+A3 0.75:A2+C#3+F3 0.25:REST // C-C#-A - chord motion
+            0.5:A2+C3+F3 0.5:G2+C3+E3 0.75:G2+B2+D3 0.25:REST // A-G-G - descent
+            0.5:G#2+B2+D3 0.5:A2+C3+E3 0.75:F2+A2+C3 0.25:REST // G#-A-F - modal shift
 
-            // Final section with traditional Russian cadence
-            0.5:G4+B4+D5+G2 // G major chord
-            0.5:A4+C5+E5+A2 // A minor chord
-            0.5:B4+D5+G5+G2 // G/B chord
-            0.5:C5+E5+G5+C3 // C major chord
-            0.5:D5+F#5+A5+D3 // D major chord
-            0.5:G4+B4+D5+G2 // G major chord
-            1.0:G3+B3+D4+G4+B4+D5+G2 // Full G major chord
+            // Final section - return to main theme with slight variation
+            0.5:F2+F1 0.5:G2+G1 0.75:C3+C2 0.25:REST // F,G,C - return
+            0.5:C3+C2 0.25:REST 0.25:C3 0.75:C3+C2 0.25:REST // C-C-C - echo
+            0.5:A2+A1 0.5:G2+G1 0.75:C3+C2 0.25:C3 // A,G,C - closing
+
+            // Ending with simple chord progression
+            0.75:F2+A2+C3 // F minor
+            0.75:C3+E3+G3 // C major
+            1.0:F1+F2+A2+C3 // Final F minor
         `
     },
     'mario': {
