@@ -52,30 +52,44 @@ window.MusicData.MELODIES = {
         name: 'Korobeiniki (Tetris Theme)',
         tempo: 120,
         melody: `
-            // Main Theme with integrated bass (Traditional Russian folk song)
-            0.5:E5+E3 0.25:B4 0.25:C5 0.25:D5 0.5:C5+E3 0.25:B4
-            0.5:A4+A3 0.25:A4 0.25:C5 0.25:E5 0.5:D5+A3 0.25:C5
-            0.5:B4+G#3 0.25:B4 0.25:C5 0.25:D5 0.5:E5+G#3 0.5:C5
-            0.5:A4+A3 0.5:A4 0.75:REST
+            // Main Theme with integrated bass - measure by measure from ABC notation
+            0.5:E5+E3 0.25:B4 0.25:C5 // B2 FG - 1st measure
+            0.5:D5+D3 0.25:C5 0.25:B4 // A2 GF - 2nd measure
+            0.5:A4+A3 0.25:A4 0.25:C5 // E2 EG - 3rd measure
+            0.5:E5+E3 0.25:D5 0.25:C5 // B2 AG - 4th measure
+            0.75:B4+G#3 0.25:C5 // F3 G - 5th measure
+            0.5:D5+D3 0.5:E5+E3 // A2 B2 - 6th measure
+            0.5:C5+C3 0.5:A4+A3 // G2 E2 - 7th measure
+            0.5:A4+A3 0.5:REST // E2 z2 - 8th measure
 
-            // Second phrase with integrated bass
-            0.25:D5+D3 0.5:F5 0.25:A5 0.5:G5+D3 0.25:F5
-            0.5:E5+A3 0.25:E5 0.25:C5 0.25:E5 0.5:D5+A3 0.25:C5
-            0.5:B4+G#3 0.25:B4 0.25:C5 0.25:D5 0.5:E5+G#3 0.5:C5
-            0.5:A4+A3 0.5:A4 0.75:REST
+            // Second phrase with integrated bass - A2- Ac|e2 dc|B3 G|...
+            0.5:D5+D3 0.25:D5 0.25:F5 // A2- Ac - 1st measure
+            0.5:A5+A3 0.25:G5 0.25:F5 // e2 dc - 2nd measure
+            0.75:E5+E3 0.25:C5 // B3 G - 3rd measure
+            0.5:E5+E3 0.25:D5 0.25:C5 // B2 AG - 4th measure
+            0.5:B4+B3 0.25:B4 0.25:C5 // F2 FG - 5th measure
+            0.5:D5+D3 0.5:E5+E3 // A2 B2 - 6th measure
+            0.5:C5+C3 0.5:A4+A3 // G2 E2 - 7th measure
+            0.5:A4+A3 0.5:REST // E2 z2 - 8th measure
 
-            // Second Part with integrated bass
-            0.5:E4+A2 0.5:C4+E3 0.5:D4+A2 0.5:B3+E3
-            0.5:C4+A2 0.5:A3+E3
-            0.5:G#3+A2 0.5:B3+E3 1.0:E4+E2
-            0.5:C4+A2 0.5:D4+E3 0.5:B3+A2
-            0.5:C4+E3 0.25:E4 0.5:A4 0.5:G#4 1.0:E4
+            // Middle low section - B4|G4|A4|F4|G4|E4|^D4 -|- ^D2 z2||
+            1.0:E4+E2 // B4 - 1st measure
+            1.0:C4+C3 // G4 - 2nd measure
+            1.0:D4+D3 // A4 - 3rd measure
+            1.0:B3+B2 // F4 - 4th measure
+            1.0:C4+C3 // G4 - 5th measure
+            1.0:A3+A2 // E4 - 6th measure
+            1.0:G#3+G#2 // ^D4 - 7th measure
+            0.5:G#3+G#2 0.5:REST // ^D2 z2 - 8th measure
 
-            // Final Section with Chords
-            0.5:E5+E3 0.25:B4 0.25:C5 0.25:D5 0.5:C5+E3 0.25:B4
-            0.5:A4+A3 0.25:A4 0.25:C5 0.25:E5 0.5:D5+A3 0.25:C5
-            0.5:B4+G#3 0.25:B4 0.25:C5 0.25:D5 0.5:E5+G#3 0.5:C5
-            0.5:A4+A3 0.5:A4 1.0:REST
+            // Final section - B4|G4|A4|F4|G2 B2|ee^d2 -|- d2 z2||
+            1.0:E5+E3 // B4 - 1st measure
+            1.0:C5+C3 // G4 - 2nd measure
+            1.0:D5+D3 // A4 - 3rd measure
+            1.0:B4+B3 // F4 - 4th measure
+            0.5:C5+C3 0.5:E5+E3 // G2 B2 - 5th measure
+            0.5:A5+A3 0.5:G#5+G#3 // ee^d2 - 6th measure
+            0.5:G#5+G#3 0.5:REST // d2 z2 - 7th measure
 
             // Final chord progression
             1.0:A4+C5+E5+A3 // A minor chord with bass
