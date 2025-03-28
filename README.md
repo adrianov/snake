@@ -40,6 +40,7 @@ A modern, feature-rich Snake game implemented in HTML5 Canvas and JavaScript. Co
 - Space: Start game / Pause game
 - S: Toggle sound effects
 - M: Toggle background music
+- N: Change to a different music track
 - L: Toggle luck feature (collision avoidance)
 - V: Toggle snake vibration effect
 

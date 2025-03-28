@@ -1027,7 +1027,8 @@ class SceneDrawer {
             "Scientists confirm: No one has ever seen the dark side of this moon either!",
             "Your snake is quite clever - it can avoid collisions 8 out of 10 times on its own.",
             "Different fruits have different scores: Apple (10), Banana (15), Orange (20), Strawberry (25).",
-            "Press 'L' to toggle luck mode, 'V' for vibration, 'S' for sound, and 'M' for music."
+            "Press 'L' to toggle luck mode, 'V' for vibration, 'S' for sound, and 'M' for music.",
+            "Tired of the current music? Press 'N' during gameplay to switch to a different melody!"
         ];
     }
 

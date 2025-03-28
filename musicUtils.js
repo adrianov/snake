@@ -64,6 +64,38 @@ class MusicManagerUtils {
     }
 
     /**
+     * Change to a different random melody
+     * @param {object} gameInstance - The snake game instance
+     * @returns {object|null} The new melody info or null if changing failed
+     */
+    static changeToRandomMelody(gameInstance) {
+        // Make sure music is enabled and the game is active
+        if (!gameInstance.musicEnabled ||
+            !gameInstance.isGameStarted ||
+            gameInstance.isPaused ||
+            gameInstance.isGameOver) {
+            return null;
+        }
+
+        // Cancel any pending cleanup
+        MusicManagerUtils.cancelPendingCleanup(gameInstance);
+
+        // Change to a new random melody
+        if (gameInstance.musicManager) {
+            const newMelodyInfo = gameInstance.musicManager.changeToRandomMelody();
+
+            // Update UI if needed
+            if (gameInstance.uiManager) {
+                gameInstance.uiManager.updateMelodyDisplay();
+            }
+
+            return newMelodyInfo;
+        }
+
+        return null;
+    }
+
+    /**
      * Clean up audio resources completely
      * @param {object} gameInstance - The snake game instance
      * @param {number} delay - Delay in milliseconds before cleanup

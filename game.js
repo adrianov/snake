@@ -198,6 +198,12 @@ class SnakeGame {
             return true;
         }
 
+        if (key === 'n') {
+            event.preventDefault();
+            this.changeMusic();
+            return true;
+        }
+
         if (key === 'l') {
             event.preventDefault();
             this.toggleLuck();
@@ -689,6 +695,24 @@ class SnakeGame {
             }
         } else {
             this.musicManager.stopMusic(false);
+        }
+    }
+
+    changeMusic() {
+        // Use the utility function to handle music change
+        const newMelody = MusicManagerUtils.changeToRandomMelody(this);
+
+        if (newMelody) {
+            // Play a sound to indicate music change
+            if (this.soundEnabled) {
+                this.soundManager.playSound('click', 0.3);
+            }
+
+            // Show a brief message with the new melody name
+            this.uiManager.showTemporaryMessage(
+                `Music: ${newMelody.name}`,
+                2000
+            );
         }
     }
 

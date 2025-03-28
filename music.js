@@ -78,8 +78,19 @@ class MusicManager {
         // Select a random melody ID from the available melodies
         const melodyIds = window.MusicData.getAllMelodyIds();
         if (melodyIds.length > 0) {
-            const randomIndex = Math.floor(Math.random() * melodyIds.length);
-            this.currentMelodyId = melodyIds[randomIndex];
+            // If we have more than one melody and we're already playing one,
+            // make sure we select a different one
+            if (melodyIds.length > 1 && this.currentMelodyId) {
+                // Filter out the current melody ID
+                const availableMelodyIds = melodyIds.filter(id => id !== this.currentMelodyId);
+                // Select a random melody from the filtered list
+                const randomIndex = Math.floor(Math.random() * availableMelodyIds.length);
+                this.currentMelodyId = availableMelodyIds[randomIndex];
+            } else {
+                // Either we're not playing anything yet or there's only one melody
+                const randomIndex = Math.floor(Math.random() * melodyIds.length);
+                this.currentMelodyId = melodyIds[randomIndex];
+            }
             // Save to static property
             MusicManager.currentMelodyId = this.currentMelodyId;
         }
@@ -334,6 +345,27 @@ class MusicManager {
             id: this.currentMelodyId,
             name: melody.name
         };
+    }
+
+    // Change to a random melody and restart the music
+    changeToRandomMelody() {
+        // If music is playing, need to restart with new melody
+        const wasPlaying = this.isPlaying;
+
+        // Stop the current melody
+        if (wasPlaying) {
+            this.stopMusic(false);
+        }
+
+        // Select a new random melody
+        this.selectRandomMelody();
+
+        // Restart the music if it was playing
+        if (wasPlaying) {
+            this.startMusic();
+        }
+
+        return this.getCurrentMelody();
     }
 }
 

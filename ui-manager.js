@@ -11,6 +11,14 @@ class UIManager {
         this.melodyElement = document.getElementById('currentMelody');
         this.musicInfoElement = document.querySelector('.music-info');
 
+        // Element for temporary messages
+        this.tempMessageElement = document.createElement('div');
+        this.tempMessageElement.className = 'temp-message';
+        document.body.appendChild(this.tempMessageElement);
+
+        // Message timeout
+        this.messageTimeout = null;
+
         // Initialize the UI controls
         this.initializeControls();
     }
@@ -154,6 +162,24 @@ class UIManager {
 
         // Show the melody name
         this.musicInfoElement.classList.add('has-melody');
+    }
+
+    showTemporaryMessage(message, duration = 2000) {
+        // Clear any existing message and timeout
+        if (this.messageTimeout) {
+            clearTimeout(this.messageTimeout);
+            this.messageTimeout = null;
+        }
+
+        // Update and show the message
+        this.tempMessageElement.textContent = message;
+        this.tempMessageElement.classList.add('visible');
+
+        // Hide the message after duration
+        this.messageTimeout = setTimeout(() => {
+            this.tempMessageElement.classList.remove('visible');
+            this.messageTimeout = null;
+        }, duration);
     }
 }
 
