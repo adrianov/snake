@@ -73,6 +73,14 @@ class Snake {
 
         return null;
     }
+
+    cutTailAt(index) {
+        // Ensure the index is valid
+        if (index > 0 && index < this.segments.length) {
+            // Keep only segments from 0 to index (inclusive)
+            this.segments = this.segments.slice(0, index);
+        }
+    }
 }
 
 // Export for use in other files

@@ -13,6 +13,7 @@ A modern, feature-rich Snake game implemented in HTML5 Canvas and JavaScript. Co
 - High score persistence using localStorage
 - Modern UI with clean, attractive design
 - Auto-collision avoidance system (luck feature)
+- Tail-cutting survival mechanic
 - Responsive design for all screen sizes
 
 ## How to Play
@@ -29,6 +30,8 @@ A modern, feature-rich Snake game implemented in HTML5 Canvas and JavaScript. Co
 - The background gradually shifts from day to night as the snake grows
 - Each fruit has a different point value: Apple (10), Banana (15), Orange (20), Strawberry (25)
 - The "luck" feature gives your snake an 80% chance to auto-avoid collisions
+- When the snake hits itself, there's a 50% chance it will cut off its tail to survive
+- Score is reduced proportionally when the snake cuts its tail
 - Press the opposite direction key to temporarily slow down the snake
 
 ## Controls
@@ -51,6 +54,9 @@ A modern, feature-rich Snake game implemented in HTML5 Canvas and JavaScript. Co
 - You can slow down the snake by pressing the arrow key opposite to current direction
 - Each fruit has a different score value - strawberries are worth the most!
 - The luck feature helps your snake avoid collisions automatically 80% of the time
+- If you hit yourself, there's a 50% chance your snake will cut its tail to survive
+- The more segments you lose when cutting your tail, the more points you'll lose
+- Use the tail-cutting feature strategically to escape tight situations
 
 ## Running Locally
 

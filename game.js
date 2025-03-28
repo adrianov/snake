@@ -393,7 +393,18 @@ class SnakeGame {
     handleCollision(nextHeadPos) {
         const gameState = this.gameStateManager.getGameState();
 
-        if (gameState.luckEnabled && Math.random() < 0.8) {
+        // First, determine what type of collision this is
+        const isWallCollision = nextHeadPos.x < 0 || nextHeadPos.x >= this.tileCount ||
+            nextHeadPos.y < 0 || nextHeadPos.y >= this.tileCount;
+
+        // Check if it's a self collision by finding which segment we're colliding with
+        const isSelfCollision = !isWallCollision && this.snake.isOccupyingPosition(nextHeadPos.x, nextHeadPos.y, true);
+
+        if (isSelfCollision && Math.random() < 0.5) {
+            // 50% chance to cut tail when snake hits itself
+            this.cutTail(nextHeadPos);
+        } else if (gameState.luckEnabled && Math.random() < 0.8) {
+            // Original luck-based collision handling (80% chance to avoid crash)
             const safeDirection = this.snake.findSafeDirection(
                 this.direction,
                 this.tileCount,
@@ -406,6 +417,56 @@ class SnakeGame {
                 this.gameOver();
             }
         } else {
+            this.gameOver();
+        }
+    }
+
+    cutTail(collisionPos) {
+        const segments = this.snake.getSegments();
+
+        // Find which segment we collided with
+        const collisionIndex = segments.findIndex(segment =>
+            segment.x === collisionPos.x && segment.y === collisionPos.y
+        );
+
+        if (collisionIndex > 0) {  // Make sure we found a valid segment (not the head)
+            // Calculate how many segments will be removed
+            const originalLength = segments.length;
+            const remainingLength = collisionIndex;
+            const removedLength = originalLength - remainingLength;
+
+            // Update score proportionally based on how many segments were lost
+            const currentScore = this.gameStateManager.getScore();
+            const scoreReduction = Math.floor(currentScore * (removedLength / originalLength));
+            const newScore = currentScore - scoreReduction;
+
+            // Update the score in the game state and UI
+            this.gameStateManager.score = newScore; // Direct assignment as there's no "updateScoreAbsolute" method
+            this.uiManager.updateScore(newScore);
+
+            // Cut the tail by removing segments from collisionIndex to the end
+            this.snake.cutTailAt(collisionIndex);
+
+            // Play a sound to indicate tail cutting
+            if (this.gameStateManager.getGameState().soundEnabled) {
+                this.soundManager.playSound('click', 0.5);
+            }
+
+            // Show a message to the player
+            this.uiManager.showTemporaryMessage(
+                `Snake cut its tail! Lost ${scoreReduction} points.`,
+                1800
+            );
+
+            // Move the snake to the next position (avoiding collision)
+            this.snake.move(collisionPos.x, collisionPos.y);
+
+            // Visual effects for tail cutting
+            if (this.drawer && this.drawer.snakeDrawer) {
+                this.drawer.snakeDrawer.triggerLuckGlow();
+            }
+        } else {
+            // Fallback to normal collision handling if we couldn't identify the collision segment
             this.gameOver();
         }
     }
