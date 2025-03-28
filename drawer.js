@@ -54,7 +54,8 @@ class GameDrawer {
             gameState.snake,
             gameState.direction,
             gameState.lastEatenTime,
-            this.glowDuration
+            this.glowDuration,
+            gameState.isGameOver
         );
 
         // Draw game state overlays

@@ -42,6 +42,7 @@ class SnakeGame {
         this.animationFrame = null; // Handle for requestAnimationFrame
         this.boundGameLoop = null; // Bound game loop function
         this.luckEnabled = true; // Enable 50% luck chance to avoid collisions
+        this.shakeEnabled = true; // Enable snake shake effect by default
 
         // Audio settings
         this.soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false'; // Default to enabled
@@ -188,6 +189,13 @@ class SnakeGame {
         if (event.key && event.key.toLowerCase() === 'l') {
             event.preventDefault();
             this.toggleLuck();
+            return;
+        }
+
+        // Handle vibration/shake toggle with 'V' key
+        if (event.key && event.key.toLowerCase() === 'v') {
+            event.preventDefault();
+            this.toggleShake();
             return;
         }
 
@@ -429,6 +437,7 @@ class SnakeGame {
         this.isGameOver = false;
         this.lastGameState = null;
         this.luckEnabled = true; // Reset luck feature to enabled when starting a new game
+        this.shakeEnabled = true; // Reset shake effect to enabled when starting a new game
 
         // Ensure sound manager is ready - don't recreate it to avoid audio context limitations
         if (!this.soundManager) {
@@ -696,11 +705,18 @@ class SnakeGame {
             isPaused: this.isPaused,
             isGameStarted: this.isGameStarted,
             lastEatenTime: this.lastEatenTime,
-            luckEnabled: this.luckEnabled // Add luck status to game state for UI
+            luckEnabled: this.luckEnabled, // Add luck status to game state for UI
+            shakeEnabled: this.shakeEnabled // Add shake status to game state for UI
         };
 
         // Use the drawer to render the game
         this.drawer.draw(gameState);
+
+        // Update shake intensity based on enabled state
+        if (this.drawer && this.drawer.snakeDrawer) {
+            this.drawer.snakeDrawer.setShakeIntensity(this.shakeEnabled ?
+                this.drawer.snakeDrawer.shakeIntensity : 0);
+        }
     }
 
     toggleSound() {
@@ -740,6 +756,27 @@ class SnakeGame {
         // Show a brief message on screen
         this.uiManager.showTemporaryMessage(
             this.luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
+            1500
+        );
+    }
+
+    toggleShake() {
+        this.shakeEnabled = !this.shakeEnabled;
+
+        // Apply shake effect to drawer if it exists
+        if (this.drawer && this.drawer.snakeDrawer) {
+            // Set shake intensity based on enabled state
+            this.drawer.snakeDrawer.setShakeIntensity(this.shakeEnabled ? 0.15 : 0);
+        }
+
+        // Play a sound to indicate shake status change
+        if (this.soundEnabled) {
+            this.soundManager.playSound('click', 0.3);
+        }
+
+        // Show a brief message on screen
+        this.uiManager.showTemporaryMessage(
+            this.shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF",
             1500
         );
     }

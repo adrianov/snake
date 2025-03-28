@@ -11,6 +11,7 @@ class SnakeDrawer {
         // Track visual effects
         this.darknessLevel = 0;   // 0-100: How dark the snake is, 100 = completely black
         this.glowYellowLevel = 0; // 0-100: How yellow the glow is, 100 = bright yellow
+        this.shakeIntensity = 0.15; // Controls how much the snake segments shake (0-1)
 
         // Define target colors for progression effects
         this.targetColors = {
@@ -70,6 +71,7 @@ class SnakeDrawer {
     resetLevels() {
         this.darknessLevel = 0;
         this.glowYellowLevel = 0;
+        this.shakeIntensity = 0.15; // Reset shake to default
         this.updateSprites();
     }
 
@@ -84,8 +86,16 @@ class SnakeDrawer {
         // Cap at 100
         this.glowYellowLevel = Math.min(this.glowYellowLevel, 100);
 
+        // Gradually increase shake intensity as snake grows
+        this.shakeIntensity = Math.min(0.15 + this.darknessLevel * 0.0025, 0.4);
+
         // Regenerate sprites with new darkness level
         this.updateSprites();
+    }
+
+    // Set a specific shake intensity level
+    setShakeIntensity(intensity) {
+        this.shakeIntensity = Math.max(0, Math.min(1, intensity)); // Clamp between 0 and 1
     }
 
     // Update snake colors and regenerate sprites
@@ -111,7 +121,7 @@ class SnakeDrawer {
     }
 
     // Draw snake on the canvas
-    drawSnake(ctx, snake, direction, lastEatenTime, glowDuration) {
+    drawSnake(ctx, snake, direction, lastEatenTime, glowDuration, isGameOver) {
         // Calculate glow effect with pulsing
         const timeSinceEaten = Date.now() - lastEatenTime;
         const glowIntensity = Math.max(0, 1 - (timeSinceEaten / glowDuration));
@@ -123,9 +133,35 @@ class SnakeDrawer {
         // Get current glow color - interpolate between snake primary color and yellow
         const glowColor = this.getYellowishGlowColor();
 
+        // Generate persistent shake offsets for each segment (changes every 100ms)
+        const shakeTime = Math.floor(Date.now() / 100);
+        const shakeSeeds = [];
+        for (let i = 0; i < snake.length; i++) {
+            // Use segment index and current time to create consistent but changing shake
+            const seed1 = Math.sin(shakeTime * 0.1 + i * 0.7) * 10000;
+            const seed2 = Math.cos(shakeTime * 0.1 + i * 0.5) * 10000;
+            shakeSeeds.push({
+                x: (seed1 - Math.floor(seed1)) * 2 - 1,
+                y: (seed2 - Math.floor(seed2)) * 2 - 1
+            });
+        }
+
         snake.forEach((segment, index) => {
-            const x = segment.x * this.gridSize;
-            const y = segment.y * this.gridSize;
+            // Calculate shake offset
+            // Make shake more intense for middle segments, less for head and tail
+            // No shake if game is over, regardless of shake setting
+            const shakeScale = isGameOver ? 0 :
+                              (index === 0 ? 0.1 : // less shake for head
+                              (index === snake.length - 1 ? 0.1 : this.shakeIntensity)); // less shake for tail
+
+            // Apply shake - multiply by gridSize to scale it proportionally
+            const shakeOffset = {
+                x: shakeSeeds[index].x * shakeScale * this.gridSize * 0.2,
+                y: shakeSeeds[index].y * shakeScale * this.gridSize * 0.2
+            };
+
+            const x = segment.x * this.gridSize + shakeOffset.x;
+            const y = segment.y * this.gridSize + shakeOffset.y;
 
             // Determine which sprite to use
             let sprite;
