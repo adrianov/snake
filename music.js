@@ -161,7 +161,7 @@ class MusicManager {
         const musicData = window.MusicData.getMelody(this.currentMelodyId);
         if (!musicData || !musicData.melody) return;
 
-        const melody = musicData.melody;
+        const melody = this.parseMelody(musicData.melody);
         const secondsPerBeat = 60.0 / musicData.tempo;
 
         // Schedule 4 notes at a time for smoother scheduling
@@ -208,6 +208,48 @@ class MusicManager {
                 this.scheduleNotes();
             }
         }, Math.max(nextScheduleTime, 100));
+    }
+
+    parseMelody(melodyData) {
+        // If it's already an array, it's the old format so just return it
+        if (Array.isArray(melodyData)) {
+            return melodyData;
+        }
+
+        // If it's a string, parse it to the array format
+        if (typeof melodyData === 'string') {
+            const parsedMelody = [];
+            // Remove comments and split by whitespace
+            const tokens = melodyData
+                .replace(/\/\/.*$/gm, '') // Remove comments
+                .trim()
+                .split(/\s+/); // Split by whitespace
+
+            for (const token of tokens) {
+                if (!token || token.length === 0) continue;
+
+                // Parse duration:notes format
+                const parts = token.split(':');
+                if (parts.length !== 2) continue;
+
+                const duration = parseFloat(parts[0]);
+
+                if (parts[1] === 'REST') {
+                    // Handle REST case
+                    parsedMelody.push([duration, 'REST']);
+                } else if (parts[1].includes('+')) {
+                    // Handle chord (notes separated by +)
+                    const notes = parts[1].split('+');
+                    parsedMelody.push([duration, notes]);
+                } else {
+                    // Handle single note
+                    parsedMelody.push([duration, parts[1]]);
+                }
+            }
+            return parsedMelody;
+        }
+
+        return [];
     }
 
     playNote(noteName, startTime, duration, isPartOfChord = false) {
