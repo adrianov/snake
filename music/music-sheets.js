@@ -110,34 +110,34 @@ window.MusicData.MELODIES = {
     'dubinushka': {
         name: 'Dubinushka (Russian Folk Song)',
         tempo: 108,
-        melody: [
+        melody: `
             // Main theme with bass - authentic Russian folk pattern
-            [0.5, ['G4', 'G2']], [0.25, 'A4'], [0.25, 'B4'], [0.5, ['C5', 'C3']], [0.5, ['B4', 'G2']],
-            [0.5, ['A4', 'D3']], [0.25, 'G4'], [0.25, 'A4'], [0.5, ['B4', 'G3']], [0.5, ['A4', 'D3']],
-            [0.5, ['G4', 'G2']], [0.25, 'A4'], [0.25, 'B4'], [0.5, ['C5', 'C3']], [0.5, ['D5', 'D3']],
-            [0.5, ['E5', 'C3']], [0.25, 'D5'], [0.25, 'C5'], [0.5, ['B4', 'G3']], [0.5, ['A4', 'D3']],
+            0.5:G4+G2 0.25:A4 0.25:B4 0.5:C5+C3 0.5:B4+G2
+            0.5:A4+D3 0.25:G4 0.25:A4 0.5:B4+G3 0.5:A4+D3
+            0.5:G4+G2 0.25:A4 0.25:B4 0.5:C5+C3 0.5:D5+D3
+            0.5:E5+C3 0.25:D5 0.25:C5 0.5:B4+G3 0.5:A4+D3
 
             // Second phrase with call and response pattern
-            [0.25, ['G4', 'G2']], [0.25, 'G4'], [0.25, 'B4'], [0.25, 'D5'], [0.5, ['G5', 'G3']], [0.5, ['F5', 'D3']],
-            [0.25, ['E5', 'C3']], [0.25, 'E5'], [0.25, 'D5'], [0.25, 'C5'], [0.5, ['B4', 'G3']], [0.5, ['A4', 'D3']],
-            [0.25, ['G4', 'G2']], [0.25, 'G4'], [0.25, 'B4'], [0.25, 'D5'], [0.5, ['G5', 'G3']], [0.5, ['F5', 'D3']],
-            [0.25, ['E5', 'C3']], [0.25, 'D5'], [0.25, 'C5'], [0.25, 'B4'], [0.75, ['A4', 'D3']], [0.25, 'B4'],
+            0.25:G4+G2 0.25:G4 0.25:B4 0.25:D5 0.5:G5+G3 0.5:F5+D3
+            0.25:E5+C3 0.25:E5 0.25:D5 0.25:C5 0.5:B4+G3 0.5:A4+D3
+            0.25:G4+G2 0.25:G4 0.25:B4 0.25:D5 0.5:G5+G3 0.5:F5+D3
+            0.25:E5+C3 0.25:D5 0.25:C5 0.25:B4 0.75:A4+D3 0.25:B4
 
             // Third part with harmonic richness
-            [0.5, ['C5', 'C3']], [0.25, 'C5'], [0.25, 'D5'], [0.5, ['E5', 'C3']], [0.5, ['G5', 'G3']],
-            [0.5, ['F5', 'D3']], [0.25, 'E5'], [0.25, 'D5'], [0.5, ['C5', 'C3']], [0.5, ['E5', 'C3']],
-            [0.5, ['D5', 'G2']], [0.25, 'C5'], [0.25, 'B4'], [0.5, ['A4', 'D3']], [0.5, ['C5', 'C3']],
-            [0.5, ['B4', 'G2']], [0.25, 'A4'], [0.25, 'G4'], [1.0, ['G4', 'B4', 'D5', 'G2']], [0.5, 'REST'],
+            0.5:C5+C3 0.25:C5 0.25:D5 0.5:E5+C3 0.5:G5+G3
+            0.5:F5+D3 0.25:E5 0.25:D5 0.5:C5+C3 0.5:E5+C3
+            0.5:D5+G2 0.25:C5 0.25:B4 0.5:A4+D3 0.5:C5+C3
+            0.5:B4+G2 0.25:A4 0.25:G4 1.0:G4+B4+D5+G2 0.5:REST
 
             // Final section with traditional Russian cadence
-            [0.5, ['G4', 'B4', 'D5', 'G2']], // G major chord
-            [0.5, ['A4', 'C5', 'E5', 'A2']], // A minor chord
-            [0.5, ['B4', 'D5', 'G5', 'G2']], // G/B chord
-            [0.5, ['C5', 'E5', 'G5', 'C3']], // C major chord
-            [0.5, ['D5', 'F#5', 'A5', 'D3']], // D major chord
-            [0.5, ['G4', 'B4', 'D5', 'G2']], // G major chord
-            [1.0, ['G3', 'B3', 'D4', 'G4', 'B4', 'D5', 'G2']]  // Full G major chord
-        ]
+            0.5:G4+B4+D5+G2 // G major chord
+            0.5:A4+C5+E5+A2 // A minor chord
+            0.5:B4+D5+G5+G2 // G/B chord
+            0.5:C5+E5+G5+C3 // C major chord
+            0.5:D5+F#5+A5+D3 // D major chord
+            0.5:G4+B4+D5+G2 // G major chord
+            1.0:G3+B3+D4+G4+B4+D5+G2 // Full G major chord
+        `
     },
     'mario': {
         name: 'Super Mario Bros. Theme',
@@ -188,25 +188,25 @@ window.MusicData.MELODIES = {
         tempo: 104,
         melody: `
             // John Williams' Imperial March with bass accompaniment
-            0.5:G3+G2 0.5:G3+G2 0.5:G3+G2 0.375:E♭3+E♭2 0.125:B♭3+B♭2
-            0.5:G3+G2 0.375:E♭3+E♭2 0.125:B♭3+B♭2 1.0:G3+G2 0.5:REST
+            0.5:G3+G2 0.5:G3+G2 0.5:G3+G2 0.375:Eb3+Eb2 0.125:Bb3+Bb2
+            0.5:G3+G2 0.375:Eb3+Eb2 0.125:Bb3+Bb2 1.0:G3+G2 0.5:REST
 
-            0.5:D4+D3 0.5:D4+D3 0.5:D4+D3 0.375:E♭4+E♭3 0.125:B♭3+B♭2
-            0.5:G♭3+G♭2 0.375:E♭3+E♭2 0.125:B♭3+B♭2 1.0:G3+G2 0.5:REST
+            0.5:D4+D3 0.5:D4+D3 0.5:D4+D3 0.375:Eb4+Eb3 0.125:Bb3+Bb2
+            0.5:Gb3+Gb2 0.375:Eb3+Eb2 0.125:Bb3+Bb2 1.0:G3+G2 0.5:REST
 
             // Second section with stronger bass
             0.5:G4+G3 0.375:G3+G2 0.125:G3+G2 0.5:G4+G3 0.375:F4+F3 0.125:E4+E3
-            0.5:E♭4+E♭3 0.375:D4+D3 0.125:E♭4+E♭3 0.25:B♭3+B♭2 0.25:D4+D3 0.25:B♭3+B♭2 0.25:D4+D3
-            0.5:G4+G3 0.375:E♭4+E♭3 0.125:G4+G3 0.5:B♭4+B♭3 0.375:G4+G3 0.125:D5+D4
+            0.5:Eb4+Eb3 0.375:D4+D3 0.125:Eb4+Eb3 0.25:Bb3+Bb2 0.25:D4+D3 0.25:Bb3+Bb2 0.25:D4+D3
+            0.5:G4+G3 0.375:Eb4+Eb3 0.125:G4+G3 0.5:Bb4+Bb3 0.375:G4+G3 0.125:D5+D4
 
             // Final section with full orchestration
             0.5:G4+G3 0.375:G3+G2 0.125:G3+G2 0.5:G4+G3 0.375:F4+F3 0.125:E4+E3
-            0.5:E♭4+E♭3 0.375:D4+D3 0.125:E♭4+E♭3 0.25:B♭3+B♭2 0.25:D4+D3 0.25:B♭3+B♭2 0.25:D4+D3
-            0.5:G4+G3 0.375:E♭4+E♭3 0.125:G4+G3 0.5:D4+D3 0.375:B♭3+B♭2 0.125:G3+G2
+            0.5:Eb4+Eb3 0.375:D4+D3 0.125:Eb4+Eb3 0.25:Bb3+Bb2 0.25:D4+D3 0.25:Bb3+Bb2 0.25:D4+D3
+            0.5:G4+G3 0.375:Eb4+Eb3 0.125:G4+G3 0.5:D4+D3 0.375:Bb3+Bb2 0.125:G3+G2
 
             // Final chord
-            1.0:G3+B♭3+D4+G4 // G minor chord
-            1.0:G2+D3+G3+B♭3+D4 // G minor full orchestral chord
+            1.0:G3+Bb3+D4+G4 // G minor chord
+            1.0:G2+D3+G3+Bb3+D4 // G minor full orchestral chord
         `
     },
     'rains-of-castamere': {
@@ -234,7 +234,7 @@ window.MusicData.MELODIES = {
             // Final section with rich harmonies
             0.5:D4+F4+A4+D3 // D minor chord
             0.5:C4+E4+G4+C3 // C major chord
-            0.5:B♭3+D4+F4+B♭2 // B♭ major chord
+            0.5:Bb3+D4+F4+Bb2 // Bb major chord
             0.5:A3+C4+E4+A2 // A minor chord
             0.5:D4+F4+A4+D3 // D minor chord
             0.5:A3+C4+E4+A2 // A minor chord
@@ -259,25 +259,25 @@ window.MusicData.MELODIES = {
 
             // Second section - traditional Jewish progression
             0.25:A5+F3 0.25:A5 0.25:A5+F3 0.25:G5
-            0.5:F5+B♭3 0.25:E5 0.25:D5
+            0.5:F5+Bb3 0.25:E5 0.25:D5
             0.5:E5+A3 0.25:F5 0.25:G5
             0.5:A5+D3 0.5:REST
 
             0.25:A5+F3 0.25:A5 0.25:A5+F3 0.25:G5
-            0.5:F5+B♭3 0.25:E5 0.25:D5
+            0.5:F5+Bb3 0.25:E5 0.25:D5
             0.5:C#5+A3 0.25:D5 0.25:E5
             0.5:D5+D3 0.5:REST
 
             // Third section - rhythmic variation
-            0.25:F5+B♭3 0.125:F5 0.125:F5 0.25:F5+B♭3 0.25:E5
+            0.25:F5+Bb3 0.125:F5 0.125:F5 0.25:F5+Bb3 0.25:E5
             0.25:D5+F3 0.125:D5 0.125:D5 0.25:D5+F3 0.25:C5
-            0.25:B♭4+B♭3 0.125:B♭4 0.125:B♭4 0.25:C5+A3 0.25:D5
+            0.25:Bb4+Bb3 0.125:Bb4 0.125:Bb4 0.25:C5+A3 0.25:D5
             0.5:C#5+A3 0.5:D5+D3
 
             // Final section with traditional Jewish cadence
             0.5:D5+F5+A5+D3 // D minor chord
             0.5:A4+C#5+E5+A3 // A major chord
-            0.5:B♭4+D5+F5+B♭3 // B♭ major chord
+            0.5:Bb4+D5+F5+Bb3 // Bb major chord
             0.5:A4+C#5+E5+A3 // A major chord
             0.5:D5+F5+A5+D3 // D minor chord
             0.5:A4+C#5+E5+A3 // A major chord
@@ -477,7 +477,7 @@ window.MusicData.MELODIES = {
             // Final chord progression
             0.75:D4+F4+A4+D3 // D minor chord
             0.75:F4+A4+C5+F3 // F major chord
-            0.75:G4+B♭4+D5+G3 // G minor chord
+            0.75:G4+Bb4+D5+G3 // G minor chord
             0.75:A4+C5+E5+A3 // A minor chord
             1.5:D3+A3+D4+F4+A4 // Final D minor chord
         `
@@ -543,47 +543,47 @@ window.MusicData.MELODIES = {
         tempo: 135,
         melody: `
             // Intro - iconic electronic theme in C minor (composed by David Whittaker)
-            0.25:C5+C3 0.25:E♭5+C3 0.25:G5+C3 0.25:E♭5+C3
-            0.25:C5+C3 0.25:E♭5+C3 0.25:G5+C3 0.25:E♭5+C3
-            0.25:C5+G2 0.25:E♭5+G2 0.25:G5+G2 0.25:E♭5+G2
-            0.25:C5+G2 0.25:E♭5+G2 0.25:G5+G2 0.25:E♭5+G2
+            0.25:C5+C3 0.25:Eb5+C3 0.25:G5+C3 0.25:Eb5+C3
+            0.25:C5+C3 0.25:Eb5+C3 0.25:G5+C3 0.25:Eb5+C3
+            0.25:C5+G2 0.25:Eb5+G2 0.25:G5+G2 0.25:Eb5+G2
+            0.25:C5+G2 0.25:Eb5+G2 0.25:G5+G2 0.25:Eb5+G2
 
             // Main theme - simplified for gameplay
-            0.25:C5+C3 0.25:E♭5 0.25:G5+G2 0.25:B♭5
-            0.25:C6+C3 0.25:B♭5 0.25:G5+G2 0.25:E♭5
-            0.25:D5+G2 0.25:F5 0.25:G5+G2 0.25:B♭5
-            0.25:C6+C3 0.25:B♭5 0.25:G5+G2 0.25:F5
+            0.25:C5+C3 0.25:Eb5 0.25:G5+G2 0.25:Bb5
+            0.25:C6+C3 0.25:Bb5 0.25:G5+G2 0.25:Eb5
+            0.25:D5+G2 0.25:F5 0.25:G5+G2 0.25:Bb5
+            0.25:C6+C3 0.25:Bb5 0.25:G5+G2 0.25:F5
 
             // Second section - rhythmic melody
             0.25:C5+C3 0.25:REST 0.25:G5+G2 0.25:REST
-            0.25:E♭5+E♭3 0.25:E♭5 0.25:G5+G2 0.25:G5
-            0.25:A♭5+A♭2 0.25:REST 0.25:E♭6+E♭3 0.25:REST
-            0.25:C6+F3 0.25:A♭5 0.25:G5+G2 0.25:E♭5
+            0.25:Eb5+Eb3 0.25:Eb5 0.25:G5+G2 0.25:G5
+            0.25:Ab5+Ab2 0.25:REST 0.25:Eb6+Eb3 0.25:REST
+            0.25:C6+F3 0.25:Ab5 0.25:G5+G2 0.25:Eb5
 
             // Third section - simplified arpeggios
-            0.25:C5+C3 0.25:E♭5 0.25:G5+C3 0.25:C6
-            0.25:B♭4+G2 0.25:D5 0.25:G5+G2 0.25:B♭5
-            0.25:A♭4+A♭2 0.25:C5 0.25:E♭5+A♭2 0.25:A♭5
-            0.25:F4+F2 0.25:A♭4 0.25:C5+F2 0.25:F5
+            0.25:C5+C3 0.25:Eb5 0.25:G5+C3 0.25:C6
+            0.25:Bb4+G2 0.25:D5 0.25:G5+G2 0.25:Bb5
+            0.25:Ab4+Ab2 0.25:C5 0.25:Eb5+Ab2 0.25:Ab5
+            0.25:F4+F2 0.25:Ab4 0.25:C5+F2 0.25:F5
 
             // Bridge section - alternating between chords
-            0.25:C5+C3 0.25:G4+C3 0.25:E♭5+C3 0.25:G4+C3
+            0.25:C5+C3 0.25:G4+C3 0.25:Eb5+C3 0.25:G4+C3
             0.25:C5+G2 0.25:G4+G2 0.25:D5+G2 0.25:G4+G2
-            0.25:A♭4+A♭2 0.25:E♭4+A♭2 0.25:C5+A♭2 0.25:E♭4+A♭2
-            0.25:B♭4+B♭2 0.25:F4+B♭2 0.25:D5+B♭2 0.25:F4+B♭2
+            0.25:Ab4+Ab2 0.25:Eb4+Ab2 0.25:C5+Ab2 0.25:Eb4+Ab2
+            0.25:Bb4+Bb2 0.25:F4+Bb2 0.25:D5+Bb2 0.25:F4+Bb2
 
             // Final section - simplified main theme reprise
-            0.25:C5+C3 0.25:E♭5 0.25:G5+G2 0.25:B♭5
-            0.25:C6+C3 0.25:B♭5 0.25:G5+G2 0.25:E♭5
-            0.25:D5+G2 0.25:F5 0.25:G5+G2 0.25:B♭5
-            0.25:C6+C3 0.25:B♭5 0.25:G5+G2 0.25:F5
+            0.25:C5+C3 0.25:Eb5 0.25:G5+G2 0.25:Bb5
+            0.25:C6+C3 0.25:Bb5 0.25:G5+G2 0.25:Eb5
+            0.25:D5+G2 0.25:F5 0.25:G5+G2 0.25:Bb5
+            0.25:C6+C3 0.25:Bb5 0.25:G5+G2 0.25:F5
 
             // Closing phrase - descending run at moderate pace
-            0.25:C6+C3 0.25:B♭5 0.25:A♭5+A♭2 0.25:G5
-            0.25:F5+F2 0.25:E♭5 0.25:D5+G2 0.25:C5
+            0.25:C6+C3 0.25:Bb5 0.25:Ab5+Ab2 0.25:G5
+            0.25:F5+F2 0.25:Eb5 0.25:D5+G2 0.25:C5
             0.5:C5+C3 0.5:C5+C3
-            0.5:C5+E♭5+G5+C3 0.5:G4+C5+E♭5+G2 // C minor chords
-            1.0:C3+G3+C4+E♭4+G4+C5 // Final C minor chord with full harmonics
+            0.5:C5+Eb5+G5+C3 0.5:G4+C5+Eb5+G2 // C minor chords
+            1.0:C3+G3+C4+Eb4+G4+C5 // Final C minor chord with full harmonics
         `
     }
 };
