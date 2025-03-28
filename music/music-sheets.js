@@ -611,6 +611,68 @@ window.MusicData.MELODIES = {
             // Final chord
             1.0:D3+A3+D4+F4+A4 // Final Dm chord with full harmonics
         `
+    },
+    'agua-de-beber': {
+        name: 'Agua de Beber',
+        tempo: 70, // Slowed down for a more relaxed feel
+        melody: `
+            // Main theme - Bossa Nova rhythm in A minor with rich accompaniment
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.5:A3+C3+E3 0.5:C4+A2+E3 // c/A/G/A/-A>c - Am7 chord with fuller voicing
+            0.25:Eb4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.25:D4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.5:D4+B2+D3+F#3 0.5:C4+E2+G#2+B2 // _e/_e/d/_e/"E7"dc - B7 to E7 with richer harmony
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.5:A3+C3+E3 0.5:C4+A2+E3 // c/A/G/A/-A>c - Am7 chord with fuller voicing
+            0.25:Eb4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.25:D4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.5:D4+B2+D3+F#3 0.5:C4+E2+G#2+B2 // _e/_e/d/_e/"E7"dc - B7 to E7 with enhanced bass
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.75:A3+C3+E3 // c/A/G/A/-A2 - Am7 chord with sustained voicing
+            0.25:A3+F2+A2+C3 0.25:G3+F2+A2+C3 1.0:A3+F2+A2+C3 // A/G/A3 - Fmaj7 chord with fuller harmonization
+            0.25:A3+A2+C3+E3 0.25:G3+A2+C3+E3 1.0:A3+A2+C3+E3 // A/G/A3- - Am7 chord with sustained accompaniment
+            0.75:A3+E2+G#2+B2 0.75:REST // "E7"A2 z2 - E7 chord with fuller harmonics
+
+            // Second section - gentler phrasing with enhanced accompaniment
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.5:A3+C3+E3 0.5:C4+A2+E3 // c/A/G/A/-A>c - Am7 chord
+            0.25:Eb4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.25:D4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.5:D4+B2+D3+F#3 0.5:C4+E2+G#2+B2 // _e/_e/d/_e/"E7"dc - B7 to E7
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.5:A3+C3+E3 0.5:C4+A2+E3 // c/A/G/A/-A>c - Am7 chord
+            0.25:Eb4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.25:D4+B2+D3+F#3 0.25:Eb4+D3+F#3 0.5:D4+B2+D3+F#3 0.5:C4+E2+G#2+B2 // _e/_e/d/_e/"E7"dc - B7 to E7
+            0.25:C4+A2+E3 0.25:A3+C3+E3 0.25:G3+C3+E3 0.25:A3+C3+E3 0.75:A3+C3+E3 // c/A/G/A/-A2 - Am7 chord
+            0.25:A3+F2+A2+C3 0.25:G3+F2+A2+C3 1.0:A3+F2+A2+C3 // A/G/A3 - Fmaj7 chord
+            0.25:A3+A2+C3+E3 0.25:G3+A2+C3+E3 1.0:A3+A2+C3+E3 // A/G/A3 - Am7 chord
+            0.5:A3+E2+G#2+B2 0.25:C4+A2+C3+E3 0.25:E4+A2+C3+E3 0.5:Eb4+B2+D3+F#3 // zA/ce\_e/- - transition to B section with harmonic support
+
+            // B section - bridge with enriched accompaniment
+            0.75:Eb4+B2+D3+F#3 0.5:Eb4+B2+D3+F#3 0.25:E4+B2+D3+F#3 0.25:C4+B2+D3+F#3 // \_e2-\_e/=ec/- - B7 chord with sustained harmonies
+            0.75:C4+E2+G#2+B2 0.5:C4+E2+G#2+B2 0.25:A3+E2+G#2+B2 0.25:C4+E2+G#2+B2 // "E7"c2-c/Ac/- - E7 chord with fuller voicing
+            0.25:C4+A2+C3+E3 0.25:A3+A2+C3+E3 1.0:A3+A2+C3+E3+G3 // c/A/-A3 - Am7 chord with extended 7th
+            0.5:A3+D2+F#2+A2+C3 0.25:C4+D2+F#2+A2+C3 0.25:E4+D2+F#2+A2+C3 0.5:G4+D2+F#2+A2+C3 // "D7"zA/ceg/- - D7 chord with complete voicing
+            0.75:G4+D2+F3+A3 0.5:G4+D2+F3+A3 0.25:A4+D2+F3+A3 0.25:E4+D2+F3+A3 // "Dm7"g2-g/ae/- - Dm7 chord with full accompaniment
+            0.75:E4+G2+B2+D3+F3 0.5:E4+G2+B2+D3+F3 0.25:D4+G2+B2+D3+F3 0.25:E4+G2+B2+D3+F3 // "G7"e2-e/de/- - G7 chord with rich 9th voicing
+            1.5:E4+C2+E2+G2+B2 // "Cmaj7"e4- - Cmaj7 chord with sustained maj7 harmony
+            0.75:E4+C2+E2+G2+B2 0.25:A3+A2+C3+E3 0.25:C4+A2+C3+E3 0.5:Eb4+B2+D3+F#3 // eA/ce\_e/- - transition with smooth chord movement
+
+            // Second B section - with richer harmonization
+            0.75:Eb4+B2+D3+F#3 0.5:Eb4+B2+D3+F#3 0.25:E4+B2+D3+F#3 0.25:C4+B2+D3+F#3 // \_e2-\_e/=ec/- - B7 chord with extended voicing
+            0.75:C4+E2+G#2+B2 0.5:C4+E2+G#2+B2 0.25:A3+E2+G#2+B2 0.25:C4+E2+G#2+B2 // "E7"c2-c/Ac/- - E7 chord with complete harmony
+            0.25:C4+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 1.0:A3+A2+C3+E3+G3 // c/A/-A3- - Am7 chord with full voicing
+            0.75:A3+C2+E2+G2+Bb2 0.5:A3+C2+E2+G2+Bb2 0.25:C4+C2+E2+G2+Bb2 0.25:C4+C2+E2+G2+Bb2 // "C7"A2-A/cc/- - C7 chord with rich dominant voicing
+            0.25:C4+B2+D3+F#3 0.25:C4+B2+D3+F#3 0.25:C4+B2+D3+F#3 0.25:C4+B2+D3+F#3 0.5:D4+B2+D3+F#3 // "B7"c/ccc/d - B7 chord with sustained harmony
+            0.75:B3+E2+G#2+B2+D3 0.5:F#3+E2+G#2+B2+D3 0.5:A3+E2+G#2+B2+D3 // "E7sus"B2^F>A - E7sus chord with 9th
+            0.25:C4+A2+C3+E3+G3 0.25:B3+A2+C3+E3+G3 1.0:A3+A2+C3+E3+G3 // "Am7"c/B/A3- - Am7 chord with full voicing
+            0.5:A3+A2+C#3+E3+G3 0.25:A3+A2+C#3+E3+G3 0.25:A3+A2+C#3+E3+G3 0.25:C4+A2+C#3+E3+G3 0.25:E4+A2+C#3+E3+G3 0.5:D4+A2+C#3+E3+G3 // "A7"AA/A/c/ed/- - A7 chord with extended dominant
+
+            // Final section - outro with rich harmonization
+            1.5:D4+D2+F#2+A2+C3 // "D7"d4- - D7 chord with full dominant 7th voicing
+            0.5:D4+D2+F3+A3 0.25:E4+D2+F3+A3 0.25:D4+D2+F3+A3 0.25:C4+D2+F3+A3 0.25:A3+D2+F3+A3 0.5:C4+D2+F3+A3 // "Dm7"de/d/c/Ac/- - Dm7 chord with rich texture
+            0.25:C4+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.75:A3+A2+C3+E3+G3 // "Am7"c/A/A/A/-A2 - Am7 chord with extended voicing
+            0.5:A3+A2+C#3+E3+G3 0.25:A3+A2+C#3+E3+G3 0.25:A3+A2+C#3+E3+G3 0.25:C4+A2+C#3+E3+G3 0.25:E4+A2+C#3+E3+G3 0.5:D4+A2+C#3+E3+G3 // "A7"AA/A/c/ed/- - A7 chord with rich dominant texture
+            1.5:D4+D2+F#2+A2+C3 // "D7"d4- - D7 chord with full dominant 7th
+            0.5:D4+D2+F3+A3 0.25:E4+D2+F3+A3 0.25:D4+D2+F3+A3 0.25:C4+D2+F3+A3 0.25:A3+D2+F3+A3 0.5:C4+D2+F3+A3 // "Dm7"de/d/c/Ac/- - Dm7 chord with sustained voices
+            0.25:C4+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.25:A3+A2+C3+E3+G3 0.5:A3+A2+C3+E3+G3 // "Am7"c/A/A/AA/A- - Am7 chord with full texture
+            0.5:A3+E2+G#2+B2+D3 0.75:REST // "E7"Azz2 - E7 chord with 9th and space
+
+            // Final chord progression with rich, full harmony
+            0.75:A3+C4+E4+A2+E3 // A minor chord with doubled voices
+            0.75:E3+G#3+B3+E2+B2 // E major chord with rich voicing
+            0.75:A3+C4+E4+A2+E3 // A minor chord with fuller texture
+            0.75:D3+F3+A3+D2+A2 // D minor chord with doubled bass
+            1.5:A2+E3+A3+C4+E4+A4 // Final A minor chord with full range
+        `
     }
 }
 
