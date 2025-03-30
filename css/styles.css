@@ -52,7 +52,7 @@ body {
     width: 100vw;
     max-width: 100vw;
     margin: 0;
-    padding: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); /* Add safe area insets */
     grid-template-rows: auto 1fr auto;
     grid-template-areas: 
         "header"
@@ -86,6 +86,9 @@ body {
     width: 100%;
     max-width: 100%;
     overflow: hidden;
+    /* Ensure content doesn't overflow on iOS devices */
+    height: 100%;
+    min-height: 0;
 }
 
 /* Footer */
@@ -990,25 +993,33 @@ body {
 /* iPad and larger tablets */
 @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
     .canvas-wrapper {
-        max-width: 98vw;
+        max-width: 650px; /* Use consistent fixed width */
+        width: 650px;
+        aspect-ratio: 1; /* Force 1:1 aspect ratio */
+        margin-top: 10px;
+        padding-bottom: 0; /* Override percentage padding */
     }
     
     .game-controls {
-        max-width: 98vw;
+        max-width: 650px;
+        width: 650px;
     }
     
     .game-container {
         gap: 8px;
-        padding: 0 3px;
+        padding: 5px 3px; /* Reduce top padding */
+        justify-content: flex-start; /* Align content to top instead of center */
     }
     
     .game-header {
         padding: 3px;
+        height: auto; /* Ensure header doesn't take too much vertical space */
+        min-height: 40px;
     }
     
     /* Reduce spacing between elements */
     .score-container {
-        gap: 15px;
+        gap: 12px;
         padding: 6px 10px;
     }
     
@@ -1020,6 +1031,125 @@ body {
     /* Adjust donation button spacing */
     .header-buttons {
         gap: 8px;
+    }
+    
+    /* Additional styling for melody display */
+    .melody-display {
+        max-width: 130px;
+        overflow: hidden;
+    }
+    
+    .melody-content {
+        justify-content: flex-start; /* Left align melody content */
+        max-width: 100%;
+    }
+    
+    #currentMelody {
+        max-width: 90px; /* Limit width to avoid overflow */
+        font-size: 0.8rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    
+    /* Slim down controls */
+    .music-info {
+        padding: 4px 6px;
+        gap: 5px;
+    }
+    
+    .control-toggle {
+        min-width: 25px;
+        padding: 3px 4px;
+    }
+    
+    .control-icon {
+        font-size: 14px;
+        margin-bottom: 1px;
+    }
+    
+    .music-icon {
+        font-size: 0.9rem;
+    }
+}
+
+/* Specific fix for iPad in portrait mode (768x1024) */
+@media only screen and (width: 768px) and (height: 1024px) and (orientation: portrait) {
+    .game-layout {
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        padding: 0; /* Remove safe area insets */
+    }
+    
+    .game-header {
+        padding: 2px 0;
+        min-height: 30px;
+    }
+    
+    .canvas-wrapper {
+        max-width: 650px; /* Fixed pixel width instead of percentage */
+        width: 650px;
+        height: 650px; /* Explicitly set height */
+        padding-bottom: 0; /* Override percentage padding */
+        margin-top: 10px;
+        aspect-ratio: 1; /* Force 1:1 aspect ratio */
+    }
+    
+    .game-controls {
+        max-width: 650px;
+        width: 650px;
+    }
+    
+    .game-container {
+        padding-top: 5px;
+        justify-content: flex-start;
+        gap: 5px; /* Reduce gap between elements */
+    }
+    
+    /* Optimize score container for iPad */
+    .score-container {
+        display: grid;
+        grid-template-columns: 1fr 1.3fr 1fr; /* Further reduce middle column */
+        gap: 8px;
+        padding: 4px 6px;
+    }
+    
+    /* Optimize music display area */
+    .music-info {
+        padding: 3px 5px;
+        gap: 4px;
+    }
+    
+    /* Make control buttons smaller */
+    .control-toggle {
+        min-width: 22px;
+        padding: 2px 3px;
+    }
+    
+    /* Reduce font sizes */
+    .score-value {
+        font-size: 1.3rem;
+        min-width: 30px;
+    }
+    
+    .score-label {
+        font-size: 0.7rem;
+    }
+    
+    /* Show melody name in smaller font */
+    #currentMelody {
+        max-width: 70px;
+        font-size: 0.75rem;
+    }
+    
+    /* Make footer smaller */
+    .game-footer {
+        font-size: 0.65rem;
+        padding: 2px;
+    }
+    
+    /* Override for melody display to ensure it fits */
+    .melody-display {
+        max-width: 110px;
     }
 }
 

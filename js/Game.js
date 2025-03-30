@@ -122,13 +122,33 @@ class SnakeGame {
 
     resizeCanvas() {
         const container = this.canvas.parentElement;
-        const size = Math.min(container.clientWidth, container.clientHeight);
-
-        // Calculate grid size based on container
+        
+        // Detect if we're on an iPad-like device
+        const isIPadSize = window.innerWidth === 768 && window.innerHeight === 1024;
+        
+        // Calculate size with special case for iPad where we use container dimensions
+        let size = isIPadSize 
+            ? Math.min(container.clientWidth, container.clientHeight) 
+            : Math.min(container.clientWidth, container.clientHeight);
+        
+        // For iPad, the CSS sets fixed dimensions, so we need to respect those
+        if (isIPadSize) {
+            // On iPad, we have a fixed 650x650 container in CSS
+            size = 650;
+        }
+        
+        // Calculate grid size based on container 
         this.gridSize = Math.min(40, Math.floor(size / 20));
 
         // Ensure tileCount is an integer
         this.tileCount = Math.floor(size / this.gridSize);
+        
+        // For iPad-like devices, ensure we have a good number of tiles
+        if (isIPadSize) {
+            // A nice square grid of 32x32 tiles works well on iPad
+            this.tileCount = 32;
+            this.gridSize = Math.floor(size / this.tileCount);
+        }
 
         // Adjust canvas size to be exactly a multiple of gridSize
         // This eliminates partial cells at the edges
