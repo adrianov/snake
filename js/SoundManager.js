@@ -28,11 +28,9 @@ class SoundManager {
             };
 
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
-
-            // Force resume the context immediately
-            this.resumeAudioContext();
-
-            // Add user interaction listeners to ensure the context stays active
+            
+            // Don't force resume immediately - wait for user interaction
+            // Add user interaction listeners to ensure the context is resumed
             const resumeHandler = () => this.resumeAudioContext();
 
             // These will auto-trigger on first user interaction with the page
@@ -190,8 +188,14 @@ class SoundManager {
 
         if (!this.audioContext || !this.soundTemplates[soundType]) return;
 
-        // Always force resume before playing
-        this.resumeAudioContext();
+        // Only resume if not already running
+        if (this.audioContext.state !== 'running') {
+            this.resumeAudioContext();
+            // If context is still not running, we need user interaction first
+            if (this.audioContext.state !== 'running') {
+                return; // We'll try again after user interaction
+            }
+        }
 
         // Get template and create sound
         const template = this.soundTemplates[soundType];
@@ -232,8 +236,14 @@ class SoundManager {
 
         if (!this.audioContext) return;
 
-        // Always force resume before playing
-        this.resumeAudioContext();
+        // Only resume if not already running
+        if (this.audioContext.state !== 'running') {
+            this.resumeAudioContext();
+            // If context is still not running, we need user interaction first
+            if (this.audioContext.state !== 'running') {
+                return; // We'll try again after user interaction
+            }
+        }
 
         const now = this.audioContext.currentTime;
 
