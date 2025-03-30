@@ -1176,7 +1176,10 @@ class SnakeGame {
             console.log("[handleDocumentClick] Checking pause condition...");
             if (!this.canvas.contains(event.target) &&
                 !event.target.closest('.controls') &&
-                !event.target.closest('.donation-panel')) {
+                !event.target.closest('.donation-panel') &&
+                !event.target.closest('.music-info') &&  // Added music-info check to prevent pause when clicking music controls
+                !event.target.closest('#soundToggle') && // Also explicitly exclude sound toggle
+                !event.target.closest('#musicToggle')) { // Also explicitly exclude music toggle
                 console.log("[handleDocumentClick] Pausing game via outside click.");
                 this.togglePause();
                 this.uiManager.showTemporaryMessage('Game paused', 1500);
