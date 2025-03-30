@@ -54,7 +54,72 @@ class SceneDrawer {
 
         // Draw stars when darkness level increases
         if (this.backgroundManager.darknessLevel > 30) {
-            this.starfieldManager.drawStars(this.ctx, this.canvas, this.backgroundManager.darknessLevel);
+            // Get the current timestamp for animation calculations
+            const currentTime = Date.now();
+            
+            // Only recalculate moon position if needed for star occlusion
+            let moonPositionData = null;
+            
+            // If moon is visible (and we need it for star occlusion)
+            if (this.backgroundManager.darknessLevel > 25) {
+                // Calculate normal cycle progress
+                const elapsedTime = currentTime - this.moonStartTime;
+                let cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
+                
+                // Handle moon reset animation
+                if (!this.isMoonResetting && cycleProgress > 0.99) {
+                    // Start the reset animation
+                    this.isMoonResetting = true;
+                    this.moonResetStartTime = currentTime;
+                }
+                
+                // Create animation state object for MoonDrawer
+                let moonAnimation = {
+                    cycleProgress: cycleProgress,
+                    isResetting: this.isMoonResetting,
+                    progress: 0
+                };
+                
+                // Update reset animation progress if active
+                if (this.isMoonResetting) {
+                    const resetElapsedTime = currentTime - this.moonResetStartTime;
+                    moonAnimation.progress = Math.min(1, resetElapsedTime / this.moonResetDuration);
+                    
+                    // If reset animation is complete, go back to normal cycle
+                    if (resetElapsedTime >= this.moonResetDuration) {
+                        this.isMoonResetting = false;
+                        this.moonStartTime = currentTime - 100; // Small offset to ensure we start at beginning
+                        moonAnimation = {
+                            cycleProgress: 0,
+                            isResetting: false
+                        };
+                    }
+                }
+                
+                // Calculate moon size
+                const visualWidth = this.canvas.width / this.pixelRatio;
+                const visualHeight = this.canvas.height / this.pixelRatio;
+                const moonSize = Math.min(this.gridSize * 2.5, visualWidth * 0.08);
+                
+                // Calculate moon position for star occlusion
+                const moonPosition = this.moonDrawer.calculatePosition(this.canvas, moonAnimation);
+                
+                // Set moon position data for star field manager
+                moonPositionData = {
+                    x: moonPosition.x,
+                    y: moonPosition.y,
+                    radius: moonSize,
+                    progress: cycleProgress
+                };
+            }
+            
+            // Draw stars with moon position for occlusion
+            this.starfieldManager.drawStars(
+                this.ctx, 
+                this.canvas, 
+                this.backgroundManager.darknessLevel, 
+                moonPositionData
+            );
         }
 
         // Draw moon AFTER stars but BEFORE grid
@@ -98,8 +163,11 @@ class SceneDrawer {
                 }
             }
 
-            // Calculate moon size
-            const moonSize = this.gridSize * 2.5;
+            // Calculate moon size - scale appropriately to grid size
+            // Use a percentage of the actual visual canvas size for better proportions
+            const visualWidth = this.canvas.width / this.pixelRatio;
+            const visualHeight = this.canvas.height / this.pixelRatio;
+            const moonSize = Math.min(this.gridSize * 2.5, visualWidth * 0.08);
 
             // Calculate moon visibility with a more gradual curve based on darkness
             // This ensures the moon is only visible when dark enough
@@ -113,24 +181,6 @@ class SceneDrawer {
 
                 // Calculate moon position using MoonDrawer's position calculator
                 const moonPosition = this.moonDrawer.calculatePosition(this.canvas, moonAnimation);
-
-                // Update starfield with moon position for hiding stars behind moon
-                if (this.backgroundManager.darknessLevel > 30) {
-                    const moonPositionData = {
-                        x: moonPosition.x,
-                        y: moonPosition.y,
-                        radius: moonSize,
-                        progress: cycleProgress
-                    };
-                    
-                    // Re-render stars with moon position information
-                    this.starfieldManager.drawStars(
-                        this.ctx, 
-                        this.canvas, 
-                        this.backgroundManager.darknessLevel, 
-                        moonPositionData
-                    );
-                }
 
                 // Use the MoonDrawer to draw the moon with the current context, position and exact sky color
                 this.moonDrawer.draw(

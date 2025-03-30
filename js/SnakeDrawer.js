@@ -148,12 +148,12 @@ class SnakeDrawer {
         const timeSinceLuck = Date.now() - this.luckGlowTime;
         const luckGlowDuration = 1500; // 1.5 seconds total for 3 pulses
         let luckGlowIntensity = 0;
-        let luckGlowColor = 'rgba(255, 30, 0, 0.9)'; // More intense flaming red with higher opacity
+        let luckGlowColor = 'rgba(255, 30, 0, 0.7)'; // Less intense red with lower opacity
 
         if (timeSinceLuck < luckGlowDuration) {
             // Create 3 pulses over 1.5 seconds
             const luckPulse = Math.sin((timeSinceLuck / 1000) * Math.PI * 4) * 0.5 + 0.5;
-            luckGlowIntensity = Math.max(0, 1 - (timeSinceLuck / luckGlowDuration)) * luckPulse * 2.5; // Increased multiplier from 1.5 to 2.5
+            luckGlowIntensity = Math.max(0, 1 - (timeSinceLuck / luckGlowDuration)) * luckPulse * 1.5; // Reduced multiplier from 2.5 to 1.5
         }
 
         // Generate persistent shake offsets for each segment (changes every 100ms)
@@ -227,7 +227,7 @@ class SnakeDrawer {
             // Priority 1: Apply luck glow effect (red) if active
             if (luckGlowIntensity > 0) {
                 ctx.shadowColor = luckGlowColor;
-                ctx.shadowBlur = 40 * luckGlowIntensity * this.pixelRatio; // Adjust blur for pixel ratio
+                ctx.shadowBlur = 25 * luckGlowIntensity * this.pixelRatio; // Reduced from 40 to 25
 
                 // Add a second shadow for even more intensity on lucky escapes
                 ctx.shadowOffsetX = 0;
@@ -242,10 +242,11 @@ class SnakeDrawer {
             ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
 
             // For luck glow, add an additional draw pass with composite operation for intense glow
-            if (luckGlowIntensity > 0.4) {
+            // Only for high intensity and skip if pixelRatio > 2 (for performance on high DPI displays)
+            if (luckGlowIntensity > 0.6 && this.pixelRatio <= 2) {
                 // Only add the extra intense effect at higher intensities
                 ctx.globalCompositeOperation = 'lighter';
-                ctx.globalAlpha = luckGlowIntensity * 0.4; // Semitransparent
+                ctx.globalAlpha = luckGlowIntensity * 0.25; // Reduced from 0.4 to 0.25
                 ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
                 // Reset composite operation
                 ctx.globalCompositeOperation = 'source-over';
@@ -298,12 +299,12 @@ class SnakeDrawer {
         const target = this.targetColors.snakeBlack;
 
         // Interpolate towards black based on darkness level
-        const r = this.interpolateValue(rgb.r, target.r, this.darknessLevel);
-        const g = this.interpolateValue(rgb.g, target.g, this.darknessLevel);
-        const b = this.interpolateValue(rgb.b, target.b, this.darknessLevel);
+        const r = Math.max(0, this.interpolateValue(rgb.r, target.r, this.darknessLevel));
+        const g = Math.max(0, this.interpolateValue(rgb.g, target.g, this.darknessLevel));
+        const b = Math.max(0, this.interpolateValue(rgb.b, target.b, this.darknessLevel));
 
-        // Convert back to hex
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        // Convert back to hex, ensuring values are between 0-255
+        return `#${Math.min(255, r).toString(16).padStart(2, '0')}${Math.min(255, g).toString(16).padStart(2, '0')}${Math.min(255, b).toString(16).padStart(2, '0')}`;
     }
 
     createSnakeHead() {

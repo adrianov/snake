@@ -40,6 +40,10 @@ class MoonDrawer {
 
     // Calculate moon position based on animation state
     calculatePosition(canvas, animation) {
+        // Get the visual canvas size (accounting for device pixel ratio)
+        const visualWidth = canvas.width / this.pixelRatio;
+        const visualHeight = canvas.height / this.pixelRatio;
+        
         // Default values
         let x, y;
 
@@ -49,12 +53,12 @@ class MoonDrawer {
             const reverseProgress = 1 - resetProgress;
 
             // Start position is at the end of normal cycle (right side)
-            const startX = canvas.width * 0.9;
-            const startY = canvas.height * 0.25;
+            const startX = visualWidth * 0.9;
+            const startY = visualHeight * 0.25;
 
             // End position is at beginning of normal cycle (left side)
-            const endX = canvas.width * 0.1;
-            const endY = canvas.height * 0.25;
+            const endX = visualWidth * 0.1;
+            const endY = visualHeight * 0.25;
 
             // Transition with an exaggerated bouncy sine wave
             // For the X position, move faster at first then slow down (ease-out)
@@ -64,7 +68,7 @@ class MoonDrawer {
             // For the Y position, add a wild sinusoidal path with decreasing amplitude
             // This creates a bouncy, wavy motion that settles down
             const baseY = startY + (endY - startY) * resetProgress;
-            const amplitude = canvas.height * 0.4 * (1 - resetProgress); // Decreasing amplitude
+            const amplitude = visualHeight * 0.4 * (1 - resetProgress); // Decreasing amplitude
             const oscillations = 3; // Complete 3 full oscillations
             const wave = Math.sin(resetProgress * Math.PI * 2 * oscillations);
             y = baseY + amplitude * wave;
@@ -73,11 +77,15 @@ class MoonDrawer {
             const cycleProgress = animation ? animation.cycleProgress : 0;
 
             // X coordinate moves from 0.1 to 0.9 across width
-            x = canvas.width * (0.1 + (0.8 * cycleProgress));
+            x = visualWidth * (0.1 + (0.8 * cycleProgress));
 
             // Y coordinate follows a simple sine wave arc (higher in middle)
-            y = canvas.height * (0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)));
+            y = visualHeight * (0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)));
         }
+        
+        // Ensure moon stays within visible boundaries
+        x = Math.max(visualWidth * 0.05, Math.min(x, visualWidth * 0.95));
+        y = Math.max(visualHeight * 0.05, Math.min(y, visualHeight * 0.5));
 
         return { x, y };
     }
