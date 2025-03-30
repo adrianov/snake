@@ -1,91 +1,105 @@
-/* Modern CSS Reset */
+/* =========== BASE STYLES =========== */
+:root {
+    /* Color palette */
+    --color-bg: #0f172a;
+    --color-bg-light: #1e293b;
+    --color-primary: #2ecc71;
+    --color-secondary: #27ae60;
+    --color-text: #f8fafc;
+    --color-text-dim: #cbd5e1;
+    --color-danger: #e74c3c;
+    
+    /* Typography */
+    --font-main: 'Poppins', system-ui, -apple-system, sans-serif;
+    
+    /* Shadows & Effects */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 20px rgba(46, 204, 113, 0.2);
+    
+    /* Transitions */
+    --transition-normal: 0.2s ease-in-out;
+    
+    /* Radiuses */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+}
+
+/* Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-:root {
-    /* Cohesive Color Palette */
-    --color-bg: #0f172a;
-    --color-bg-light: #1e293b;
-    --color-primary: #2ecc71; /* Vibrant green - matches snake */
-    --color-secondary: #27ae60; /* Emerald green - matches snake */
-    --color-accent: #3498db; /* Complementary blue */
-    --color-accent-dark: #2980b9; /* Darker blue */
-    --color-text: #f8fafc;
-    --color-text-dim: #cbd5e1;
-    --color-danger: #e74c3c;
-    --color-game-bg: #dff5e6; /* Light green tint */
-    --color-grid: rgba(46, 204, 113, 0.1); /* Grid lines with snake color */
-
-    /* Typography */
-    --font-main: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-
-    /* Shadows */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.05);
-    --shadow-glow: 0 0 20px rgba(46, 204, 113, 0.2), 0 0 40px rgba(46, 204, 113, 0.1);
-
-    /* Animations */
-    --transition-normal: 0.2s ease-in-out;
-
-    /* Border Radius */
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 20px;
-
-    /* Game Specific */
-    --game-padding: clamp(10px, 2vw, 24px);
-}
-
-/* Base Styles */
 body {
+    font-family: var(--font-main);
     background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-light) 100%);
     color: var(--color-text);
-    font-family: var(--font-main);
     height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%;
     overflow: hidden;
-    padding: var(--game-padding);
 }
 
-/* Game Layout */
-.game-wrapper {
+/* =========== LAYOUT STRUCTURE =========== */
+.game-layout {
+    display: grid;
+    height: 100vh;
+    width: 100%;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 
+        "header"
+        "main"
+        "footer";
+    overflow: hidden;
+}
+
+/* Header */
+.game-header {
+    grid-area: header;
+    padding: 10px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    z-index: 10;
+}
+
+/* Main game container */
+.game-container {
+    grid-area: main;
     display: flex;
     flex-direction: column;
-    width: 100%;
-    gap: 16px;
     align-items: center;
-    position: relative;
-}
-
-/* Donation Button Container */
-.donation-button-container {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
+    justify-content: center;
     gap: 10px;
-    z-index: 100;
+    padding: 0 10px;
+    overflow: hidden;
 }
 
-/* Canvas Container - Square */
-.canvas-container {
-    width: 100%;
-    max-width: calc(100vh - 120px);
-    height: 0;
-    padding-bottom: min(100%, calc(100vh - 120px));
+/* Footer */
+.game-footer {
+    grid-area: footer;
+    padding: 5px 15px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    opacity: 0.7;
+}
+
+/* =========== CANVAS & GAME ELEMENTS =========== */
+/* Canvas wrapper - enforces square aspect ratio */
+.canvas-wrapper {
     position: relative;
+    width: 100%;
+    max-width: min(80vh, 80vw);
+    aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #dff5e6 0%, #e7f7f5 100%);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
     overflow: hidden;
+    margin: 0 auto; /* Center the game canvas */
 }
 
 #gameCanvas {
@@ -94,13 +108,160 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 0 2px rgba(6, 182, 212, 0.2));
 }
 
-/* Score Container - Positioned below game field */
+/* Game controls container */
+.game-controls {
+    width: 100%;
+    max-width: min(80vh, 80vw);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+    margin: 0 auto;
+}
+
+/* =========== GAME TIPS & TEXT =========== */
+/* Tip styles */
+.tip-item {
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    flex-shrink: 0; /* Prevent items from shrinking */
+}
+
+/* Desktop-only tips */
+.desktop-only-tip {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    white-space: nowrap;
+    padding: 0 10px 2px 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.desktop-only-tip::-webkit-scrollbar {
+    display: none;
+}
+
+/* Mobile-only tips */
+.mobile-only-tip {
+    display: none;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    white-space: nowrap;
+    padding: 0 10px 2px 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mobile-only-tip::-webkit-scrollbar {
+    display: none;
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* iOS only */
+    .desktop-only-tip,
+    .mobile-only-tip {
+        width: auto;
+        max-width: min(95vh, 95vw);
+        margin: 0 auto; /* Center the container */
+        padding: 0 5px 2px 5px; /* Reduce padding to prevent overflow */
+    }
+    
+    .game-controls {
+        width: auto;
+        max-width: min(95vh, 95vw);
+        margin: 0 auto;
+    }
+    
+    .tip-item {
+        /* Ensure tip items don't get clipped */
+        flex-shrink: 0;
+        display: inline-block; /* Reinforced to ensure proper display */
+        margin: 0 3px; /* Add horizontal margin for better spacing */
+        padding: 4px 6px; /* Slightly reduce padding to fit more text */
+        max-width: none; /* Ensure no max-width is applied */
+        white-space: nowrap; /* Ensure text stays on one line */
+    }
+    
+    /* Fix canvas wrapper for iOS */
+    .canvas-wrapper {
+        width: auto;
+        max-width: min(95vh, 95vw);
+        margin: 0 auto;
+    }
+    
+    /* Fix mobile arrow controls for iOS */
+    .mobile-arrow-controls {
+        width: auto;
+        max-width: min(95vh, 95vw);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Fix arrow button rows for iOS */
+    .arrow-button-row {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* Specific fix for top arrow row */
+    .arrow-button-row:first-child {
+        justify-content: center;
+        display: flex;
+        margin: 0 auto 8px auto;
+    }
+    
+    /* Fix for the spacers in arrow controls */
+    .spacer {
+        flex: 1;
+        max-width: 70px;
+    }
+    
+    /* Fix score container for iOS */
+    .score-container {
+        width: auto;
+        max-width: min(95vh, 95vw);
+        margin-left: auto;
+        margin-right: auto;
+        padding: 8px 10px; /* Adjust padding to ensure content fits */
+    }
+    
+    /* Ensure game container has proper spacing */
+    .game-container {
+        padding: 0 5px;
+    }
+}
+
+/* =========== SCORE CONTAINER =========== */
 .score-container {
     display: grid;
-    grid-template-columns: minmax(80px, 1fr) minmax(200px, 2fr) minmax(80px, 1fr);
+    grid-template-columns: 1fr 2fr 1fr;
     gap: 20px;
     padding: 8px 16px;
     background: rgba(30, 41, 59, 0.8);
@@ -109,8 +270,7 @@ body {
     border-radius: var(--radius-md);
     align-items: center;
     width: 100%;
-    max-width: calc(100vh - 120px);
-    z-index: 10;
+    max-width: 100%;
 }
 
 .score-item {
@@ -136,11 +296,41 @@ body {
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    min-width: 60px;
+    min-width: 40px;
     text-align: center;
 }
 
-/* Music Info */
+.high-score-container {
+    position: relative;
+}
+
+.reset-button {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.reset-button:hover {
+    background-color: rgba(231, 76, 60, 0.4);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* =========== MUSIC & SOUND CONTROLS =========== */
 .music-info {
     display: flex;
     align-items: center;
@@ -164,13 +354,9 @@ body {
     align-items: center;
     justify-content: center;
     flex: 1;
-    min-width: 0; /* Allow for proper text overflow */
+    min-width: 0;
     position: relative;
     transition: all var(--transition-normal);
-}
-
-.melody-display:hover {
-    background-color: rgba(46, 204, 113, 0.1);
 }
 
 .melody-content {
@@ -182,29 +368,11 @@ body {
     overflow: hidden;
 }
 
-.melody-display .music-icon {
+.music-icon {
     color: var(--color-primary);
     font-size: 1rem;
     animation: pulse 2s infinite;
     flex-shrink: 0;
-}
-
-.melody-display .control-label {
-    font-size: 9px;
-    color: var(--color-text-dim);
-    font-weight: bold;
-    margin-top: 2px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-}
-
-.melody-display .control-label:hover {
-    color: var(--color-primary);
-    transform: scale(1.1);
-}
-
-.music-info.has-melody #currentMelody {
-    display: inline-block;
 }
 
 #currentMelody {
@@ -217,11 +385,11 @@ body {
     transition: all var(--transition-normal);
 }
 
-#currentMelody:hover {
-    color: var(--color-primary);
+.music-info.has-melody #currentMelody {
+    display: inline-block;
 }
 
-/* Control toggles */
+/* Controls toggles */
 .control-toggle {
     cursor: pointer;
     display: flex;
@@ -260,132 +428,148 @@ body {
     display: none;
 }
 
-@keyframes pulse {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
+/* =========== DONATION & GITHUB BUTTONS =========== */
+.header-buttons {
+    display: flex;
+    gap: 10px;
 }
 
-/* Remove the separate controls container styles */
-.controls-container {
-    display: none;
-}
-
-/* Mobile Responsive */
-@media (max-width: 600px) {
-    :root {
-        --game-padding: 8px;
-    }
-
-    .game-wrapper {
-        gap: 12px;
-    }
-
-    .canvas-container {
-        width: 100%;
-        max-width: calc(100vh - 100px);
-        padding-bottom: min(100%, calc(100vh - 100px));
-    }
-
-    .score-container {
-        padding: 8px;
-        gap: 10px;
-        grid-template-columns: minmax(60px, 1fr) minmax(140px, 2fr) minmax(60px, 1fr);
-        max-width: calc(100vh - 100px);
-    }
-
-    .score-label {
-        font-size: 0.65rem;
-    }
-
-    .score-value {
-        font-size: 1.2rem;
-        min-width: 40px;
-    }
-
-    .music-info {
-        font-size: 0.7rem;
-        padding: 4px 8px;
-    }
-}
-
-/* Animation */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.game-wrapper {
-    animation: fadeIn 0.5s ease-out;
-}
-
-/* High Score Reset Button */
-.high-score-container {
-    position: relative;
-}
-
-.reset-button {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    background-color: rgba(231, 76, 60, 0.2);
-    color: #e74c3c;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 14px;
+.btn {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.4);
+    color: var(--color-text);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-main);
+    font-weight: 600;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+    user-select: none;
+}
+
+.btn:hover {
+    background: rgba(46, 204, 113, 0.3);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+}
+
+.btn-icon, .button-icon {
+    font-size: 1.1rem;
+}
+
+.btn-text, .button-text {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 700;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.github-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    filter: brightness(0) saturate(100%) invert(66%) sepia(86%) saturate(380%) hue-rotate(93deg) brightness(92%) contrast(87%);
+}
+
+/* =========== MOBILE ARROW CONTROLS =========== */
+.mobile-arrow-controls {
+    display: none;
+    width: 100%;
+    max-width: min(80vh, 80vw);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.arrow-button-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.arrow-button {
+    width: 70px;
+    height: 70px;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: rgba(240, 240, 245, 0.85);
     cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s;
-    padding: 0;
+    touch-action: manipulation;
+    position: relative;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.4);
+    overflow: hidden;
 }
 
-.reset-button:hover {
-    background-color: rgba(231, 76, 60, 0.4);
-    transform: scale(1.1);
-    opacity: 1;
+#upArrow {
+    background: linear-gradient(to top, rgba(39, 174, 96, 0.65), rgba(46, 204, 113, 0.65));
 }
 
-.reset-button:active {
-    transform: scale(0.95);
+#downArrow {
+    background: linear-gradient(to bottom, rgba(231, 76, 60, 0.65), rgba(192, 57, 43, 0.65));
 }
 
-@keyframes pulse {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
+#leftArrow {
+    background: linear-gradient(to left, rgba(52, 152, 219, 0.65), rgba(41, 128, 185, 0.65));
 }
 
-/* Add styles for temporary messages */
-.temp-message {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(39, 174, 96, 0.8);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 18px;
-    text-align: center;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+#rightArrow {
+    background: linear-gradient(to right, rgba(241, 196, 15, 0.65), rgba(243, 156, 18, 0.65));
 }
 
-.temp-message.visible {
-    opacity: 1;
-    transform: translateY(0);
+.arrow-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    filter: brightness(1.1);
 }
 
-/* Donation Panel Styles */
+.arrow-button svg {
+    max-width: 100%;
+    max-height: 100%;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.arrow-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+}
+
+.spacer {
+    width: 70px;
+    height: 70px;
+}
+
+/* =========== DONATION PANEL =========== */
 .donation-panel {
     position: fixed;
     left: 0;
@@ -446,28 +630,11 @@ body {
     gap: 24px;
 }
 
-.donation-method h4 {
-    margin: 0 0 12px 0;
-    font-size: 1rem;
-    color: var(--color-text);
-}
-
 .qr-code-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 8px;
-}
-
-.qr-code-link {
-    display: block;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.qr-code-link:hover .qr-code {
-    transform: scale(1.03);
-    box-shadow: var(--shadow-md);
 }
 
 .qr-code {
@@ -489,24 +656,24 @@ body {
     object-fit: contain;
 }
 
-.qr-placeholder {
-    color: var(--color-bg);
-    font-weight: bold;
-}
-
 .qr-label {
     font-size: 0.8rem;
     color: var(--color-text-dim);
     text-align: center;
 }
 
-/* Cryptocurrency Address Styles */
+.donation-method h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: var(--color-text);
+}
+
 .crypto-address-container {
     display: flex;
     align-items: center;
     margin-top: 10px;
-    width: 100%;
     max-width: 220px;
+    width: 100%;
 }
 
 .crypto-address {
@@ -543,396 +710,191 @@ body {
     transform: translateY(-1px);
 }
 
-.copy-btn:active {
-    transform: translateY(0);
+/* =========== ANIMATIONS =========== */
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
 }
 
-.copy-icon {
-    font-size: 1rem;
-}
-
-/* Game Controls - Improved Unified Button System */
-.game-controls {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
-}
-
-/* Base class for all buttons */
-.btn {
-    background: rgba(46, 204, 113, 0.2);
-    border: 1px solid rgba(46, 204, 113, 0.4);
-    color: var(--color-text);
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-main);
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all var(--transition-normal);
-    box-shadow: var(--shadow-sm);
-    text-decoration: none; /* For anchor tags */
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.btn:hover {
-    background: rgba(46, 204, 113, 0.3);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-.btn:active, 
-.btn.active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    opacity: 0.9;
-}
-
-/* Button icon styling */
-.btn-icon {
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Button text styling */
-.btn-text {
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 700;
-    font-size: 0.9rem;
-    white-space: nowrap;
-}
-
-/* Maintain existing classes for backward compatibility */
-.control-button {
-    background: rgba(46, 204, 113, 0.2);
-    border: 1px solid rgba(46, 204, 113, 0.4);
-    color: var(--color-text);
-    padding: 8px 16px;
-    border-radius: var(--radius-sm);
-    font-family: var(--font-main);
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all var(--transition-normal);
-    box-shadow: var(--shadow-sm);
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.control-button:hover {
-    background: rgba(46, 204, 113, 0.3);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-
-.control-button:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm);
-}
-
-.button-text {
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 700;
-    font-size: 0.9rem;
-}
-
-.button-icon {
-    color: #ff6b6b;
-    font-size: 1.1rem;
-}
-
-/* GitHub styling now inherits from btn classes */
-.github-button {
-    text-decoration: none;
-}
-
-.github-icon {
-    width: 1.1rem;
-    height: 1.1rem;
-    filter: brightness(0) saturate(100%) invert(66%) sepia(86%) saturate(380%) hue-rotate(93deg) brightness(92%) contrast(87%);
-}
-
-/* Fix GitHub text color */
-.github-button .button-text,
-a.github-button .button-text,
-.control-button.github-button .button-text,
-.github-button .btn-text,
-a.github-button .btn-text {
-    color: var(--color-primary) !important;
-}
-
-.github-button::after {
-    color: var(--color-primary) !important;
-    font-weight: 700;
-    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-}
-
-/* Mobile styling - tiered approach for different screen sizes */
-@media (max-width: 768px) {
-    .donation-button-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        padding: 10px;
-        background-color: rgba(0, 0, 0, 0.7);
-        display: flex;
-        justify-content: center;
-        flex-wrap: nowrap;
-        gap: 20px;
-        z-index: 1000;
-    }
-    
-    /* Buttons for larger mobile devices */
-    .btn,
-    .control-button, 
-    a.control-button,
-    .donation-button-container .control-button,
-    .donation-button-container .btn {
-        padding: 10px 18px !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        width: auto !important;
-        margin: 0 !important;
-        white-space: nowrap !important;
-        flex: 0 0 auto !important;
-    }
-    
-    .btn-text,
-    .button-text {
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        font-size: 16px !important;
-    }
-    
-    .btn-icon,
-    .button-icon {
-        font-size: 20px !important;
-    }
-    
-    .github-icon {
-        width: 20px !important;
-        height: 20px !important;
-    }
-    
-    /* Fix GitHub text display on mobile */
-    .github-button .button-text,
-    .github-button .btn-text {
-        display: inline !important; /* Override the previous rule that hid text */
-        font-size: 16px !important;
-        white-space: nowrap !important;
-    }
-    
-    /* Reset the ::after content that was providing alternative text */
-    .github-button::after {
-        content: none !important;
-    }
-}
-
-/* Smaller mobile devices */
-@media (max-width: 480px) {
-    .donation-button-container {
-        padding: 6px;
-        gap: 10px;
-    }
-    
-    .btn,
-    .control-button, 
-    a.control-button,
-    .donation-button-container .control-button,
-    .donation-button-container .btn {
-        padding: 8px 12px !important;
-        font-size: 14px !important;
-    }
-    
-    .btn-text,
-    .button-text {
-        font-size: 14px !important;
-    }
-    
-    .btn-icon,
-    .button-icon {
-        font-size: 16px !important;
-    }
-    
-    .github-icon {
-        width: 16px !important;
-        height: 16px !important;
-    }
-}
-
-/* Very small devices */
-@media (max-width: 360px) {
-    .donation-button-container {
-        padding: 4px;
-        gap: 6px;
-    }
-    
-    .btn,
-    .control-button, 
-    a.control-button,
-    .donation-button-container .control-button,
-    .donation-button-container .btn {
-        padding: 6px 10px !important;
-        font-size: 13px !important;
-    }
-    
-    .btn-text,
-    .button-text {
-        font-size: 13px !important;
-    }
-    
-    .btn-icon,
-    .button-icon {
-        font-size: 14px !important;
-    }
-    
-    .github-icon {
-        width: 14px !important;
-        height: 14px !important;
-    }
-}
-
-/* Add active button state for better feedback */
-.control-button.button-active,
-.control-button:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    opacity: 0.9;
-}
-
-/* Ensure donation button has proper cursor */
-#donateButton {
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Footer styles */
-.game-footer {
+.temp-message {
     position: fixed;
-    bottom: 10px;
-    left: 15px;
-    text-align: left;
-    padding: 8px;
-    font-size: 0.75rem;
-    color: var(--color-text-dim);
-    opacity: 0.7;
-    transition: opacity var(--transition-normal);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(39, 174, 96, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.game-footer:hover {
+.temp-message.visible {
     opacity: 1;
+    visibility: visible;
 }
 
-/* Media queries for responsiveness - general */
-@media (max-width: 600px) {
-    .donation-panel {
-        width: 100%;
-    }
-}
-
-/* Mobile arrow controls */
-.mobile-arrow-controls {
-    display: none; /* Hidden by default */
-    width: 100%;
-    max-width: calc(100vh - 120px);
-    margin: 10px 0;
-    padding: 10px;
-}
-
-.arrow-button-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.arrow-button {
-    width: 80px;
-    height: 80px;
-    padding: 12px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: rgba(30, 41, 59, 0.8);
-    color: var(--color-primary);
-    cursor: pointer;
-    touch-action: manipulation; /* Improve touch performance */
-    position: relative;
-    transition: all 0.15s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Add keyboard-like appearance */
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 1px solid rgba(0, 0, 0, 0.2);
-    border-bottom: 3px solid rgba(0, 0, 0, 0.4);
-}
-
-.arrow-button:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.arrow-button svg {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-.spacer {
-    width: 80px;
-    height: 80px;
-}
-
-/* Only display the controls on touch devices */
+/* =========== RESPONSIVE LAYOUT =========== */
+/* Show mobile controls and tips on touch devices */
 @media (hover: none) and (pointer: coarse) {
     .mobile-arrow-controls {
         display: block;
     }
-}
-
-/* Adjust layout on smaller screens */
-@media (max-width: 480px) {
-    .arrow-button {
-        width: 65px;
-        height: 65px;
+    
+    .mobile-only-tip {
+        display: flex;
     }
     
-    .spacer {
-        width: 65px;
-        height: 65px;
+    .desktop-only-tip {
+        display: none;
     }
 }
 
-/* Adjust layout on very small screens */
-@media (max-width: 360px) {
-    .arrow-button {
-        width: 55px;
-        height: 55px;
+/* Desktop layout - landscape orientation */
+@media (orientation: landscape) {
+    .game-layout {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr auto;
+        grid-template-areas:
+            "header main"
+            "header footer";
     }
     
-    .spacer {
-        width: 55px;
-        height: 55px;
+    .game-header {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+    
+    .header-buttons {
+        flex-direction: column;
+    }
+    
+    .game-container {
+        padding: 10px 20px;
     }
 }
+
+/* Mobile layout - portrait orientation or small screens */
+@media (orientation: portrait), (max-width: 768px) {
+    .game-layout {
+        grid-template-rows: auto 1fr auto;
+        grid-template-areas: 
+            "header"
+            "main"
+            "footer";
+    }
+    
+    .game-header {
+        justify-content: center;
+        padding: 5px;
+    }
+    
+    .header-buttons {
+        justify-content: center;
+    }
+    
+    .game-container {
+        padding: 0 10px;
+        gap: 15px;
+    }
+    
+    .game-controls {
+        gap: 12px;
+    }
+    
+    .game-footer {
+        text-align: center;
+        padding: 5px;
+    }
+    
+    .mobile-arrow-controls {
+        margin-bottom: 10px;
+    }
+    
+    .mobile-only-tip {
+        margin-bottom: 10px;
+    }
+}
+
+/* Very small screens */
+@media (max-height: 600px), (max-width: 350px) {
+    .canvas-wrapper {
+        max-width: min(95vh, 95vw);
+    }
+    
+    .game-controls {
+        max-width: min(95vh, 95vw);
+    }
+    
+    .score-container {
+        padding: 5px 10px;
+        gap: 10px;
+    }
+    
+    .arrow-button, .spacer {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .game-footer {
+        display: none;
+    }
+    
+    .tip-item {
+        padding: 3px 6px;
+        font-size: 0.65rem;
+    }
+}
+
+/* Specific container for arrow controls to help with centering */
+.arrow-controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 240px; /* Limiting width to force center alignment */
+    margin: 0 auto;
+}
+
+@supports (-webkit-touch-callout: none) {
+    /* Fix mobile arrow controls for iOS */
+    .mobile-arrow-controls {
+        width: 100%;
+        max-width: 95vw;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Additional container for iOS */
+    .arrow-controls-container {
+        width: 100%;
+        max-width: 240px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    /* Fix arrow button rows for iOS */
+    .arrow-button-row {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+

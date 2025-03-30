@@ -1174,23 +1174,44 @@ class SnakeGame {
         const gameState = this.gameStateManager.getGameState();
         console.log("[handleDocumentClick] Current Game State:", JSON.stringify(gameState));
 
+        // Get all elements that should NOT pause the game when clicked
+        const nonPausingElements = [
+            '.canvas-wrapper',
+            '#gameCanvas',
+            '.controls',
+            '.donation-panel',
+            '.music-info',
+            '#soundToggle',
+            '#musicToggle',
+            '.mobile-arrow-controls',
+            '.arrow-button',
+            '.game-controls',
+            '.mobile-only-tip',
+            '.desktop-only-tip',
+            '.tip-item',
+            '.score-container',
+            '.score-item',
+            '.reset-button',
+            '.control-toggle',
+            '.melody-display'
+        ];
+        
         // Pause logic: Click outside when running & not paused
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             console.log("[handleDocumentClick] Checking pause condition...");
-            if (!this.canvas.contains(event.target) &&
-                !event.target.closest('.controls') &&
-                !event.target.closest('.donation-panel') &&
-                !event.target.closest('.music-info') &&  // Added music-info check to prevent pause when clicking music controls
-                !event.target.closest('#soundToggle') && // Also explicitly exclude sound toggle
-                !event.target.closest('#musicToggle') && // Also explicitly exclude music toggle
-                !event.target.closest('.mobile-arrow-controls') && // Exclude mobile arrow controls
-                !event.target.closest('.arrow-button')) { // Explicitly exclude arrow buttons
+            
+            // Check if the clicked element (or any of its parents) is in the non-pausing list
+            const shouldNotPause = nonPausingElements.some(selector => {
+                return event.target.closest(selector) !== null;
+            });
+            
+            if (!shouldNotPause) {
                 console.log("[handleDocumentClick] Pausing game via outside click.");
                 this.togglePause();
                 this.uiManager.showTemporaryMessage('Game paused', 1500);
                 return; // Handled
             }
-            console.log("[handleDocumentClick] Pause condition not met (click was inside or on controls).");
+            console.log("[handleDocumentClick] Pause condition not met (click was inside UI element).");
         }
 
         // Start logic: Click inside canvas when not started
@@ -1239,41 +1260,64 @@ class SnakeGame {
                 // Set request flag for user interaction
                 this.startRequested = true;
                 
-                // Ensure interaction flag is set
+                // Ensure interaction flag is set and audio is initialized
                 this.handleFirstInteraction();
+                
+                // Explicitly initialize audio contexts - redundant but ensures audio works
+                this.initializeAudio();
                 
                 // Start game and loops
                 this.startGame();
                 this.gameLoop.startGameLoop();
                 this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
                 
-                // Explicitly start music if enabled
-                if (gameState.musicEnabled && this.musicManager) {
-                    console.log("Starting music for new game (mobile arrows)");
-                    // Select a new random melody for the game
-                    this.musicManager.selectRandomMelody();
-                    // Start the music
-                    this.musicManager.startMusic();
-                }
+                // Force a delay to ensure game state is fully updated
+                setTimeout(() => {
+                    // Get FRESH game state after initialization
+                    const updatedGameState = this.gameStateManager.getGameState();
+                    
+                    // Explicitly start music if enabled
+                    if (updatedGameState.musicEnabled && this.musicManager) {
+                        console.log("Starting music for new game (mobile arrows)");
+                        // Select a new random melody for the game
+                        this.musicManager.selectRandomMelody();
+                        // Start the music with force flag
+                        this.musicManager.startMusic();
+                        // Update melody display
+                        this.uiManager.updateMelodyDisplay(this.musicManager.getCurrentMelody());
+                    }
+                }, 100);
                 
                 return;
             }
             
             if (gameState.isPaused || gameState.isGameOver) return;
             
+            // IMPORTANT: Always set the nextDirection regardless of validity check
+            // This ensures the most recent arrow press is registered
             if (this.isValidDirectionChange(direction)) {
+                console.log(`Arrow button press: changing direction to ${direction}`);
                 this.nextDirection = direction;
                 
                 // Adjust speed like keyboard controls
                 this.gameLoop.updateGameSpeed(direction, this.direction);
+            } else {
+                console.log(`Arrow button press: ${direction} is invalid from current direction ${this.direction}`);
             }
         };
         
-        // Add event listeners for buttons
+        // Add event listeners for buttons - use both touchstart and mousedown for better compatibility
         upButton.addEventListener('touchstart', (e) => {
             if (e.cancelable) {
                 e.preventDefault();
             }
+            
+            // Ensure audio is initialized directly from touch event
+            if (!this.hasUserInteraction) {
+                this.hasUserInteraction = true;
+                this.initializeAudio();
+            }
+            
             handleArrowButtonPress('up');
         });
         
@@ -1281,6 +1325,13 @@ class SnakeGame {
             if (e.cancelable) {
                 e.preventDefault();
             }
+            
+            // Ensure audio is initialized directly from touch event
+            if (!this.hasUserInteraction) {
+                this.hasUserInteraction = true;
+                this.initializeAudio();
+            }
+            
             handleArrowButtonPress('down');
         });
         
@@ -1288,6 +1339,13 @@ class SnakeGame {
             if (e.cancelable) {
                 e.preventDefault();
             }
+            
+            // Ensure audio is initialized directly from touch event
+            if (!this.hasUserInteraction) {
+                this.hasUserInteraction = true;
+                this.initializeAudio();
+            }
+            
             handleArrowButtonPress('left');
         });
         
@@ -1295,8 +1353,21 @@ class SnakeGame {
             if (e.cancelable) {
                 e.preventDefault();
             }
+            
+            // Ensure audio is initialized directly from touch event
+            if (!this.hasUserInteraction) {
+                this.hasUserInteraction = true;
+                this.initializeAudio();
+            }
+            
             handleArrowButtonPress('right');
         });
+        
+        // Add mouse event listeners as fallback for hybrid devices
+        upButton.addEventListener('mousedown', () => handleArrowButtonPress('up'));
+        downButton.addEventListener('mousedown', () => handleArrowButtonPress('down'));
+        leftButton.addEventListener('mousedown', () => handleArrowButtonPress('left'));
+        rightButton.addEventListener('mousedown', () => handleArrowButtonPress('right'));
     }
 }
 
