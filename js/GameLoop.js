@@ -107,7 +107,7 @@ class GameLoop {
     }
 
     adjustSpeedAfterFoodEaten() {
-        this.speed *= 0.95;
+        this.speed *= 0.97;
         this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
         this.frameInterval = this.speed;
     }
