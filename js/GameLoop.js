@@ -5,10 +5,10 @@ class GameLoop {
         this.animationFrame = null;
         this.boundGameLoop = this.gameLoop.bind(this);
         this.fruitLoop = null;
-        this.baseSpeed = 100;
+        this.baseSpeed = window.GAME_CONSTANTS.SNAKE.BASE_SPEED;
         this.speed = this.baseSpeed;
-        this.speedMultiplier = 0.8;
-        this.slowMultiplier = 1.2;
+        this.speedMultiplier = window.GAME_CONSTANTS.SNAKE.SPEED_MULTIPLIER;
+        this.slowMultiplier = window.GAME_CONSTANTS.SNAKE.SLOW_MULTIPLIER;
         this.frameInterval = this.baseSpeed;
     }
 
@@ -44,7 +44,7 @@ class GameLoop {
 
         this.fruitLoop = setInterval(() => {
             manageFruitsCallback();
-        }, 100);
+        }, window.GAME_CONSTANTS.FRUIT_REFRESH_INTERVAL);
     }
 
     stopFruitLoop() {
@@ -70,8 +70,8 @@ class GameLoop {
         }
 
         // Ensure speed stays within reasonable bounds
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
+        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 
@@ -86,8 +86,8 @@ class GameLoop {
         }[currentDirection];
         
         // Touch speed multiplier - more gradual change than keyboard
-        const touchSpeedMultiplier = 0.9; // Less aggressive than 0.8 for keyboard
-        const touchSlowMultiplier = 1.15; // Less aggressive than 1.2 for keyboard
+        const touchSpeedMultiplier = window.GAME_CONSTANTS.SNAKE.TOUCH_SPEED_MULTIPLIER;
+        const touchSlowMultiplier = window.GAME_CONSTANTS.SNAKE.TOUCH_SLOW_MULTIPLIER;
         
         if (isCurrentDirection) {
             this.speed *= touchSpeedMultiplier;
@@ -96,8 +96,8 @@ class GameLoop {
         }
         
         // Ensure speed stays within reasonable bounds
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
+        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 
@@ -107,14 +107,14 @@ class GameLoop {
     }
 
     adjustSpeedAfterFoodEaten() {
-        this.speed *= 0.97;
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
+        this.speed *= window.GAME_CONSTANTS.SNAKE.SPEED_INCREASE_AFTER_FOOD;
+        this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 
     adjustSpeedAfterLuckEffect() {
-        this.speed *= 1.3;
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.speed *= window.GAME_CONSTANTS.SNAKE.SPEED_INCREASE_LUCK;
+        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 
@@ -125,7 +125,7 @@ class GameLoop {
     reduceSpeed() {
         // Reduce the speed when tapped on mobile (same as opposite direction)
         this.speed *= this.slowMultiplier;
-        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 
@@ -133,7 +133,7 @@ class GameLoop {
         // Multiply by a factor smaller than 1 to speed up (reduce the interval)
         this.speed *= factor;
         // Ensure speed doesn't get too fast
-        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
+        this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
         this.frameInterval = this.speed;
     }
 }
