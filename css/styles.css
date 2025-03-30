@@ -58,7 +58,6 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: min(800px, calc(100vh - 120px));
     gap: 16px;
     align-items: center;
     position: relative;
@@ -79,8 +78,9 @@ body {
 /* Canvas Container - Square */
 .canvas-container {
     width: 100%;
+    max-width: calc(100vh - 120px);
     height: 0;
-    padding-bottom: 100%;
+    padding-bottom: min(100%, calc(100vh - 120px));
     position: relative;
     background: linear-gradient(135deg, #dff5e6 0%, #e7f7f5 100%);
     border-radius: var(--radius-md);
@@ -109,6 +109,7 @@ body {
     border-radius: var(--radius-md);
     align-items: center;
     width: 100%;
+    max-width: calc(100vh - 120px);
     z-index: 10;
 }
 
@@ -281,7 +282,8 @@ body {
     }
 
     .canvas-container {
-        width: min(100%, calc(100vh - 100px));
+        width: 100%;
+        max-width: calc(100vh - 100px);
         padding-bottom: min(100%, calc(100vh - 100px));
     }
 
@@ -289,6 +291,7 @@ body {
         padding: 8px;
         gap: 10px;
         grid-template-columns: minmax(60px, 1fr) minmax(140px, 2fr) minmax(60px, 1fr);
+        max-width: calc(100vh - 100px);
     }
 
     .score-label {
