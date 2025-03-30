@@ -18,11 +18,11 @@
   - [x] Ensure icon matches game's visual style
   - [x] Add favicon to HTML head
 
-- [ ] Add Facebook sharing template
-  - [ ] Add Open Graph meta tags to HTML head
-  - [ ] Create compelling og:title and og:description
-  - [ ] Keep original img/snake1.png and use ImageMagick to create a new file at 1200×630px for og:image
-  - [ ] Add og:url with canonical URL
+- [x] Add Facebook sharing template
+  - [x] Add Open Graph meta tags to HTML head
+  - [x] Create compelling og:title and og:description
+  - [x] Keep original img/snake1.png and use ImageMagick to create a new file at 1200×630px for og:image
+  - [x] Add og:url with canonical URL
 
 - [ ] Add copyright information
   - [ ] Add "© Peter Adrianov, 2025" to footer in index.html
