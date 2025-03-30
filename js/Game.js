@@ -336,6 +336,21 @@ class SnakeGame {
              // Set request flag BEFORE calling interaction handler
              this.startRequested = true;
              this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
+             
+             // Start game loops explicitly (similar to what's done with spacebar)
+             this.gameLoop.startGameLoop();
+             this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
+             
+             // EXPLICITLY START MUSIC if it's enabled
+             const currentGameState = this.gameStateManager.getGameState();
+             if (currentGameState.musicEnabled && this.musicManager) {
+                 console.log("Starting music for new game (arrow keys)");
+                 // Select a new random melody for each game
+                 this.musicManager.selectRandomMelody();
+                 // Start the music
+                 this.musicManager.startMusic();
+             }
+             
              return true; // Handled
         }
 
