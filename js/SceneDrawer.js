@@ -1,14 +1,15 @@
 class SceneDrawer {
-    constructor(canvas, gridSize) {
+    constructor(canvas, gridSize, pixelRatio = 1) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.gridSize = gridSize;
+        this.pixelRatio = pixelRatio; // Store pixel ratio for Retina display support
 
         // Initialize manager classes
         this.backgroundManager = new BackgroundManager();
-        this.starfieldManager = new StarfieldManager();
-        this.moonDrawer = new MoonDrawer();
-        this.uiOverlayManager = new UIOverlayManager(gridSize);
+        this.starfieldManager = new StarfieldManager(this.pixelRatio);
+        this.moonDrawer = new MoonDrawer(this.pixelRatio);
+        this.uiOverlayManager = new UIOverlayManager(gridSize, this.pixelRatio);
         
         // Moon animation properties
         this.moonStartTime = Date.now();
@@ -22,9 +23,12 @@ class SceneDrawer {
     }
 
     // Update gridSize (for responsive design)
-    updateGridSize(gridSize) {
+    updateGridSize(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize;
-        this.uiOverlayManager.updateGridSize(gridSize);
+        this.pixelRatio = pixelRatio; // Update pixel ratio
+        this.uiOverlayManager.updateGridSize(gridSize, this.pixelRatio);
+        this.starfieldManager.updatePixelRatio(this.pixelRatio);
+        this.moonDrawer.updatePixelRatio(this.pixelRatio);
     }
 
     // Reset darkness level when starting a new game
@@ -159,17 +163,37 @@ class SceneDrawer {
 
     // Draw game over screen
     drawGameOver(score, highScore) {
-        this.uiOverlayManager.drawGameOver(this.ctx, this.canvas, score, highScore);
+        // Get the visual canvas size (accounting for device pixel ratio)
+        const visualWidth = this.canvas.width / this.pixelRatio;
+        const visualHeight = this.canvas.height / this.pixelRatio;
+        
+        this.uiOverlayManager.drawGameOver(this.ctx, visualWidth, visualHeight, score, highScore);
     }
 
     // Draw pause message overlay
     drawPauseMessage() {
-        this.uiOverlayManager.drawPauseMessage(this.ctx, this.canvas);
+        // Get the visual canvas size (accounting for device pixel ratio)
+        const visualWidth = this.canvas.width / this.pixelRatio;
+        const visualHeight = this.canvas.height / this.pixelRatio;
+        
+        this.uiOverlayManager.drawPauseMessage(this.ctx, visualWidth, visualHeight);
     }
 
     // Draw start message overlay
-    drawStartMessage() {
-        this.uiOverlayManager.drawStartMessage(this.ctx, this.canvas);
+    drawStartMessage(ctx = this.ctx, canvas = this.canvas) {
+        // Get the visual canvas size (accounting for device pixel ratio)
+        const visualWidth = canvas.width / this.pixelRatio;
+        const visualHeight = canvas.height / this.pixelRatio;
+        
+        // Create a semi-transparent gradient overlay
+        const gradient = ctx.createLinearGradient(0, 0, 0, visualHeight);
+        gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+        gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, visualWidth, visualHeight);
+        
+        // Pass the call to UIOverlayManager with correct dimensions
+        this.uiOverlayManager.drawStartMessage(ctx, visualWidth, visualHeight);
     }
 
     // Draw food items with appropriate effects
@@ -201,7 +225,7 @@ class SceneDrawer {
                 if (this.backgroundManager.darknessLevel > 50) {
                     const glowIntensity = Math.min(10, this.backgroundManager.darknessLevel / 10);
                     this.ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
-                    this.ctx.shadowBlur = glowIntensity;
+                    this.ctx.shadowBlur = glowIntensity * this.pixelRatio; // Adjust blur for pixel ratio
                 }
 
                 this.ctx.drawImage(

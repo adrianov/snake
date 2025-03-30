@@ -1,15 +1,22 @@
 class MoonDrawer {
-    constructor() {
+    constructor(pixelRatio = 1) {
         // Known new moon reference date (January 6, 2000 at 18:14 UTC)
         this.referenceNewMoon = new Date('2000-01-06T18:14:00Z');
         // The moon's synodic period (average time between new moons) in days
         this.synodicPeriod = 29.53059;
         // Default sky color in case no color is provided
         this.skyColor = 'rgb(10, 15, 40)';
+        // Store pixel ratio for Retina display support
+        this.pixelRatio = pixelRatio;
 
         // Reset animation properties
         this.resetDuration = 3000; // 3 seconds for reset animation
         this.spinsInReset = 5; // How many full phase spins during reset
+    }
+
+    // Update pixelRatio after resize
+    updatePixelRatio(pixelRatio) {
+        this.pixelRatio = pixelRatio;
     }
 
     // Calculate the current moon phase (0-1)
@@ -375,68 +382,105 @@ class MoonDrawer {
 
     // Draw craters on the visible portion of the moon
     drawCraters(ctx, x, y, radius, phase, alpha, visibleSide, terminatorX = null) {
+        // Skip drawing craters if opacity is too low to see them
+        if (alpha < 0.2) return;
+
+        // Simplified crater drawing with shadow effects
         ctx.save();
 
-        // Use a semi-transparent fill for craters that scales with the moon's alpha
-        // Craters should be subtle when the moon first appears
-        ctx.globalAlpha = 0.06 * alpha * alpha; // Square alpha to keep craters faint at low visibility
+        // Retina display adjustment - increase shadow blur slightly
+        const shadowBlur = 3 * this.pixelRatio;
 
-        // Use deterministic positions for craters
-        const seed = 12345;
+        // Define a few preset craters with varying sizes
+        const craters = [
+            // Large craters
+            { x: -0.2, y: 0.1, r: 0.18, d: 0.02 }, // Mare Imbrium
+            { x: 0.12, y: 0.25, r: 0.15, d: 0.03 }, // Mare Serenitatis
+            { x: 0.3, y: -0.15, r: 0.12, d: 0.01 }, // Oceanus Procellarum
+            { x: -0.32, y: -0.3, r: 0.1, d: 0.03 }, // Mare Nubium
+            
+            // Medium craters
+            { x: -0.05, y: -0.26, r: 0.07, d: 0.01 }, 
+            { x: 0.26, y: 0.32, r: 0.06, d: 0.02 },
+            { x: -0.27, y: 0.27, r: 0.08, d: 0.03 },
+            
+            // Small craters
+            { x: 0.1, y: 0.05, r: 0.03, d: 0.005 },
+            { x: -0.15, y: -0.1, r: 0.04, d: 0.005 },
+            { x: 0.35, y: -0.35, r: 0.05, d: 0.01 },
+            { x: -0.3, y: -0.05, r: 0.02, d: 0.003 },
+            { x: 0.04, y: -0.36, r: 0.03, d: 0.002 },
+            { x: 0.22, y: 0.1, r: 0.025, d: 0.004 }
+        ];
+
+        // Function to generate consistent "random" values based on inputs
         const pseudoRandom = (i, offset) => {
-            return ((seed * 9301 + 49297) * (i * 10 + offset)) % 233280 / 233280;
+            return (Math.sin(i * 12.9898 + offset * 78.233) * 43758.5453) % 1;
         };
 
-        // Draw several craters
-        for (let i = 0; i < 8; i++) {
-            // Generate crater position using polar coordinates
-            const angle = pseudoRandom(i, 1) * Math.PI * 2;
-            const distance = pseudoRandom(i, 2) * radius * 0.85;
-
-            const craterX = x + Math.cos(angle) * distance;
-            const craterY = y + Math.sin(angle) * distance;
-
-            // Only draw craters on the visible portion
-            let shouldDraw = false;
-
-            if (visibleSide === 'both') {
-                shouldDraw = true;
-            } else if (visibleSide === 'right' && craterX > x) {
-                shouldDraw = true;
-            } else if (visibleSide === 'left' && craterX < x) {
-                shouldDraw = true;
-            }
-
-            // Don't draw craters beyond the terminator line if provided
+        // Loop through and draw each crater
+        craters.forEach((crater, i) => {
+            // Skip craters that aren't visible based on phase
+            if (visibleSide === 'right' && crater.x < 0) return;
+            if (visibleSide === 'left' && crater.x > 0) return;
+            
+            // If there's a terminator line (day/night divider), check if crater is visible
             if (terminatorX !== null) {
-                if ((visibleSide === 'right' && craterX < terminatorX) ||
-                    (visibleSide === 'left' && craterX > terminatorX)) {
-                    shouldDraw = false;
-                }
+                // For waxing moon (terminator moves right to left)
+                if (phase < 0.5 && crater.x > terminatorX) return;
+                // For waning moon (terminator moves left to right)
+                if (phase > 0.5 && crater.x < terminatorX) return;
             }
 
-            if (shouldDraw) {
-                // Vary crater size
-                const craterSize = pseudoRandom(i, 3) * radius * 0.18 + radius * 0.04;
+            // Convert relative coordinates to canvas coordinates
+            const craterX = x + crater.x * radius;
+            const craterY = y + crater.y * radius;
+            const craterRadius = crater.r * radius;
+            const craterDepth = crater.d;
 
-                // Create gradient for realistic crater
-                const craterGradient = ctx.createRadialGradient(
-                    craterX, craterY, 0,
-                    craterX, craterY, craterSize
-                );
+            // Modify opacity based on global alpha
+            const craterAlpha = alpha * 0.8; // Slightly more transparent than moon
 
-                // Darker center, lighter edges
-                craterGradient.addColorStop(0, 'rgba(70, 70, 90, 0.9)');
-                craterGradient.addColorStop(0.6, 'rgba(90, 100, 120, 0.7)');
-                craterGradient.addColorStop(1, 'rgba(120, 130, 160, 0.4)');
-
-                ctx.fillStyle = craterGradient;
-                ctx.beginPath();
-                ctx.arc(craterX, craterY, craterSize, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
+            // Draw crater
+            ctx.beginPath();
+            ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
+            
+            // Set crater color as a slightly darker shade than the moon
+            // Calculate a pseudo-random variation for each crater
+            const variation = pseudoRandom(i, 0.5) * 0.2 - 0.1; // -0.1 to 0.1 variation
+            
+            // Base crater color with a slight variation to avoid uniformity
+            const colorValue = Math.max(150, Math.min(215, 180 + variation * 35));
+            ctx.fillStyle = `rgba(${colorValue}, ${colorValue + 3}, ${colorValue + 10}, ${craterAlpha})`;
+            
+            // Add subtle shadow for depth
+            ctx.shadowColor = `rgba(0, 0, 0, ${0.25 * alpha})`;
+            ctx.shadowBlur = shadowBlur; // Use pixel ratio scaled shadow
+            ctx.shadowOffsetX = craterRadius * craterDepth * 12;
+            ctx.shadowOffsetY = craterRadius * craterDepth * 12;
+            
+            ctx.fill();
+            
+            // Add highlight on opposite side for 3D effect
+            ctx.beginPath();
+            ctx.arc(
+                craterX - craterRadius * craterDepth * 18, 
+                craterY - craterRadius * craterDepth * 18, 
+                craterRadius * 0.8, 
+                0, Math.PI * 2
+            );
+            
+            // Clear shadow for highlight
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Semi-transparent white for highlight
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.08 * alpha})`;
+            ctx.fill();
+        });
+        
         ctx.restore();
     }
 }

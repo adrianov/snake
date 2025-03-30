@@ -70,7 +70,7 @@ class TipsManager {
     }
 
     // Draw the tip on the screen
-    drawTip(ctx, canvasWidth, canvasHeight, gridSize) {
+    drawTip(ctx, canvasWidth, canvasHeight, gridSize, pixelRatio = 1) {
         // Ensure we have a tip
         this.ensureCurrentTip();
         
@@ -89,7 +89,7 @@ class TipsManager {
         ctx.font = `${this.tipFontSize}px 'Poppins', sans-serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 4;
+        ctx.shadowBlur = 4 * pixelRatio; // Adjust shadow blur for pixel ratio
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 

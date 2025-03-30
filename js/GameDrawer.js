@@ -5,10 +5,11 @@ class GameDrawer {
         this.gridSize = gridSize;
         this.fruitImages = fruitImages;
         this.glowDuration = 3000; // Duration of glow effect in milliseconds (3 seconds)
+        this.pixelRatio = window.devicePixelRatio || 1; // Get device pixel ratio for Retina displays
 
         // Initialize specialized drawers
-        this.snakeDrawer = new SnakeDrawer(gridSize);
-        this.sceneDrawer = new SceneDrawer(canvas, gridSize);
+        this.snakeDrawer = new SnakeDrawer(gridSize, this.pixelRatio);
+        this.sceneDrawer = new SceneDrawer(canvas, gridSize, this.pixelRatio);
     }
 
     // Reset darkness level when starting a new game
@@ -33,8 +34,9 @@ class GameDrawer {
     // Update gridSize for responsive design
     updateGridSize(gridSize) {
         this.gridSize = gridSize;
-        this.snakeDrawer.updateGridSize(gridSize);
-        this.sceneDrawer.updateGridSize(gridSize);
+        this.pixelRatio = window.devicePixelRatio || 1; // Update pixel ratio on resize
+        this.snakeDrawer.updateGridSize(gridSize, this.pixelRatio);
+        this.sceneDrawer.updateGridSize(gridSize, this.pixelRatio);
     }
 
     // Main draw function that delegates to specialized drawers

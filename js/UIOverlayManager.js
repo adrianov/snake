@@ -1,22 +1,24 @@
 class UIOverlayManager {
-    constructor(gridSize) {
+    constructor(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize || 20;
+        this.pixelRatio = pixelRatio; // Store pixel ratio for Retina display support
         this.tipsManager = new TipsManager();
     }
 
     // Update gridSize for responsive design
-    updateGridSize(gridSize) {
+    updateGridSize(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize;
+        this.pixelRatio = pixelRatio; // Update pixel ratio
     }
 
     // Draw game over screen
-    drawGameOver(ctx, canvas, score, highScore) {
+    drawGameOver(ctx, visualWidth, visualHeight, score, highScore) {
         // Create a semi-transparent gradient overlay with a green-to-red tint
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        const gradient = ctx.createLinearGradient(0, 0, 0, visualHeight);
         gradient.addColorStop(0, 'rgba(30, 41, 59, 0.9)');
         gradient.addColorStop(1, 'rgba(153, 27, 27, 0.85)'); // Darker red that complements green
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, visualWidth, visualHeight);
 
         // Set common text properties
         ctx.textAlign = 'center';
@@ -27,21 +29,21 @@ class UIOverlayManager {
 
         // Create gradient for game over text - using a red that complements green
         const gameOverGradient = ctx.createLinearGradient(
-            canvas.width / 2 - 120,
-            canvas.height / 2 - 60,
-            canvas.width / 2 + 120,
-            canvas.height / 2 - 20
+            visualWidth / 2 - 120,
+            visualHeight / 2 - 60,
+            visualWidth / 2 + 120,
+            visualHeight / 2 - 20
         );
         gameOverGradient.addColorStop(0, '#e74c3c');
         gameOverGradient.addColorStop(1, '#c0392b');
 
         // Add glow effect
         ctx.shadowColor = 'rgba(231, 76, 60, 0.6)';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 15 * this.pixelRatio; // Adjust for pixel ratio
 
         ctx.font = `bold ${this.gridSize * 1.8}px 'Poppins', sans-serif`;
         ctx.fillStyle = gameOverGradient;
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - this.gridSize * 4);
+        ctx.fillText('GAME OVER', visualWidth / 2, visualHeight / 2 - this.gridSize * 4);
 
         ctx.restore();
 
@@ -52,8 +54,8 @@ class UIOverlayManager {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
         ctx.beginPath();
         ctx.roundRect(
-            canvas.width / 2 - this.gridSize * 5,
-            canvas.height / 2 - this.gridSize * 2,
+            visualWidth / 2 - this.gridSize * 5,
+            visualHeight / 2 - this.gridSize * 2,
             this.gridSize * 10,
             this.gridSize * 6, // Increased height to add more space
             this.gridSize / 3
@@ -62,7 +64,7 @@ class UIOverlayManager {
 
         // Score border highlight
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 * this.pixelRatio; // Adjust for pixel ratio
         ctx.stroke();
 
         ctx.restore();
@@ -71,21 +73,21 @@ class UIOverlayManager {
         ctx.save();
 
         const scoreGradient = ctx.createLinearGradient(
-            canvas.width / 2 - 60,
-            canvas.height / 2,
-            canvas.width / 2 + 60,
-            canvas.height / 2
+            visualWidth / 2 - 60,
+            visualHeight / 2,
+            visualWidth / 2 + 60,
+            visualHeight / 2
         );
         scoreGradient.addColorStop(0, '#2ecc71');
         scoreGradient.addColorStop(1, '#27ae60');
 
         ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillText('SCORE', canvas.width / 2, canvas.height / 2 - this.gridSize * 1);
+        ctx.fillText('SCORE', visualWidth / 2, visualHeight / 2 - this.gridSize * 1);
 
         ctx.font = `bold ${this.gridSize * 1.2}px 'Poppins', sans-serif`;
         ctx.fillStyle = scoreGradient;
-        ctx.fillText(`${score}`, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(`${score}`, visualWidth / 2, visualHeight / 2);
 
         ctx.restore();
 
@@ -93,21 +95,21 @@ class UIOverlayManager {
         ctx.save();
 
         const highScoreGradient = ctx.createLinearGradient(
-            canvas.width / 2 - 80,
-            canvas.height / 2 + 60,
-            canvas.width / 2 + 80,
-            canvas.height / 2 + 60
+            visualWidth / 2 - 80,
+            visualHeight / 2 + 60,
+            visualWidth / 2 + 80,
+            visualHeight / 2 + 60
         );
         highScoreGradient.addColorStop(0, '#3498db');
         highScoreGradient.addColorStop(1, '#2980b9');
 
         ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillText('HIGH SCORE', canvas.width / 2, canvas.height / 2 + this.gridSize * 1.8);
+        ctx.fillText('HIGH SCORE', visualWidth / 2, visualHeight / 2 + this.gridSize * 1.8);
 
         ctx.font = `bold ${this.gridSize * 1.2}px 'Poppins', sans-serif`;
         ctx.fillStyle = highScoreGradient;
-        ctx.fillText(`${highScore}`, canvas.width / 2, canvas.height / 2 + this.gridSize * 2.8);
+        ctx.fillText(`${highScore}`, visualWidth / 2, visualHeight / 2 + this.gridSize * 2.8);
 
         ctx.restore();
 
@@ -119,8 +121,8 @@ class UIOverlayManager {
             ctx.fillStyle = 'rgba(243, 156, 18, 0.2)';
             ctx.beginPath();
             ctx.roundRect(
-                canvas.width / 2 - this.gridSize * 4,
-                canvas.height / 2 + this.gridSize * 5.5,
+                visualWidth / 2 - this.gridSize * 4,
+                visualHeight / 2 + this.gridSize * 5.5,
                 this.gridSize * 8,
                 this.gridSize * 1,
                 this.gridSize / 3
@@ -129,10 +131,10 @@ class UIOverlayManager {
 
             // Add star icon and glow
             ctx.shadowColor = 'rgba(243, 156, 18, 0.6)';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 10 * this.pixelRatio; // Adjust for pixel ratio
             ctx.fillStyle = '#f39c12';
             ctx.font = `${this.gridSize * 0.65}px 'Poppins', sans-serif`;
-            ctx.fillText('✨ NEW HIGH SCORE! ✨', canvas.width / 2, canvas.height / 2 + this.gridSize * 6);
+            ctx.fillText('✨ NEW HIGH SCORE! ✨', visualWidth / 2, visualHeight / 2 + this.gridSize * 6);
 
             ctx.restore();
         }
@@ -149,21 +151,21 @@ class UIOverlayManager {
 
         // Position based on whether there's a new high score badge
         const y = score === highScore && score > 0
-            ? canvas.height / 2 + this.gridSize * 7.5 // After high score badge
-            : canvas.height / 2 + this.gridSize * 6; // Directly after high score
+            ? visualHeight / 2 + this.gridSize * 7.5 // After high score badge
+            : visualHeight / 2 + this.gridSize * 6; // Directly after high score
 
-        ctx.fillText('Press SPACE to play again', canvas.width / 2, y);
+        ctx.fillText('Press SPACE to play again', visualWidth / 2, y);
         ctx.restore();
     }
 
     // Draw pause message overlay
-    drawPauseMessage(ctx, canvas) {
+    drawPauseMessage(ctx, visualWidth, visualHeight) {
         // Create a semi-transparent gradient overlay
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        const gradient = ctx.createLinearGradient(0, 0, 0, visualHeight);
         gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
         gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, visualWidth, visualHeight);
 
         // Set common text properties
         ctx.textAlign = 'center';
@@ -176,8 +178,8 @@ class UIOverlayManager {
         ctx.fillStyle = 'rgba(46, 204, 113, 0.2)';
         ctx.beginPath();
         ctx.roundRect(
-            canvas.width / 2 - this.gridSize * 2,
-            canvas.height / 2 - this.gridSize * 3,
+            visualWidth / 2 - this.gridSize * 2,
+            visualHeight / 2 - this.gridSize * 3,
             this.gridSize * 4,
             this.gridSize * 2,
             this.gridSize / 2
@@ -187,11 +189,11 @@ class UIOverlayManager {
         // Draw left pause bar
         ctx.fillStyle = '#2ecc71';
         ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 10 * this.pixelRatio; // Adjust for pixel ratio
         ctx.beginPath();
         ctx.roundRect(
-            canvas.width / 2 - this.gridSize * 0.8,
-            canvas.height / 2 - this.gridSize * 2.5,
+            visualWidth / 2 - this.gridSize * 0.8,
+            visualHeight / 2 - this.gridSize * 2.5,
             this.gridSize * 0.6,
             this.gridSize * 1,
             this.gridSize / 8
@@ -201,8 +203,8 @@ class UIOverlayManager {
         // Draw right pause bar
         ctx.beginPath();
         ctx.roundRect(
-            canvas.width / 2 + this.gridSize * 0.2,
-            canvas.height / 2 - this.gridSize * 2.5,
+            visualWidth / 2 + this.gridSize * 0.2,
+            visualHeight / 2 - this.gridSize * 2.5,
             this.gridSize * 0.6,
             this.gridSize * 1,
             this.gridSize / 8
@@ -216,19 +218,19 @@ class UIOverlayManager {
 
         // Create gradient for text using snake colors
         const textGradient = ctx.createLinearGradient(
-            canvas.width / 2 - 80,
-            canvas.height / 2,
-            canvas.width / 2 + 80,
-            canvas.height / 2
+            visualWidth / 2 - 80,
+            visualHeight / 2,
+            visualWidth / 2 + 80,
+            visualHeight / 2
         );
         textGradient.addColorStop(0, '#2ecc71');
         textGradient.addColorStop(1, '#27ae60');
 
         ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 10 * this.pixelRatio; // Adjust for pixel ratio
         ctx.font = `bold ${this.gridSize * 1.4}px 'Poppins', sans-serif`;
         ctx.fillStyle = textGradient;
-        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 + this.gridSize * 0.5); // Moved down by 1 grid unit
+        ctx.fillText('PAUSED', visualWidth / 2, visualHeight / 2 + this.gridSize * 0.5); // Moved down by 1 grid unit
 
         ctx.restore();
 
@@ -242,20 +244,13 @@ class UIOverlayManager {
         const pulse = Math.sin(time * 2) * 0.1 + 0.9;
         ctx.globalAlpha = pulse;
 
-        ctx.fillText('Press SPACE to continue', canvas.width / 2, canvas.height / 2 + this.gridSize * 2.5); // Also moved down to maintain spacing
+        ctx.fillText('Press SPACE to continue', visualWidth / 2, visualHeight / 2 + this.gridSize * 2.5); // Also moved down to maintain spacing
 
         ctx.restore();
     }
 
     // Draw start message overlay
-    drawStartMessage(ctx, canvas) {
-        // Create a semi-transparent gradient overlay
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
-        gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+    drawStartMessage(ctx, visualWidth, visualHeight) {
         // Set common text properties
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -265,28 +260,28 @@ class UIOverlayManager {
 
         // Create gradient for title - using snake greens
         const titleGradient = ctx.createLinearGradient(
-            canvas.width / 2 - 150,
-            canvas.height / 2 - 80,
-            canvas.width / 2 + 150,
-            canvas.height / 2 - 40
+            visualWidth / 2 - 150,
+            visualHeight / 2 - 80,
+            visualWidth / 2 + 150,
+            visualHeight / 2 - 40
         );
         titleGradient.addColorStop(0, '#2ecc71');
         titleGradient.addColorStop(1, '#27ae60');
 
         // Add glow effect
         ctx.shadowColor = 'rgba(46, 204, 113, 0.6)';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 15 * this.pixelRatio;
 
         ctx.font = `bold ${this.gridSize * 1.8}px 'Poppins', sans-serif`;
         ctx.fillStyle = titleGradient;
-        ctx.fillText('SNAKE GAME', canvas.width / 2, canvas.height / 2 - this.gridSize * 4);
+        ctx.fillText('SNAKE GAME', visualWidth / 2, visualHeight / 2 - this.gridSize * 4);
 
         ctx.restore();
 
         // Draw arrow keys with animation and colors in the green/blue family
         const arrowSize = this.gridSize * 0.9;
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2 - this.gridSize * 0.4; // Move arrows up
+        const centerX = visualWidth / 2;
+        const centerY = visualHeight / 2 - this.gridSize * 0.4; // Move arrows up
         const arrowSpacing = arrowSize * 1.4;
         const time = Date.now() / 1000;
         const bounce = Math.sin(time * 3) * 5;
@@ -296,7 +291,7 @@ class UIOverlayManager {
         // Left arrow - teal blue
         ctx.fillStyle = '#3498db';
         ctx.shadowColor = 'rgba(52, 152, 219, 0.6)';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 8 * this.pixelRatio;
         ctx.font = `${arrowSize}px Arial`;
         ctx.fillText('←', centerX - arrowSpacing * 1.5, centerY + bounce);
 
@@ -320,10 +315,10 @@ class UIOverlayManager {
         // Draw "to start" text
         ctx.font = `${this.gridSize * 0.7}px 'Poppins', sans-serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillText('to start', canvas.width / 2, canvas.height / 2 + this.gridSize * 0.8);
+        ctx.fillText('to start', visualWidth / 2, visualHeight / 2 + this.gridSize * 0.8);
 
         // Draw a game tip
-        this.tipsManager.drawTip(ctx, canvas.width, canvas.height, this.gridSize);
+        this.tipsManager.drawTip(ctx, visualWidth, visualHeight, this.gridSize, this.pixelRatio);
     }
 
     // Reset the current tip

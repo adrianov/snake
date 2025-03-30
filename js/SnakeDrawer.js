@@ -1,6 +1,7 @@
 class SnakeDrawer {
-    constructor(gridSize) {
+    constructor(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize;
+        this.pixelRatio = pixelRatio; // Store pixel ratio for Retina display support
 
         // Set default snake colors (will be overridden by random selection)
         this.snakeColor = {
@@ -116,8 +117,9 @@ class SnakeDrawer {
     }
 
     // Update gridSize (for responsive design)
-    updateGridSize(gridSize) {
+    updateGridSize(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize;
+        this.pixelRatio = pixelRatio; // Update pixel ratio
         this.updateSprites();
     }
 
@@ -128,6 +130,9 @@ class SnakeDrawer {
 
     // Draw snake on the canvas
     drawSnake(ctx, snake, direction, lastEatenTime, glowDuration, isGameOver) {
+        // Apply high DPI scaling
+        ctx.save();
+        
         // Calculate glow effect with pulsing
         const timeSinceEaten = Date.now() - lastEatenTime;
         const glowIntensity = Math.max(0, 1 - (timeSinceEaten / glowDuration));
@@ -222,7 +227,7 @@ class SnakeDrawer {
             // Priority 1: Apply luck glow effect (red) if active
             if (luckGlowIntensity > 0) {
                 ctx.shadowColor = luckGlowColor;
-                ctx.shadowBlur = 40 * luckGlowIntensity; // Increased from 30 to 40 for stronger blur
+                ctx.shadowBlur = 40 * luckGlowIntensity * this.pixelRatio; // Adjust blur for pixel ratio
 
                 // Add a second shadow for even more intensity on lucky escapes
                 ctx.shadowOffsetX = 0;
@@ -231,7 +236,7 @@ class SnakeDrawer {
             // Priority 2: Apply normal food glow effect if active
             else if (finalGlowIntensity > 0) {
                 ctx.shadowColor = glowColor;
-                ctx.shadowBlur = 25 * finalGlowIntensity; // Increased from 20 to 25
+                ctx.shadowBlur = 25 * finalGlowIntensity * this.pixelRatio; // Adjust blur for pixel ratio
             }
 
             ctx.drawImage(sprite, -this.gridSize / 2, -this.gridSize / 2, this.gridSize, this.gridSize);
@@ -249,6 +254,8 @@ class SnakeDrawer {
 
             ctx.restore();
         });
+        
+        ctx.restore();
     }
 
     // Helper method to get glow color based on yellowness level

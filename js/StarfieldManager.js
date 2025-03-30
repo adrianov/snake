@@ -1,10 +1,19 @@
 class StarfieldManager {
-    constructor() {
+    constructor(pixelRatio = 1) {
         // Cache system
         this.starFieldCache = null;
         this.lastCacheKey = null;
         this.stars = []; // Pre-calculated star data
         this.starsGenerated = false;
+        this.pixelRatio = pixelRatio; // Store pixel ratio for Retina display support
+    }
+
+    // Update pixelRatio after resize
+    updatePixelRatio(pixelRatio) {
+        this.pixelRatio = pixelRatio;
+        // Clear cache to force regeneration with new pixel ratio
+        this.starFieldCache = null;
+        this.lastCacheKey = null;
     }
 
     // Generate star data - only called once or when canvas size changes
@@ -155,8 +164,8 @@ class StarfieldManager {
             this.stars.push({
                 x,
                 y,
-                size,
-                glowRadius: size * 1.5, // Smaller glow radius
+                size: size * this.pixelRatio, // Scale size by pixel ratio
+                glowRadius: size * 1.5 * this.pixelRatio, // Scale glow by pixel ratio
                 twinkleSpeed,
                 twinklePhase,
                 hasPulsingEffect,
@@ -169,10 +178,10 @@ class StarfieldManager {
                 coreG,
                 coreB,
                 hasHalo,
-                haloSize,
+                haloSize: haloSize * this.pixelRatio, // Scale halo by pixel ratio
                 haloColor,
                 hasDiffraction,
-                spikeLength,
+                spikeLength: spikeLength * this.pixelRatio, // Scale spike length by pixel ratio
                 hasOctoDiffraction
             });
         }
@@ -203,7 +212,7 @@ class StarfieldManager {
 
         // Create a key that represents both darkness level and moon position
         const currentDarknessBand = Math.floor(darknessLevel / 5);
-        const cacheKey = `${currentDarknessBand}_${moonPositionBand}`;
+        const cacheKey = `${currentDarknessBand}_${moonPositionBand}_${this.pixelRatio}`;
 
         // Check if we need to regenerate the star field cache
         if (this.lastCacheKey !== cacheKey || !this.starFieldCache || 

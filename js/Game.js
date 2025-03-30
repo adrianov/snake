@@ -154,8 +154,16 @@ class SnakeGame {
         // This eliminates partial cells at the edges
         const adjustedSize = this.tileCount * this.gridSize;
 
-        this.canvas.width = adjustedSize;
-        this.canvas.height = adjustedSize;
+        // Get the device pixel ratio
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Set canvas dimensions for Retina display
+        this.canvas.width = adjustedSize * dpr;
+        this.canvas.height = adjustedSize * dpr;
+        
+        // Set CSS dimensions for proper sizing on screen
+        this.canvas.style.width = `${adjustedSize}px`;
+        this.canvas.style.height = `${adjustedSize}px`;
 
         // Ensure the canvas container maintains its border-radius after resize
         container.style.borderRadius = 'var(--radius-md)';
@@ -895,32 +903,36 @@ class SnakeGame {
     }
 
     draw() {
-        if (!this.drawer || !this.ctx) {
-            return;
-        }
-
-        const gameState = this.gameStateManager.getGameState();
-        const drawState = {
+        if (!this.imagesLoaded) return;
+        
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Apply device pixel ratio scaling
+        const dpr = window.devicePixelRatio || 1;
+        this.ctx.save();
+        this.ctx.scale(dpr, dpr);
+        
+        // Get current game state
+        const currentState = this.gameStateManager.getGameState();
+        
+        // Draw game state
+        const gameState = {
             snake: this.snake.getSegments(),
-            food: this.foodManager.getAllFood(),
+            food: this.foodManager.food,
             direction: this.direction,
-            score: gameState.score,
-            highScore: gameState.highScore,
-            isGameOver: gameState.isGameOver,
-            isPaused: gameState.isPaused,
-            isGameStarted: gameState.isGameStarted,
-            lastEatenTime: this.lastEatenTime,
-            luckEnabled: gameState.luckEnabled,
-            shakeEnabled: gameState.shakeEnabled
+            score: currentState.score,
+            highScore: currentState.highScore,
+            isGameOver: currentState.isGameOver,
+            isPaused: currentState.isPaused,
+            isGameStarted: currentState.isGameStarted,
+            lastEatenTime: this.lastEatenTime
         };
-
-        this.drawer.draw(drawState);
-
-        // Only turn off shaking if shakeEnabled is false
-        // Don't override the intensity value when it's enabled - let the SnakeDrawer handle it
-        if (this.drawer && this.drawer.snakeDrawer && !gameState.shakeEnabled) {
-            this.drawer.snakeDrawer.setShakeIntensity(0);
-        }
+        
+        this.drawer.draw(gameState);
+        
+        // Restore context
+        this.ctx.restore();
     }
 
     toggleSound() {
