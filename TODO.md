@@ -18,6 +18,17 @@
   - [x] Ensure icon matches game's visual style
   - [x] Add favicon to HTML head
 
+- [ ] Add Facebook sharing template
+  - [ ] Add Open Graph meta tags to HTML head
+  - [ ] Create compelling og:title and og:description
+  - [ ] Keep original img/snake1.png and use ImageMagick to create a new file at 1200×630px for og:image
+  - [ ] Add og:url with canonical URL
+
+- [ ] Add copyright information
+  - [ ] Add "© Peter Adrianov, 2025" to footer in index.html
+  - [ ] Include copyright notice in README.md
+  - [ ] Add license information to GitHub repository
+
 ## Mobile Optimization
 - [ ] Implement touch controls
   - [ ] Add one-finger drag for direction control
@@ -29,4 +40,4 @@
   - [ ] Hide browser UI elements when game starts
   - [ ] Restore browser UI on game over
   - [ ] Ensure proper scaling for different screen sizes
-  - [ ] Test on various mobile devices 
+  - [ ] Test on various mobile devices
