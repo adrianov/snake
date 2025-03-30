@@ -12,9 +12,19 @@
 ### Root
 - **index.html**: Main HTML file loading all game assets
 - **README.md**: Documentation and instructions
+- **TODO.md**: Task list for ongoing development
 
 ### css/
 - **styles.css**: UI styling and animations
+
+### img/
+- **favicon.svg**: Vector version of the snake head favicon
+- **favicon.ico**: ICO version for older browsers
+- **favicon-32x32.png**: 32x32 PNG version for various devices
+- **apple-touch-icon.png**: Default Apple Touch Icon (180x180)
+- **apple-touch-icon-180x180.png**: iPhone 6+/7+/8+/X/XS/11/12/13 devices
+- **apple-touch-icon-167x167.png**: iPad Pro
+- **apple-touch-icon-152x152.png**: iPad, iPad mini
 
 ### js/
 - **Game.js**: Main game logic and initialization

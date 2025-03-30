@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define gradient like in the game -->
+  <defs>
+    <linearGradient id="snakeGradient" x1="0" y1="0" x2="64" y2="64">
+      <stop offset="0%" stop-color="#4CAF50" />
+      <stop offset="100%" stop-color="#2E7D32" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Snake head shape - square with rounded corners -->
+  <rect x="2" y="2" width="60" height="60" rx="4" ry="4"
+        fill="url(#snakeGradient)" stroke="#2E7D32" stroke-width="2" />
+  
+  <!-- Eyes with white eyeballs and black irises -->
+  <!-- Left eye -->
+  <circle cx="16" cy="16" r="6" fill="#FFFFFF" />
+  <circle cx="16" cy="16" r="3" fill="#000000" />
+  
+  <!-- Right eye -->
+  <circle cx="48" cy="16" r="6" fill="#FFFFFF" />
+  <circle cx="48" cy="16" r="3" fill="#000000" />
+  
+  <!-- Draw white smile - lower and wider -->
+  <path d="M16 38 Q32 50 48 38" 
+        stroke="#FFFFFF" stroke-width="4" fill="none" />
+</svg> 
