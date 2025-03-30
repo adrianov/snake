@@ -55,6 +55,9 @@ class SnakeGame {
         // Prevent page scrolling when touching the canvas using CSS overscroll behavior
         this.canvas.style.overscrollBehavior = 'none';
         this.canvas.style.touchAction = 'none';
+        
+        // Add click listener to document to pause the game when clicking outside the game field
+        document.addEventListener('click', (e) => this.handleDocumentClick(e));
     }
 
     addInteractionListeners() {
@@ -436,7 +439,7 @@ class SnakeGame {
 
     startGame() {
         if (!this.imagesLoaded) {
-            console.warn('Attempted to start game before images loaded.');
+            console.warn('[startGame] Attempted to start game before images loaded.');
             return;
         }
         
@@ -447,38 +450,28 @@ class SnakeGame {
 
         // Check if the game is over - shouldn't reach here if resetGame() was called properly
         if (this.gameStateManager.getGameState().isGameOver) {
-             console.log("StartGame called when game is already over. This shouldn't happen if resetGame() was called.");
+             console.log("[startGame] StartGame called when game is already over. This shouldn't happen if resetGame() was called.");
              this.resetGame(); // Should ideally be handled before calling startGame
         }
 
-        console.log("Starting game...");
-        console.log("Game State before start:", 
-            JSON.stringify({
-                isGameStarted: this.gameStateManager.isGameStarted,
-                isGameOver: this.gameStateManager.isGameOver,
-                isPaused: this.gameStateManager.isPaused
-            })
-        );
+        console.log("[startGame] Starting game process...");
+        console.log("[startGame] State BEFORE resetGameState:", JSON.stringify(this.gameStateManager.getGameState()));
 
         // Reset game elements FIRST 
         this.resetGameState(); 
+        console.log("[startGame] State AFTER resetGameState:", JSON.stringify(this.gameStateManager.getGameState()));
         
         // THEN set the game state to started
         this.gameStateManager.startGame();
-        
-        console.log("Game State after start:", 
-            JSON.stringify({
-                isGameStarted: this.gameStateManager.isGameStarted,
-                isGameOver: this.gameStateManager.isGameOver,
-                isPaused: this.gameStateManager.isPaused
-            })
-        );
+        console.log("[startGame] State AFTER gameStateManager.startGame():", JSON.stringify(this.gameStateManager.getGameState()));
 
         // Start loops
         this.gameLoop.startGameLoop();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this)); 
+        console.log("[startGame] Game loops started.");
 
         this.draw(); // Initial draw after starting
+        console.log("[startGame] Initial draw completed.");
     }
 
     resetGameState() {
@@ -828,6 +821,11 @@ class SnakeGame {
             })
         );
         
+        // Generate a new color for the snake
+        if (this.drawer) {
+            this.drawer.generateNewSnakeColor();
+        }
+
         // Get sound manager instance
         this.soundManager = SoundManager.getInstance();
         
@@ -1001,7 +999,7 @@ class SnakeGame {
         
         // Handle game over state - reset and start a new game
         if (gameState.isGameOver) {
-             console.log("Touch detected on game over screen - resetting and starting new game");
+             console.log("[handleTouchStart] Touch detected on game over screen - resetting and starting new game");
              event.preventDefault(); // Prevent default for game restart touch
              
              // Reset game state first
@@ -1012,24 +1010,21 @@ class SnakeGame {
              this.gameLoop.startGameLoop();
              this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
              
-             // Ensure interaction has happened
+             // Ensure interaction has happened (should be true if clicking game over screen)
              if (!this.hasUserInteraction) {
-                 this.handleFirstInteraction();
+                 this.handleFirstInteraction(); // Should ideally not be needed here
              }
              
              // Select a NEW random melody for the new game
              if (this.musicManager) {
-                 console.log("Selecting new random melody for new game after game over");
+                 console.log("Selecting new random melody for new game after game over (touch)");
                  this.musicManager.selectRandomMelody();
              }
              
              // EXPLICITLY START MUSIC if it should be enabled
-             // This is needed because the new/reset MusicManager won't automatically start
              const currentGameState = this.gameStateManager.getGameState();
              if (currentGameState.musicEnabled && this.musicManager) {
-                 console.log("Starting music for new game after game over");
-                 // We can safely start music here because resetGame ensures 
-                 // musicManager is initialized and AudioContext is properly set up
+                 console.log("Starting music for new game after game over (touch)");
                  this.musicManager.startMusic();
              }
              
@@ -1038,12 +1033,20 @@ class SnakeGame {
         
         // Start game if not started yet
         if (!gameState.isGameStarted) {
-             console.log("Touch detected on start screen - starting new game");
+             console.log("[handleTouchStart] Touch detected on start screen.");
              event.preventDefault(); // Prevent default for game start touch
              
-             // Set request flag BEFORE calling interaction handler
-             this.startRequested = true;
-             this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
+             // Check if this is the *first* interaction
+             if (!this.hasUserInteraction) {
+                 console.log("[handleTouchStart] First interaction via touch, setting startRequested.");
+                 // Set request flag BEFORE calling interaction handler
+                 this.startRequested = true;
+                 this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
+             } else {
+                 // Interaction already happened (e.g., clicked outside), start game directly
+                 console.log("[handleTouchStart] Interaction already occurred, starting game directly.");
+                 this.startGame();
+             }
              return; // Handled start request
         }
 
@@ -1151,6 +1154,52 @@ class SnakeGame {
                 this.gameLoop.reduceSpeed();
             }
         }
+    }
+
+    handleDocumentClick(event) {
+        console.log("[handleDocumentClick] Click detected.");
+        // Prerequisite: User must have interacted at least once for clicks to matter for game state
+        if (!this.hasUserInteraction) {
+            // If the first interaction is a click, the 'once' listener in
+            // addInteractionListeners should handle it. This function shouldn't
+            // need to do anything until interaction has occurred.
+            console.log("[handleDocumentClick] Ignored: No user interaction yet.");
+            return;
+        }
+
+        console.log(`[handleDocumentClick] User interaction detected (hasUserInteraction: ${this.hasUserInteraction}).`);
+        const gameState = this.gameStateManager.getGameState();
+        console.log("[handleDocumentClick] Current Game State:", JSON.stringify(gameState));
+
+        // Pause logic: Click outside when running & not paused
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            console.log("[handleDocumentClick] Checking pause condition...");
+            if (!this.canvas.contains(event.target) &&
+                !event.target.closest('.controls') &&
+                !event.target.closest('.donation-panel')) {
+                console.log("[handleDocumentClick] Pausing game via outside click.");
+                this.togglePause();
+                this.uiManager.showTemporaryMessage('Game paused', 1500);
+                return; // Handled
+            }
+            console.log("[handleDocumentClick] Pause condition not met (click was inside or on controls).");
+        }
+
+        // Start logic: Click inside canvas when not started
+        if (!gameState.isGameStarted && !gameState.isGameOver) {
+            console.log("[handleDocumentClick] Checking start condition...");
+            if (this.canvas.contains(event.target)) {
+                console.log("[handleDocumentClick] Starting game via canvas click.");
+                // Ensure startRequested is set (potentially redundant, but safe)
+                this.startRequested = true;
+                // Call startGame directly. Audio is ready because hasUserInteraction is true.
+                this.startGame();
+                return; // Handled
+            }
+            console.log("[handleDocumentClick] Start condition not met (click was outside canvas).");
+        }
+        
+        console.log("[handleDocumentClick] Click did not trigger pause or start.");
     }
 }
 
