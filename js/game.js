@@ -214,7 +214,6 @@ class SnakeGame {
                     this.snake,
                     this.direction,
                     this.getRandomFruit.bind(this),
-                    gameState.soundEnabled,
                     this.soundManager
                 );
             }
@@ -262,7 +261,7 @@ class SnakeGame {
             if (validDirectionChange) {
                 this.nextDirection = keyDirection;
             }
-            this.gameLoop.updateGameSpeed(keyDirection, this.direction, validDirectionChange);
+            this.gameLoop.updateGameSpeed(keyDirection, this.direction);
         }
     }
 
@@ -287,8 +286,7 @@ class SnakeGame {
                 this.nextDirection,
                 this.foodManager.getAllFood(),
                 this.gameStateManager.getScore(),
-                this.gameLoop.getSpeed(),
-                this.gameLoop.getFrameInterval()
+                this.gameLoop.getSpeed()
             );
             this.pauseGame();
         } else {
@@ -358,7 +356,6 @@ class SnakeGame {
         this.foodManager.manageFruits(
             this.snake,
             this.getRandomFruit.bind(this),
-            gameState.soundEnabled,
             gameState.isGameStarted,
             gameState.isPaused,
             gameState.isGameOver,
@@ -410,7 +407,6 @@ class SnakeGame {
             // Original luck-based collision handling (80% chance to avoid crash)
             const safeDirection = this.snake.findSafeDirection(
                 this.direction,
-                this.tileCount,
                 (x, y) => this.isPositionSafe(x, y)
             );
 

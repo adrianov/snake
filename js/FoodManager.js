@@ -41,7 +41,7 @@ class FoodManager {
         }
     }
 
-    manageFruits(snake, getRandomFruit, soundEnabled, isGameStarted, isPaused, isGameOver, soundManager) {
+    manageFruits(snake, getRandomFruit, isGameStarted, isPaused, isGameOver, soundManager) {
         // Remove expired fruits
         const currentTime = Date.now();
         this.food = this.food.filter(food => {
@@ -74,7 +74,7 @@ class FoodManager {
         return null;
     }
 
-    spawnFruitInSnakeDirection(snake, direction, getRandomFruit, soundEnabled, soundManager) {
+    spawnFruitInSnakeDirection(snake, direction, getRandomFruit, soundManager) {
         if (!snake) return;
 
         const head = snake.head();

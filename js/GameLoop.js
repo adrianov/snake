@@ -54,8 +54,7 @@ class GameLoop {
         }
     }
 
-    updateGameSpeed(keyDirection, currentDirection, validDirectionChange) {
-        const previousSpeed = this.speed;
+    updateGameSpeed(keyDirection, currentDirection) {
         const isCurrentDirection = keyDirection === currentDirection;
         const isOppositeDirection = keyDirection === {
             'up': 'down',
@@ -95,10 +94,6 @@ class GameLoop {
 
     getSpeed() {
         return this.speed;
-    }
-
-    getFrameInterval() {
-        return this.frameInterval;
     }
 }
 

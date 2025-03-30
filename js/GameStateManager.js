@@ -29,7 +29,7 @@ class GameStateManager {
         this.isGameOver = false;
     }
 
-    pauseGame(snake, direction, nextDirection, food, score, speed, frameInterval) {
+    pauseGame(snake, direction, nextDirection, food, score, speed) {
         this.isPaused = true;
         this.lastGameState = {
             snake: JSON.parse(JSON.stringify(snake.getSegments())),
@@ -37,8 +37,7 @@ class GameStateManager {
             nextDirection: nextDirection,
             food: JSON.parse(JSON.stringify(food)),
             score: score,
-            speed: speed,
-            frameInterval: frameInterval
+            speed: speed
         };
     }
 

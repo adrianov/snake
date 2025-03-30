@@ -38,7 +38,7 @@ class Snake {
         );
     }
 
-    findSafeDirection(currentDirection, boardSize, isPositionSafeCallback) {
+    findSafeDirection(currentDirection, isPositionSafeCallback) {
         const oppositeDirections = {
             'up': 'down',
             'down': 'up',
