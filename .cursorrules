@@ -13,6 +13,8 @@
 - **index.html**: Main HTML file loading all game assets
 - **README.md**: Documentation and instructions
 - **TODO.md**: Task list for ongoing development
+- **LICENSE**: Project license information
+- **.gitignore**: Git ignore rules
 
 ### css/
 - **styles.css**: UI styling and animations
@@ -25,6 +27,11 @@
 - **apple-touch-icon-180x180.png**: iPhone 6+/7+/8+/X/XS/11/12/13 devices
 - **apple-touch-icon-167x167.png**: iPad Pro
 - **apple-touch-icon-152x152.png**: iPad, iPad mini
+- **github-icon.svg**: GitHub icon for social links
+- **snake1.png**: Snake game screenshot
+- **snake1-og.jpg**: Open Graph image for social sharing
+- **sber-qr.png**: QR code for Sber payment
+- **usdt-trc20-qr.png**: QR code for USDT TRC20 payment
 
 ### js/
 - **Game.js**: Main game logic and initialization
@@ -38,7 +45,10 @@
 - **MoonDrawer.js**: Moon phases animations
 - **Fruits.js**: Fruit types and properties
 - **UIManager.js**: UI elements and interactions
+- **UIOverlayManager.js**: Game overlay UI components
 - **SoundManager.js**: Sound effect generation
 - **MusicManager.js**: Background music playback
-- **MusicUtils.js**: Music utility functions
-- **MusicSheets.js**: Game melody sequences 
+- **MusicSheets.js**: Game melody sequences
+- **BackgroundManager.js**: Background rendering and effects
+- **StarfieldManager.js**: Star field generation and animation
+- **TipsManager.js**: In-game tips handling 
