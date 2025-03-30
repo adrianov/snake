@@ -150,9 +150,30 @@ class SoundManager {
         // Attempt resume only if suspended
         if (context.state === 'suspended') {
             console.log("SoundManager attempting to resume suspended shared AudioContext...");
+            // Return the promise from resume()
             return context.resume().then(() => {
-                console.log(`SoundManager: Shared context resumed. New state: ${context?.state}`);
-                return context?.state === 'running';
+                const isRunning = context?.state === 'running';
+                console.log(`SoundManager: Shared context resume attempt finished. State: ${context?.state}`);
+                
+                // *** If successfully resumed, check and potentially start music ***
+                if (isRunning) {
+                    // Access the global game instance
+                    const gameInstance = window.SnakeGame;
+                    if (gameInstance && gameInstance.gameStateManager && gameInstance.musicManager) {
+                        const gameState = gameInstance.gameStateManager.getGameState();
+                        // If music is enabled but not currently playing, try starting it now
+                        if (gameState.musicEnabled && !gameInstance.musicManager.isPlaying) {
+                            console.log("SoundManager: Context resumed, triggering music start.");
+                            // Use a minimal timeout to avoid potential immediate re-entry issues
+                            setTimeout(() => gameInstance.musicManager.startMusic(), 0);
+                        }
+                    } else {
+                        console.warn("SoundManager: Could not access game instance or managers to potentially start music after resume.");
+                    }
+                }
+                // *** End of music start trigger ***
+                
+                return isRunning; // Return true if running, false otherwise
             }).catch(e => {
                 console.warn('SoundManager could not resume shared AudioContext:', e);
                 return false;

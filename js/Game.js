@@ -301,6 +301,25 @@ class SnakeGame {
                 // Set request flag BEFORE calling interaction handler
                 this.startRequested = true;
                 this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
+                
+                // Start game loops 
+                this.gameLoop.startGameLoop();
+                this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
+                
+                // Select a NEW random melody for the new game
+                if (this.musicManager) {
+                    console.log("Selecting new random melody for new game after game over (spacebar)");
+                    this.musicManager.selectRandomMelody();
+                }
+                
+                // EXPLICITLY START MUSIC if it should be enabled
+                // This is needed because the reset MusicManager won't automatically start
+                const currentGameState = this.gameStateManager.getGameState();
+                if (currentGameState.musicEnabled && this.musicManager) {
+                    console.log("Starting music for new game after game over (spacebar)");
+                    this.musicManager.startMusic();
+                }
+                
             } else if (gameState.isGameStarted) {
                 this.togglePause();
             } else {
@@ -403,41 +422,52 @@ class SnakeGame {
     startGame() {
         if (!this.imagesLoaded) {
             console.warn('Attempted to start game before images loaded.');
-            // Optionally, set startRequested = true and wait for imagesLoaded callback?
             return;
         }
         
-        // Remove the interaction check here, it's handled by handleFirstInteraction now
-        // if (!this.hasUserInteraction) { ... }
-
         // Ensure audio is initialized if interaction happened (redundant check, but safe)
         if (this.hasUserInteraction) {
              this.initializeAudio(); 
         }
 
+        // Check if the game is over - shouldn't reach here if resetGame() was called properly
         if (this.gameStateManager.getGameState().isGameOver) {
-             console.log("StartGame called when game is already over. Resetting first.");
+             console.log("StartGame called when game is already over. This shouldn't happen if resetGame() was called.");
              this.resetGame(); // Should ideally be handled before calling startGame
-             // Consider if resetGame should also reset interaction/startRequested flags?
         }
 
-        console.log("Executing startGame logic...");
+        console.log("Starting game...");
+        console.log("Game State before start:", 
+            JSON.stringify({
+                isGameStarted: this.gameStateManager.isGameStarted,
+                isGameOver: this.gameStateManager.isGameOver,
+                isPaused: this.gameStateManager.isPaused
+            })
+        );
 
+        // Reset game elements FIRST 
+        this.resetGameState(); 
+        
+        // THEN set the game state to started
         this.gameStateManager.startGame();
-        this.resetGameState(); // Reset score, snake position etc.
-        this.gameLoop.startGameLoop();
-        this.gameLoop.startFruitLoop(this.manageFruits.bind(this)); // Restart fruit loop
+        
+        console.log("Game State after start:", 
+            JSON.stringify({
+                isGameStarted: this.gameStateManager.isGameStarted,
+                isGameOver: this.gameStateManager.isGameOver,
+                isPaused: this.gameStateManager.isPaused
+            })
+        );
 
-        // Start music only if enabled and context is ready
-        // MusicManager.startMusic() will now handle resuming the context internally
-        if (this.gameStateManager.getGameState().musicEnabled) {
-            this.musicManager.startMusic(); // Attempt to start (will check context inside)
-        } 
+        // Start loops
+        this.gameLoop.startGameLoop();
+        this.gameLoop.startFruitLoop(this.manageFruits.bind(this)); 
 
         this.draw(); // Initial draw after starting
     }
 
     resetGameState() {
+        console.log("Resetting game elements (snake, food, score, etc.)..."); // Added log for clarity
         this.drawer.generateNewSnakeColor();
         this.gameStateManager.resetGameState();
         this.uiManager.updateScore(this.gameStateManager.getScore());
@@ -745,42 +775,87 @@ class SnakeGame {
 
     handleGameOverAudio(isNewHighScore) {
         // Skip audio handling if we don't have a valid audio context
-        if (!this.soundManager || !this.soundManager.audioContext) {
+        const sharedContext = SoundManager.getAudioContext();
+        if (!this.soundManager || !sharedContext) {
+            console.warn("Cannot handle game over audio: SoundManager or shared context unavailable.");
             return;
         }
         
-        let cleanupDelayTime = isNewHighScore ? 2500 : 900;
+        // Calculate delay for potential high score sound
+        const highScoreFanfareDelay = 800;
 
-        // Play crash sound immediately
+        // 1. Stop music but don't fully clean up (preserve the AudioContext)
+        if (this.musicManager) {
+            console.log("Game Over: Stopping music without AudioContext cleanup.");
+            this.musicManager.stopMusic(false); // Use false to avoid full cleanup
+        }
+
+        // 2. Play crash sound immediately
         this.soundManager.playSound('crash');
 
-        // Stop music with a short delay
-        if (this.musicManager) {
-            setTimeout(() => {
-                this.musicManager.stopMusic(false);
-            }, 100);
-        }
-
-        // Play high score fanfare if needed
+        // 3. Play high score fanfare if needed, after a delay
         if (isNewHighScore) {
+            console.log("Game Over: Scheduling high score fanfare.");
             setTimeout(() => {
                 this.soundManager.playHighScoreFanfare();
-            }, 800);
+            }, highScoreFanfareDelay);
         }
-
-        // Clean up audio resources after delays
-        setTimeout(() => {
-            // Only clean up music manager, leave sound manager alone
-            if (this.musicManager) {
-                this.musicManager.stopMusic(true);
-                this.musicManager = null;
-            }
-        }, cleanupDelayTime);
     }
 
     resetGame() {
+        console.log("Resetting game state...");
         this.gameStateManager.resetGame();
+        console.log("Game State after reset:", 
+            JSON.stringify({
+                isGameStarted: this.gameStateManager.isGameStarted,
+                isGameOver: this.gameStateManager.isGameOver,
+                isPaused: this.gameStateManager.isPaused
+            })
+        );
+        
+        // Get sound manager instance
         this.soundManager = SoundManager.getInstance();
+        
+        // Handle music manager - reuse if possible
+        if (!this.musicManager) {
+            console.log("Creating new MusicManager instance for reset game.");
+            this.musicManager = new MusicManager();
+        } else {
+            console.log("Reusing existing MusicManager instance for reset game.");
+            // Reset the music manager state without creating a new instance
+            this.musicManager.isPlaying = false;
+            this.musicManager.currentNoteIndex = 0;
+            this.musicManager.nextNoteTime = 0;
+            
+            // Clear any scheduled notes
+            if (this.musicManager.melodyScheduler) {
+                clearTimeout(this.musicManager.melodyScheduler);
+                this.musicManager.melodyScheduler = null;
+            }
+        }
+        
+        // If the shared context is already running, ensure the music manager is ready
+        if (SoundManager.getAudioContext()?.state === 'running') {
+             this.musicManager.initAudioContextIfNeeded();
+        }
+        
+        // Reinitialize snake and game elements for a clean slate
+        this.snake = new Snake(5, 5);
+        this.direction = 'right';
+        this.nextDirection = 'right';
+        this.gameLoop.resetSpeed();
+        this.foodManager.resetFood();
+        this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
+        
+        // Ensure UI is updated with initial state
+        this.uiManager.updateScore(this.gameStateManager.getScore());
+        this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
+        
+        // Reset the start requested flag
+        this.startRequested = false;
+        
+        // Force a redraw to show the new state
+        this.draw();
     }
 
     draw() {
@@ -909,12 +984,48 @@ class SnakeGame {
              return; // Don't process further for unpause
         }
         
-        // Start game if not started yet OR Reset/Start if game over
-        if (!gameState.isGameStarted || gameState.isGameOver) {
-             event.preventDefault(); // Prevent default for game start/restart touch
-             if(gameState.isGameOver) {
-                 this.resetGame(); 
+        // Handle game over state - reset and start a new game
+        if (gameState.isGameOver) {
+             console.log("Touch detected on game over screen - resetting and starting new game");
+             event.preventDefault(); // Prevent default for game restart touch
+             
+             // Reset game state first
+             this.resetGame(); 
+             
+             // Since resetGame now sets isGameStarted = true via GameStateManager.resetGame(),
+             // we can start the game loop immediately
+             this.gameLoop.startGameLoop();
+             this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
+             
+             // Ensure interaction has happened
+             if (!this.hasUserInteraction) {
+                 this.handleFirstInteraction();
              }
+             
+             // Select a NEW random melody for the new game
+             if (this.musicManager) {
+                 console.log("Selecting new random melody for new game after game over");
+                 this.musicManager.selectRandomMelody();
+             }
+             
+             // EXPLICITLY START MUSIC if it should be enabled
+             // This is needed because the new/reset MusicManager won't automatically start
+             const currentGameState = this.gameStateManager.getGameState();
+             if (currentGameState.musicEnabled && this.musicManager) {
+                 console.log("Starting music for new game after game over");
+                 // We can safely start music here because resetGame ensures 
+                 // musicManager is initialized and AudioContext is properly set up
+                 this.musicManager.startMusic();
+             }
+             
+             return; // Handled game over restart
+        }
+        
+        // Start game if not started yet
+        if (!gameState.isGameStarted) {
+             console.log("Touch detected on start screen - starting new game");
+             event.preventDefault(); // Prevent default for game start touch
+             
              // Set request flag BEFORE calling interaction handler
              this.startRequested = true;
              this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game

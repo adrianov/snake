@@ -176,65 +176,63 @@ class MusicManager {
 
     // Start playing music
     startMusic() {
+        // Prevent starting if already playing
+        if (this.isPlaying) {
+            console.log("MusicManager: startMusic called but already playing.");
+            return;
+        }
+        
         // 1. Ensure we have user interaction (checked by SoundManager now)
         if (!SoundManager.hasUserInteraction) {
              console.log("MusicManager start deferred: No user interaction yet.");
              return;
         }
 
-        // 2. Ensure shared context is initialized and potentially running
-        this.initAudioContextIfNeeded(); // Get/ensure shared context exists
-        
-        // Use the acquired shared context
+        // 2. Ensure shared context exists and is RUNNING
+        // initAudioContextIfNeeded gets the context but doesn't guarantee it's running
+        this.initAudioContextIfNeeded(); 
         const context = this.audioContext; 
         
-        if (!context) {
-            console.warn("Cannot start music: Failed to acquire shared AudioContext.");
+        // *** Check if context is actually running now ***
+        if (!context || context.state !== 'running') {
+            console.warn(`MusicManager: Cannot start music because shared context is not running. State: ${context?.state}. Will wait for SoundManager to trigger start upon resume.`);
             return;
         }
 
-        // 3. Attempt to resume the shared context just before playing
-        // Use SoundManager's resume method as it manages the shared context
-        SoundManager.instance?.resumeAudioContext().then(resumed => {
-            // Re-check context state *after* resume attempt
-            const currentContext = SoundManager.getAudioContext(); 
-            if (!resumed || !currentContext || currentContext.state !== 'running') {
-                console.warn(`MusicManager: Failed to resume shared context for playback. State: ${currentContext?.state}`);
-                return;
-            }
+        // 3. Remove the explicit resume call here - SoundManager handles triggering startMusic after resume
+        // SoundManager.instance?.resumeAudioContext().then(resumed => { ... });
 
-            // --- Context is running, proceed with setup and playback ---
-            console.log("MusicManager: Shared context is running. Proceeding with music setup.");
+        // --- Context is running, proceed with setup and playback ---
+        console.log("MusicManager: Shared context is running. Proceeding with music setup.");
 
-            // 4. Ensure gain nodes are set up (using the running shared context)
-            this.setupGainNodes(); // setupGainNodes uses this.audioContext which is now the shared one
-             if (!this.masterGain || !this.melodyGain) {
-                 console.error("MusicManager: Failed to setup gain nodes on shared context.");
-                 return;
-             }
-    
-            // 5. If already playing, don't restart
-            if (this.isPlaying) {
-                console.log("Music is already playing.");
-                return;
-            }
-            
-            // 6. Select a melody if needed
-            if (!this.currentMelodyId) {
-                this.restoreMelodyId() || this.selectRandomMelody(); // Try restoring first
-            }
-            
-            // 7. Get melody data
-            const musicData = window.MusicData?.getMelody(this.currentMelodyId);
-            if (!musicData) {
-                console.error(`Melody data not found for ID: ${this.currentMelodyId}`);
-                return;
-            }
-            
-            console.log(`Starting music playback on shared context: ${this.currentMelodyId}`);
-            // 8. Start actual playback
-            this.startMusicPlayback(musicData);
-        });
+        // 4. Ensure gain nodes are set up (using the running shared context)
+        this.setupGainNodes(); // setupGainNodes uses this.audioContext which is now the shared one
+         if (!this.masterGain || !this.melodyGain) {
+             console.error("MusicManager: Failed to setup gain nodes on shared context.");
+             return;
+         }
+
+        // 5. If already playing, don't restart
+        if (this.isPlaying) {
+            console.log("Music is already playing.");
+            return;
+        }
+        
+        // 6. Select a melody if needed
+        if (!this.currentMelodyId) {
+            this.restoreMelodyId() || this.selectRandomMelody(); // Try restoring first
+        }
+        
+        // 7. Get melody data
+        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
+        if (!musicData) {
+            console.error(`Melody data not found for ID: ${this.currentMelodyId}`);
+            return;
+        }
+        
+        console.log(`Starting music playback on shared context: ${this.currentMelodyId}`);
+        // 8. Start actual playback
+        this.startMusicPlayback(musicData);
     }
 
     // Start actual music playback
@@ -442,11 +440,12 @@ class MusicManager {
             this.melodyScheduler = null;
         }
 
-        // Only continue if we have an audio context
-        if (!this.audioContext) return;
+        // Only continue if we have the shared audio context
+        const context = this.audioContext; // Use shared context
+        if (!context) return;
 
         try {
-            const currentTime = this.audioContext.currentTime;
+            const currentTime = context.currentTime;
 
             // Fade out master gain over 100ms for smoother transition
             if (this.masterGain) {
@@ -455,48 +454,45 @@ class MusicManager {
                 this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
             }
 
-            // Stop all active oscillators with a smoother fade
-            for (const source of this.activeOscillators) {
-                try {
-                    source.stop(currentTime + 0.1);
-                    source.disconnect();
-                } catch (e) {
-                    // Ignore errors from already stopped oscillators
-                }
+            // Stop all active oscillators
+            if (this.activeOscillators) {
+                this.activeOscillators.forEach(osc => {
+                    try {
+                        // Check if stop method exists before calling
+                        if (typeof osc.stop === 'function') {
+                            osc.stop(currentTime);
+                        }
+                        // Disconnect after stopping
+                        osc.disconnect();
+                    } catch (e) {
+                        // Ignore errors if oscillator already stopped or disconnected
+                    }
+                });
+                this.activeOscillators.clear();
             }
-
-            // Clear the set
-            this.activeOscillators.clear();
-
-            // Full cleanup if requested
+            
+            // If full cleanup, disconnect nodes
             if (fullCleanup) {
-                try {
-                    // Disconnect all nodes but don't close the context
-                    // (it might be shared with SoundManager)
-                    if (this.masterGain) {
-                        this.masterGain.disconnect();
-                        this.masterGain = null;
-                    }
-                    if (this.melodyGain) {
-                        this.melodyGain.disconnect();
-                        this.melodyGain = null;
-                    }
-
-                    // We don't want to close the AudioContext since it's shared
-                    // Just null our reference to it
-                    this.audioContext = null;
-                    
-                } catch (e) {
-                    console.warn('Error cleaning up audio resources:', e);
+                console.log("MusicManager: Full cleanup. Disconnecting all nodes.");
+                if (this.melodyGain) this.melodyGain.disconnect();
+                if (this.masterGain) this.masterGain.disconnect();
+                this.melodyGain = null;
+                this.masterGain = null;
+                
+                // We DO NOT close or nullify the AudioContext anymore
+                // Just null our reference to the shared context
+                // this.audioContext = null; // This was causing issues with restart
+            } else {
+                console.log("MusicManager: Partial cleanup. Preserving nodes and context.");
+                // Keep references to gain nodes, just set their gains to 0
+                if (this.masterGain) {
+                    this.masterGain.gain.value = 0;
                 }
             }
+            
         } catch (e) {
-            console.warn('Error stopping music:', e);
+            console.error("Error stopping music:", e);
         }
-
-        // Reset playback state
-        this.nextNoteTime = 0;
-        this.currentNoteIndex = 0;
     }
 
     getCurrentMelody() {

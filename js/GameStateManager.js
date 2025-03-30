@@ -61,6 +61,7 @@ class GameStateManager {
 
     resetGame() {
         this.isGameOver = false;
+        this.isGameStarted = true;
     }
 
     updateScore(points) {
