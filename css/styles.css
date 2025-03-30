@@ -41,13 +41,18 @@ body {
     height: 100vh;
     width: 100%;
     overflow: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 /* =========== LAYOUT STRUCTURE =========== */
 .game-layout {
     display: grid;
     height: 100vh;
-    width: 100%;
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
     grid-template-rows: auto 1fr auto;
     grid-template-areas: 
         "header"
@@ -59,11 +64,13 @@ body {
 /* Header */
 .game-header {
     grid-area: header;
-    padding: 10px;
+    padding: 5px 0;
+    margin: 0;
     display: flex;
     justify-content: flex-start;
     align-items: center;
     z-index: 10;
+    width: 100%;
 }
 
 /* Main game container */
@@ -74,7 +81,10 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 0 10px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
     overflow: hidden;
 }
 
@@ -93,7 +103,7 @@ body {
 .canvas-wrapper {
     position: relative;
     width: 100%;
-    max-width: min(80vh, 80vw);
+    max-width: min(90vh, 90vw);
     aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #dff5e6 0%, #e7f7f5 100%);
     border-radius: var(--radius-md);
@@ -113,7 +123,7 @@ body {
 /* Game controls container */
 .game-controls {
     width: 100%;
-    max-width: min(80vh, 80vw);
+    max-width: min(90vh, 90vw);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -181,44 +191,42 @@ body {
     /* iOS only */
     .desktop-only-tip,
     .mobile-only-tip {
-        width: auto;
-        max-width: min(95vh, 95vw);
+        width: 100%;
+        max-width: 99vw;
         margin: 0 auto; /* Center the container */
-        padding: 0 5px 2px 5px; /* Reduce padding to prevent overflow */
+        padding: 0;
     }
     
     .game-controls {
-        width: auto;
-        max-width: min(95vh, 95vw);
+        width: 100%;
+        max-width: 99vw;
         margin: 0 auto;
+        gap: 6px;
     }
     
     .tip-item {
         /* Ensure tip items don't get clipped */
         flex-shrink: 0;
         display: inline-block; /* Reinforced to ensure proper display */
-        margin: 0 3px; /* Add horizontal margin for better spacing */
-        padding: 4px 6px; /* Slightly reduce padding to fit more text */
+        margin: 0 2px; /* Add horizontal margin for better spacing */
+        padding: 3px 6px; /* Slightly reduce padding to fit more text */
         max-width: none; /* Ensure no max-width is applied */
         white-space: nowrap; /* Ensure text stays on one line */
     }
     
     /* Fix canvas wrapper for iOS */
     .canvas-wrapper {
-        width: auto;
-        max-width: min(95vh, 95vw);
+        width: 100%;
+        max-width: 99vw;
         margin: 0 auto;
     }
     
     /* Fix mobile arrow controls for iOS */
     .mobile-arrow-controls {
-        width: auto;
-        max-width: min(95vh, 95vw);
+        width: 100%;
+        max-width: 99vw;
         margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        margin-bottom: 6px;
     }
     
     /* Fix arrow button rows for iOS */
@@ -234,27 +242,41 @@ body {
     .arrow-button-row:first-child {
         justify-content: center;
         display: flex;
-        margin: 0 auto 8px auto;
+        margin: 0 auto 6px auto;
     }
     
     /* Fix for the spacers in arrow controls */
     .spacer {
         flex: 1;
-        max-width: 70px;
+        max-width: 60px;
     }
     
     /* Fix score container for iOS */
     .score-container {
-        width: auto;
-        max-width: min(95vh, 95vw);
-        margin-left: auto;
-        margin-right: auto;
-        padding: 8px 10px; /* Adjust padding to ensure content fits */
+        width: 100%;
+        max-width: 99vw;
+        margin: 0 auto;
+        padding: 6px 8px;
+        gap: 10px;
     }
     
     /* Ensure game container has proper spacing */
     .game-container {
-        padding: 0 5px;
+        padding: 0;
+        gap: 6px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    /* Reduce header padding */
+    .game-header {
+        padding: 2px 0;
+        width: 100%;
+    }
+    
+    .header-buttons {
+        margin-left: 0;
+        justify-content: center;
     }
 }
 
@@ -432,6 +454,7 @@ body {
 .header-buttons {
     display: flex;
     gap: 10px;
+    margin-left: 5px;
 }
 
 .btn {
@@ -795,7 +818,7 @@ body {
     
     .game-header {
         justify-content: center;
-        padding: 5px;
+        padding: 3px;
     }
     
     .header-buttons {
@@ -803,17 +826,18 @@ body {
     }
     
     .game-container {
-        padding: 0 10px;
-        gap: 15px;
+        padding: 0;
+        gap: 12px;
+        width: 100%;
     }
     
     .game-controls {
-        gap: 12px;
+        gap: 10px;
     }
     
     .game-footer {
         text-align: center;
-        padding: 5px;
+        padding: 3px;
     }
     
     .mobile-arrow-controls {
@@ -821,23 +845,51 @@ body {
     }
     
     .mobile-only-tip {
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+    }
+    
+    /* Increased max-width for mobile devices */
+    .canvas-wrapper {
+        max-width: min(90vh, 90vw);
+    }
+}
+
+/* Tablet-specific styles */
+@media (min-width: 600px) and (max-width: 1024px) {
+    .canvas-wrapper {
+        max-width: min(90vh, 90vw);
+    }
+    
+    .game-controls {
+        max-width: min(90vh, 90vw);
+    }
+    
+    .game-header {
+        padding: 5px;
+    }
+    
+    .game-container {
+        padding: 0;
+        gap: 10px;
+        width: 100%;
     }
 }
 
 /* Very small screens */
 @media (max-height: 600px), (max-width: 350px) {
     .canvas-wrapper {
-        max-width: min(95vh, 95vw);
+        max-width: 99vw;
     }
     
     .game-controls {
-        max-width: min(95vh, 95vw);
+        max-width: 99vw;
+        gap: 5px;
+        padding: 0;
     }
     
     .score-container {
-        padding: 5px 10px;
-        gap: 10px;
+        padding: 5px 8px;
+        gap: 8px;
     }
     
     .arrow-button, .spacer {
@@ -850,8 +902,84 @@ body {
     }
     
     .tip-item {
-        padding: 3px 6px;
+        padding: 2px 4px;
         font-size: 0.65rem;
+        margin: 0 1px;
+    }
+    
+    .mobile-only-tip,
+    .desktop-only-tip {
+        padding: 0 3px 2px 3px;
+        gap: 4px;
+    }
+    
+    .game-container {
+        padding: 0 3px;
+        gap: 8px;
+    }
+    
+    .music-info {
+        padding: 3px 6px;
+        gap: 4px;
+    }
+    
+    .control-toggle {
+        padding: 3px 4px;
+    }
+    
+    .arrow-button-row {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+    
+    .arrow-button-row:first-child {
+        margin: 0 auto 5px auto;
+    }
+    
+    .mobile-arrow-controls {
+        margin-bottom: 5px;
+    }
+}
+
+/* Medium to small screens */
+@media (max-width: 480px) {
+    .canvas-wrapper {
+        max-width: 98vw;
+    }
+    
+    .game-controls {
+        max-width: 98vw;
+        gap: 6px;
+        padding: 0;
+    }
+    
+    .score-container {
+        padding: 6px 10px;
+        gap: 10px;
+    }
+    
+    .mobile-arrow-controls {
+        margin-bottom: 8px;
+    }
+    
+    .mobile-only-tip,
+    .desktop-only-tip {
+        padding: 0 5px 2px 5px;
+        gap: 6px;
+    }
+    
+    .game-container {
+        padding: 0 5px;
+        gap: 10px;
+    }
+    
+    .arrow-button-row {
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+    
+    .tip-item {
+        padding: 3px 5px;
     }
 }
 
@@ -895,6 +1023,42 @@ body {
         display: flex;
         margin-left: auto;
         margin-right: auto;
+    }
+}
+
+/* iPad and larger tablets */
+@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+    .canvas-wrapper {
+        max-width: 98vw;
+    }
+    
+    .game-controls {
+        max-width: 98vw;
+    }
+    
+    .game-container {
+        gap: 8px;
+        padding: 0 3px;
+    }
+    
+    .game-header {
+        padding: 3px;
+    }
+    
+    /* Reduce spacing between elements */
+    .score-container {
+        gap: 15px;
+        padding: 6px 10px;
+    }
+    
+    /* Ensure buttons are properly sized */
+    .btn {
+        padding: 6px 12px;
+    }
+    
+    /* Adjust donation button spacing */
+    .header-buttons {
+        gap: 8px;
     }
 }
 
