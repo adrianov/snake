@@ -123,10 +123,15 @@ class SnakeGame {
     resizeCanvas() {
         const container = this.canvas.parentElement;
         
-        // Calculate square size based on available width/height in container
-        const size = Math.min(container.clientWidth, container.clientHeight);
+        // Get the container's current dimensions
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
         
-        // Calculate grid size based on container 
+        // Calculate square size based on the smallest dimension
+        // to ensure a perfect square that fits within the container
+        const size = Math.min(containerWidth, containerHeight);
+        
+        // Calculate grid size based on container
         this.gridSize = Math.min(40, Math.floor(size / 20));
 
         // Ensure tileCount is an integer
@@ -139,15 +144,15 @@ class SnakeGame {
         // Get the device pixel ratio
         const dpr = window.devicePixelRatio || 1;
         
-        // Set canvas dimensions for Retina display
+        // Set canvas dimensions for Retina display (internal resolution)
         this.canvas.width = adjustedSize * dpr;
         this.canvas.height = adjustedSize * dpr;
         
-        // Set CSS dimensions for proper sizing on screen
+        // Set CSS dimensions to maintain the square aspect ratio
         this.canvas.style.width = '100%';
         this.canvas.style.height = '100%';
         
-        // Clear inline styles from container to allow CSS to control dimensions
+        // Let CSS handle container dimensions through aspect-ratio property
         container.style.width = '';
         container.style.height = '';
         container.style.paddingBottom = '';

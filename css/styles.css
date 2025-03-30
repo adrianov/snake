@@ -53,7 +53,7 @@ body {
     max-width: 100vw;
     margin: 0;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); /* Add safe area insets */
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas: 
         "header"
         "main"
@@ -85,9 +85,9 @@ body {
     margin: 0;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
-    /* Ensure content doesn't overflow on iOS devices */
-    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Remove height constraints */
     min-height: 0;
 }
 
@@ -116,6 +116,7 @@ body {
     margin: 0 auto; /* Center the game canvas */
     font-size: 0; /* Eliminate space for inline elements */
     line-height: 0;
+    flex-shrink: 0; /* Prevent compression */
 }
 
 #gameCanvas {
@@ -717,13 +718,10 @@ body {
         margin-left: 0;
     }
     
-    .game-container {
-        /* Removed padding: 0; */
-    }
-    
     .canvas-wrapper {
         max-width: min(80vh, 75vw);
         aspect-ratio: 1 / 1;
+        flex-shrink: 0;
     }
     
     .game-controls {
@@ -734,7 +732,7 @@ body {
 /* Mobile layout - portrait orientation or small screens */
 @media (orientation: portrait), (max-width: 768px) {
     .game-layout {
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
         grid-template-areas: 
             "header"
             "main"
@@ -753,9 +751,9 @@ body {
     }
     
     .game-container {
-        /* Removed padding: 0; */
         gap: 12px;
         width: 100%;
+        overflow-y: auto;
     }
     
     .game-controls {
@@ -792,6 +790,7 @@ body {
         max-width: min(90vh, 95vw);
         aspect-ratio: 1 / 1;
         margin: 0 auto;
+        flex-shrink: 0;
     }
     
     /* Reduced spacing for score container */
@@ -833,6 +832,7 @@ body {
     .canvas-wrapper {
         max-width: 95vw;
         aspect-ratio: 1 / 1;
+        flex-shrink: 0;
     }
     
     .game-controls {
@@ -868,8 +868,8 @@ body {
     }
     
     .game-container {
-        /* Removed padding: 0; */
         gap: 8px;
+        overflow-y: auto;
     }
     
     .music-info {
@@ -900,6 +900,7 @@ body {
     .canvas-wrapper {
         max-width: 95vw;
         aspect-ratio: 1 / 1;
+        flex-shrink: 0;
     }
     
     .game-controls {
@@ -926,9 +927,9 @@ body {
     }
     
     .game-container {
-        /* Removed padding: 0; */
         gap: 10px;
         width: 100%;
+        overflow-y: auto;
     }
     
     .arrow-button-row {
@@ -956,6 +957,7 @@ body {
     .canvas-wrapper {
         max-width: min(85vh, 95vw);
         aspect-ratio: 1 / 1;
+        flex-shrink: 0;
     }
     
     .game-controls {
@@ -967,9 +969,9 @@ body {
     }
     
     .game-container {
-        /* Removed padding: 0; */
         gap: 10px;
         width: 100%;
+        overflow-y: auto;
     }
     
     .score-container {
