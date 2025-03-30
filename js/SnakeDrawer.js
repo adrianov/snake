@@ -323,35 +323,47 @@ class SnakeDrawer {
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, 4);
+        
+        // Round corner radius proportional to grid size
+        const cornerRadius = Math.max(2, this.gridSize * 0.1);
+        ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, cornerRadius);
         ctx.fill();
+
+        // Calculate proportional sizes for facial features
+        const eyePositionX = this.gridSize * 0.2; // 20% from edge
+        const eyePositionY = this.gridSize * 0.2; // 20% from top
+        const eyeRadius = Math.max(1.5, this.gridSize * 0.075); // 7.5% of gridSize
+        const irisRadius = Math.max(0.75, eyeRadius * 0.5); // 50% of eye size
+        const smileRadius = Math.max(4, this.gridSize * 0.2); // 20% of gridSize
+        const smileY = this.gridSize * 0.55; // Position smile at 55% down
+        const smileWidth = Math.max(1, this.gridSize * 0.05); // Line width proportional to grid size
 
         // Draw eyes with white eyeballs
         // Left eye
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(8, 8, 3, 0, Math.PI * 2);
+        ctx.arc(eyePositionX, eyePositionY, eyeRadius, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(8, 8, 1.5, 0, Math.PI * 2);
+        ctx.arc(eyePositionX, eyePositionY, irisRadius, 0, Math.PI * 2);
         ctx.fill();
 
         // Right eye
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(this.gridSize - 8, 8, 3, 0, Math.PI * 2);
+        ctx.arc(this.gridSize - eyePositionX, eyePositionY, eyeRadius, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(this.gridSize - 8, 8, 1.5, 0, Math.PI * 2);
+        ctx.arc(this.gridSize - eyePositionX, eyePositionY, irisRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw white smile - lower and wider
+        // Draw white smile - positioned proportionally
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = smileWidth;
         ctx.beginPath();
-        ctx.arc(this.gridSize / 2, this.gridSize / 2 + 2, 8, 0, Math.PI);
+        ctx.arc(this.gridSize / 2, smileY, smileRadius, 0, Math.PI);
         ctx.stroke();
 
         return canvas;
@@ -372,17 +384,20 @@ class SnakeDrawer {
         gradient.addColorStop(0, primaryColor);
         gradient.addColorStop(1, secondaryColor);
 
+        // Calculate proportional corner radius
+        const cornerRadius = Math.max(2, this.gridSize * 0.1);
+        
         // Draw body segment
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(2, 2, this.gridSize - 4, this.gridSize - 4, 4);
+        ctx.roundRect(2, 2, this.gridSize - 4, this.gridSize - 4, cornerRadius);
         ctx.fill();
 
         // Add subtle pattern as a highlight (get more subtle as snake darkens)
         const highlightAlpha = Math.max(0.05, 0.15 * (1 - this.darknessLevel / 100));
         ctx.fillStyle = `rgba(255, 255, 255, ${highlightAlpha})`;
         ctx.beginPath();
-        ctx.roundRect(4, 4, this.gridSize - 8, this.gridSize - 8, 2);
+        ctx.roundRect(4, 4, this.gridSize - 8, this.gridSize - 8, Math.max(1, cornerRadius * 0.5));
         ctx.fill();
 
         return canvas;
@@ -404,22 +419,28 @@ class SnakeDrawer {
         gradient.addColorStop(0.7, secondaryColor);
         gradient.addColorStop(1, secondaryColor);
 
+        // Calculate proportional sizes
+        const taperWidth = Math.max(6, this.gridSize * 0.15); // Proportional taper width
+        const cornerRadius = Math.max(1, this.gridSize * 0.05); // Smaller corner radius for tail
+        
         // Draw tail segment with tapered shape
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        // Start with full width on the left, taper to 60% on the right
+        // Start with full width on the left, taper on the right
         ctx.moveTo(2, 2);
         ctx.lineTo(this.gridSize - 2, 2);
-        ctx.lineTo(this.gridSize - 8, this.gridSize - 2);
+        ctx.lineTo(this.gridSize - taperWidth, this.gridSize - 2);
         ctx.lineTo(2, this.gridSize - 2);
         ctx.closePath();
         ctx.fill();
 
         // Add pattern that fades out (subtle highlight)
         const highlightAlpha = Math.max(0.05, 0.15 * (1 - this.darknessLevel / 100));
+        const highlightWidth = Math.max(8, this.gridSize * 0.2); // Proportional highlight width
+        
         ctx.fillStyle = `rgba(255, 255, 255, ${highlightAlpha})`;
         ctx.beginPath();
-        ctx.roundRect(4, 4, this.gridSize - 12, this.gridSize - 8, 2);
+        ctx.roundRect(4, 4, this.gridSize - highlightWidth, this.gridSize - 8, cornerRadius);
         ctx.fill();
 
         return canvas;
