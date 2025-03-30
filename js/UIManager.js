@@ -59,30 +59,83 @@ class UIManager {
             });
         }
         
+        // Set up music change on melody display click and N label click
+        this.initializeMusicChangeControls();
+        
         // Set up donation panel controls
         this.initializeDonationControls();
     }
     
+    initializeMusicChangeControls() {
+        // Add click handler to the melody display for changing music
+        if (this.melodyElement) {
+            this.melodyElement.addEventListener('click', () => {
+                this.game.changeMusic();
+            });
+            
+            // Make it clear this is clickable
+            this.melodyElement.style.cursor = 'pointer';
+            this.melodyElement.title = "Click to change melody (same as N key)";
+        }
+        
+        // Find and add click handler to the N label that changes the music
+        const nLabel = document.querySelector('.melody-display .control-label');
+        if (nLabel) {
+            nLabel.addEventListener('click', () => {
+                this.game.changeMusic();
+            });
+            
+            // Make it clear this is clickable
+            nLabel.style.cursor = 'pointer';
+            nLabel.title = "Click to change melody (N key)";
+        }
+    }
+    
     initializeDonationControls() {
-        // Set up donate button
+        // Set up donate button with multiple event handlers for better responsiveness
         if (this.donateButton) {
-            this.donateButton.addEventListener('click', () => {
+            // Use both click and pointerdown events for better mobile responsiveness
+            const showDonationPanel = (e) => {
+                e.preventDefault(); // Prevent any default actions
+                e.stopPropagation(); // Stop event from propagating to document click handler
                 this.toggleDonationPanel(true);
+            };
+            
+            // Add multiple event listeners for better responsiveness
+            this.donateButton.addEventListener('click', showDonationPanel);
+            this.donateButton.addEventListener('pointerdown', showDonationPanel);
+            
+            // Add active state for visual feedback
+            this.donateButton.addEventListener('pointerdown', () => {
+                this.donateButton.classList.add('button-active');
+            });
+            
+            this.donateButton.addEventListener('pointerup', () => {
+                this.donateButton.classList.remove('button-active');
+            });
+            
+            this.donateButton.addEventListener('pointerleave', () => {
+                this.donateButton.classList.remove('button-active');
             });
         }
         
         // Set up close donation panel button
         if (this.closeDonationButton) {
-            this.closeDonationButton.addEventListener('click', () => {
+            this.closeDonationButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.toggleDonationPanel(false);
             });
         }
         
         // Close donation panel when clicking outside
         document.addEventListener('click', (e) => {
-            // If donation panel is open
-            if (this.donationPanel && this.donationPanel.classList.contains('active')) {
-                // Check if click was outside the panel
+            // If donation panel is open AND not just opened (to prevent immediate closing)
+            if (this.donationPanel && 
+                this.donationPanel.classList.contains('active') && 
+                !this.donationPanelJustOpened) {
+                
+                // Check if click was outside the panel (and NOT on the donate button)
                 if (!this.donationPanel.contains(e.target) && e.target !== this.donateButton) {
                     this.toggleDonationPanel(false);
                 }
@@ -155,6 +208,14 @@ class UIManager {
         
         if (show) {
             this.donationPanel.classList.add('active');
+            // Set a flag to prevent immediate closing
+            this.donationPanelJustOpened = true;
+            
+            // Clear the flag after animation completes
+            setTimeout(() => {
+                this.donationPanelJustOpened = false;
+            }, 350); // Slightly longer than the CSS transition (300ms)
+            
             // Pause the game if it's running
             if (this.game.gameStateManager.getGameState().isGameStarted && 
                 !this.game.gameStateManager.getGameState().isPaused) {
@@ -164,6 +225,11 @@ class UIManager {
             }
         } else {
             this.donationPanel.classList.remove('active');
+            
+            // Reset donate button state when panel is closed
+            if (this.donateButton) {
+                this.donateButton.classList.remove('button-active');
+            }
         }
     }
 

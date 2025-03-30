@@ -2,9 +2,9 @@ class MusicManager {
     // Static property to store melody ID across instances
     static currentMelodyId = null;
 
-    constructor() {
+    constructor(audioContext = null) {
         // Audio context and nodes
-        this.audioContext = null;
+        this.audioContext = audioContext;
         this.masterGain = null;
         this.melodyGain = null;
 
@@ -23,7 +23,7 @@ class MusicManager {
             // Octave 1-2 (low bass notes)
             'F1': 43.65, 'G1': 49.00, 'A1': 55.00, 'B1': 61.74,
             'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'Eb2': 77.78, 'E2': 82.41, 'F2': 87.31,
-            'F#2': 92.50, 'Gb2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'Ab2': 103.83, 'A2': 110.00, 'Bb2': 116.54, 'B2': 123.47,
+            'F#2': 92.50, 'Gb2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'Ab2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'Bb2': 116.54, 'B2': 123.47,
 
             // Octave 3 (bass notes)
             'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'Eb3': 155.56, 'E3': 164.81, 'F3': 174.61,
@@ -44,31 +44,41 @@ class MusicManager {
             // Special case
             'REST': 0
         };
+
+        // If AudioContext is provided, setup audio nodes immediately
+        if (this.audioContext) {
+            this.setupGainNodes();
+        }
     }
 
-    init(audioContext = null) {
-        // Clean up any existing audio context
-        this.stopMusic(true);
-
-        // Create or use provided audio context
-        if (!audioContext || (audioContext && audioContext.state === 'closed')) {
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        } else {
-            this.audioContext = audioContext;
+    // Setup gain nodes for volume control
+    setupGainNodes() {
+        if (!this.audioContext) return;
+        
+        // Clean up old nodes if they exist
+        if (this.masterGain) {
+            try {
+                this.masterGain.disconnect();
+            } catch (e) {
+                // Ignore disconnect errors
+            }
         }
-
-        // Create gain node structure with higher levels
+        if (this.melodyGain) {
+            try {
+                this.melodyGain.disconnect();
+            } catch (e) {
+                // Ignore disconnect errors
+            }
+        }
+        
+        // Create gain nodes
         this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = 0.5; // Increased from 0.3
+        this.masterGain.gain.value = 0.5;
         this.masterGain.connect(this.audioContext.destination);
 
         this.melodyGain = this.audioContext.createGain();
-        this.melodyGain.gain.value = 0.9; // Increased from 0.7
+        this.melodyGain.gain.value = 0.9;
         this.melodyGain.connect(this.masterGain);
-
-        // Reset playback state
-        this.isPlaying = false;
-        this.activeOscillators.clear();
     }
 
     // Save melody ID to static property
@@ -87,7 +97,10 @@ class MusicManager {
         return false;
     }
 
+    // Select a random melody
     selectRandomMelody() {
+        if (!window.MusicData) return null;
+        
         // Select a random melody ID from the available melodies
         const melodyIds = window.MusicData.getAllMelodyIds();
         if (melodyIds.length > 0) {
@@ -110,53 +123,75 @@ class MusicManager {
         return this.currentMelodyId;
     }
 
+    // Start music
     startMusic() {
-        // Stop any existing music first
+        // Always stop any existing music first
         this.stopMusic();
 
-        // Select a melody if none is currently selected
+        // Check if music is enabled in game settings
+        if (window.SnakeGame && window.SnakeGame.gameStateManager) {
+            const gameState = window.SnakeGame.gameStateManager.getGameState();
+            if (!gameState.musicEnabled) {
+                return; // Don't play music if it's disabled
+            }
+        }
+
+        // We need a valid AudioContext to play music
+        if (!this.audioContext) {
+            return;
+        }
+        
+        // If AudioContext is suspended, try to resume it
+        if (this.audioContext.state === 'suspended') {
+            try {
+                // Resume and continue with playback
+                this.audioContext.resume().then(() => {
+                    if (this.audioContext && this.audioContext.state === 'running') {
+                        this._continueStartMusic();
+                    }
+                }).catch(() => {});
+                return; // Wait for resume to complete
+            } catch (e) {
+                return; // Failed to resume
+            }
+        }
+        
+        // Continue with starting music if context is already running
+        this._continueStartMusic();
+    }
+    
+    // Helper method to continue starting music after audio context checks
+    _continueStartMusic() {
+        // Make sure we have the necessary audio nodes
+        if (!this.masterGain || !this.melodyGain) {
+            this.setupGainNodes();
+        }
+        
+        // Select a melody if we don't have one
         if (!this.currentMelodyId) {
             this.selectRandomMelody();
         }
-
-        // Get the melody data from our new system
-        const musicData = window.MusicData.getMelody(this.currentMelodyId);
-        if (!musicData) return;
-
-        // Ensure audio context is running
-        if (this.audioContext && this.audioContext.state !== 'running') {
-            try {
-                // Modern browsers require user interaction to start AudioContext
-                this.audioContext.resume().then(() => {
-                    this.startMusicPlayback(musicData);
-                }).catch(err => {
-                    console.error('Failed to resume AudioContext:', err);
-                    // Reinitialize AudioContext if needed
-                    this.init();
-                    this.startMusicPlayback(musicData);
-                });
-            } catch (err) {
-                console.error('Error resuming AudioContext:', err);
-                // Reinitialize AudioContext if needed
-                this.init();
-                this.startMusicPlayback(musicData);
-            }
-        } else {
-            // AudioContext is already running or doesn't exist
-            this.startMusicPlayback(musicData);
+        
+        // Get melody data
+        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
+        if (!musicData) {
+            return;
         }
+        
+        // Start playback
+        this.startMusicPlayback(musicData);
     }
 
+    // Start actual music playback
     startMusicPlayback(musicData) {
-        // Ensure we have a valid audio context and master gain
-        if (!this.audioContext || !this.masterGain) {
-            console.error('Cannot start music: AudioContext or MasterGain is null');
+        // Bail if we're missing required components
+        if (!this.audioContext || !this.masterGain || !this.melodyGain) {
             return;
         }
 
         // Make sure master gain is set to audible level
         this.masterGain.gain.cancelScheduledValues(this.audioContext.currentTime);
-        this.masterGain.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+        this.masterGain.gain.setValueAtTime(0.5, this.audioContext.currentTime);
 
         // Reset playback state
         this.isPlaying = true;
@@ -170,7 +205,7 @@ class MusicManager {
     scheduleNotes() {
         if (!this.isPlaying) return;
 
-        const musicData = window.MusicData.getMelody(this.currentMelodyId);
+        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
         if (!musicData || !musicData.melody) return;
 
         const melody = this.parseMelody(musicData.melody);
@@ -340,14 +375,16 @@ class MusicManager {
             this.melodyScheduler = null;
         }
 
-        // Stop all active oscillators with a gentle fade out
-        if (this.audioContext) {
+        // Only continue if we have an audio context
+        if (!this.audioContext) return;
+
+        try {
             const currentTime = this.audioContext.currentTime;
 
             // Fade out master gain over 100ms for smoother transition
             if (this.masterGain) {
                 this.masterGain.gain.cancelScheduledValues(currentTime);
-                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, currentTime);
+                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value || 0, currentTime);
                 this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
             }
 
@@ -367,37 +404,27 @@ class MusicManager {
             // Full cleanup if requested
             if (fullCleanup) {
                 try {
-                    // Disconnect all nodes
-                    if (this.masterGain) this.masterGain.disconnect();
-                    if (this.melodyGain) this.melodyGain.disconnect();
-
-                    // Close the audio context if we created it
-                    if (this.audioContext && this.audioContext.state !== 'closed') {
-                        this.audioContext.close();
+                    // Disconnect all nodes but don't close the context
+                    // (it might be shared with SoundManager)
+                    if (this.masterGain) {
+                        this.masterGain.disconnect();
+                        this.masterGain = null;
+                    }
+                    if (this.melodyGain) {
+                        this.melodyGain.disconnect();
+                        this.melodyGain = null;
                     }
 
-                    // Null out references
+                    // We don't want to close the AudioContext since it's shared
+                    // Just null our reference to it
                     this.audioContext = null;
-                    this.masterGain = null;
-                    this.melodyGain = null;
+                    
                 } catch (e) {
-                    console.error('Error closing audio context:', e);
+                    console.warn('Error cleaning up audio resources:', e);
                 }
-            } else {
-                // If not doing full cleanup, prepare for reuse
-                setTimeout(() => {
-                    if (this.audioContext && this.audioContext.state === 'suspended') {
-                        try {
-                            this.audioContext.resume();
-                            if (this.masterGain) {
-                                this.masterGain.gain.setValueAtTime(0.5, this.audioContext.currentTime); // Updated to match new level
-                            }
-                        } catch (e) {
-                            console.error('Error resuming audio context:', e);
-                        }
-                    }
-                }, 200);
             }
+        } catch (e) {
+            console.warn('Error stopping music:', e);
         }
 
         // Reset playback state
@@ -410,7 +437,7 @@ class MusicManager {
             return null;
         }
 
-        const melody = window.MusicData.getMelody(this.currentMelodyId);
+        const melody = window.MusicData?.getMelody(this.currentMelodyId);
         if (!melody) return null;
 
         return {

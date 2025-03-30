@@ -75,6 +75,32 @@ class GameLoop {
         this.frameInterval = this.speed;
     }
 
+    // More gradual speed adjustment for touch controls
+    updateTouchGameSpeed(touchDirection, currentDirection) {
+        const isCurrentDirection = touchDirection === currentDirection;
+        const isOppositeDirection = touchDirection === {
+            'up': 'down',
+            'down': 'up',
+            'left': 'right',
+            'right': 'left'
+        }[currentDirection];
+        
+        // Touch speed multiplier - more gradual change than keyboard
+        const touchSpeedMultiplier = 0.9; // Less aggressive than 0.8 for keyboard
+        const touchSlowMultiplier = 1.15; // Less aggressive than 1.2 for keyboard
+        
+        if (isCurrentDirection) {
+            this.speed *= touchSpeedMultiplier;
+        } else if (isOppositeDirection) {
+            this.speed *= touchSlowMultiplier;
+        }
+        
+        // Ensure speed stays within reasonable bounds
+        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
+        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.frameInterval = this.speed;
+    }
+
     resetSpeed() {
         this.speed = this.baseSpeed;
         this.frameInterval = this.baseSpeed;
@@ -94,6 +120,21 @@ class GameLoop {
 
     getSpeed() {
         return this.speed;
+    }
+
+    reduceSpeed() {
+        // Reduce the speed when tapped on mobile (same as opposite direction)
+        this.speed *= this.slowMultiplier;
+        this.speed = Math.min(this.speed, this.baseSpeed * 3);
+        this.frameInterval = this.speed;
+    }
+
+    speedUp(factor = 0.85) {
+        // Multiply by a factor smaller than 1 to speed up (reduce the interval)
+        this.speed *= factor;
+        // Ensure speed doesn't get too fast
+        this.speed = Math.max(this.speed, this.baseSpeed * 0.25);
+        this.frameInterval = this.speed;
     }
 }
 

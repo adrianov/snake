@@ -1,27 +1,56 @@
 class SoundManager {
     // Static reference to the current instance
     static instance = null;
-
+    
+    // Flag to track if audio has been initialized by a real user action
+    static audioInitialized = false;
+    
     /**
      * Get or create a SoundManager instance
-     * Will initialize a new instance if none exists or reinitialize if needed
+     * @param {boolean} forceInit - Force initialization of AudioContext (use during user gestures)
      * @returns {SoundManager} The SoundManager instance
      */
-    static getInstance() {
+    static getInstance(forceInit = false) {
         if (!SoundManager.instance) {
-            SoundManager.instance = new SoundManager();
-        } else if (!SoundManager.instance.audioContext || SoundManager.instance.audioContext.state === 'closed') {
-            SoundManager.instance.reinitialize();
+            SoundManager.instance = new SoundManager(forceInit);
+        } else if (forceInit && (!SoundManager.instance.audioContext || SoundManager.instance.audioContext.state === 'closed')) {
+            // If we're forcing initialization and the context is closed, recreate it
+            SoundManager.instance.initAudioContext(true);
         }
         return SoundManager.instance;
     }
 
-    constructor() {
+    constructor(forceInit = false) {
         // Register this instance as the singleton
         SoundManager.instance = this;
-
+        
+        // Initialize without creating AudioContext by default
+        this.audioContext = null;
+        this.soundTemplates = null;
+        
+        // Only initialize immediately if explicitly forced (from a user gesture)
+        if (forceInit) {
+            this.initAudioContext(true);
+        }
+    }
+    
+    initAudioContext(fromUserGesture = false) {
+        // Only initialize once or if we're forcing a new initialization
+        if (this.audioContext && this.audioContext.state !== 'closed' && !fromUserGesture) {
+            return;
+        }
+        
         try {
-            // Create audio context with options to keep it running if possible
+            // Clean up existing context if needed
+            if (this.audioContext && this.audioContext.state !== 'closed') {
+                try {
+                    this.audioContext.close().catch(() => {});
+                } catch (e) {
+                    // Ignore errors closing context
+                }
+            }
+            
+            // Create audio context with options for best performance
             const contextOptions = {
                 latencyHint: 'interactive',
                 sampleRate: 44100
@@ -29,32 +58,65 @@ class SoundManager {
 
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
             
-            // Don't force resume immediately - wait for user interaction
-            // Add user interaction listeners to ensure the context is resumed
-            const resumeHandler = () => this.resumeAudioContext();
-
-            // These will auto-trigger on first user interaction with the page
-            window.addEventListener('click', resumeHandler, { once: true });
-            window.addEventListener('touchstart', resumeHandler, { once: true });
-            window.addEventListener('keydown', resumeHandler, { once: true });
-
             // Create sound templates
             this.initSoundTemplates();
 
-            // Keep the context alive with a silent audio node if needed
-            this.keepContextAlive();
-
+            // When forced from a user gesture, resume right away and create a silent sound
+            // to fully unlock audio on iOS/Safari
+            if (fromUserGesture) {
+                try {
+                    // First try to resume the context
+                    this.audioContext.resume().then(() => {
+                        // After resume, play a short silent sound to fully unlock audio
+                        // This is critical for iOS Safari
+                        try {
+                            const unlockOsc = this.audioContext.createOscillator();
+                            const unlockGain = this.audioContext.createGain();
+                            unlockGain.gain.value = 0.001;  // Effectively silent
+                            unlockOsc.connect(unlockGain);
+                            unlockGain.connect(this.audioContext.destination);
+                            unlockOsc.start(0);
+                            unlockOsc.stop(this.audioContext.currentTime + 0.001);
+                        } catch (e) {
+                            // Ignore unlock errors
+                        }
+                    }).catch(() => {});
+                } catch (e) {
+                    // Ignore errors resuming
+                }
+            }
+            
+            // Mark that audio has been properly initialized
+            SoundManager.audioInitialized = true;
+            
+            return true;
         } catch (e) {
             console.error('Error creating AudioContext:', e);
             this.audioContext = null;
+            return false;
         }
     }
-
+    
     // Helper method to resume audio context
     resumeAudioContext() {
-        if (this.audioContext && this.audioContext.state !== 'running') {
-            this.audioContext.resume();
+        // Don't try to resume if we don't have user interaction yet
+        if (!SoundManager.hasUserInteraction) {
+            return false;
         }
+        
+        if (this.audioContext && this.audioContext.state !== 'running') {
+            try {
+                // Wrap in a try/catch and return a promise that resolves when resumed
+                return this.audioContext.resume().catch(e => {
+                    console.warn('Could not resume AudioContext:', e);
+                    return false;
+                });
+            } catch (e) {
+                console.warn('Error resuming AudioContext:', e);
+                return Promise.resolve(false);
+            }
+        }
+        return Promise.resolve(true);
     }
 
     // Keep audio context alive with a silent node
@@ -91,19 +153,10 @@ class SoundManager {
     // Reinitialize audio context if needed
     reinitialize() {
         if (this.audioContext && this.audioContext.state !== 'closed') return;
-
-        try {
-            const contextOptions = {
-                latencyHint: 'interactive',
-                sampleRate: 44100
-            };
-
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
-            this.resumeAudioContext();
-            this.keepContextAlive();
-        } catch (e) {
-            console.error('Error reinitializing AudioContext:', e);
-            this.audioContext = null;
+        
+        // Only initialize if we've had user interaction
+        if (SoundManager.hasUserInteraction) {
+            this.initAudioContext();
         }
     }
 
@@ -175,109 +228,133 @@ class SoundManager {
         };
     }
 
-    // Play sound from template - always force resume context
-    playSound(soundType) {
+    // Play sound from template
+    playSound(soundType, volume = 1) {
         // Check if sound is enabled in localStorage
         const soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false';
         if (!soundEnabled) return;
-
-        // Reinitialize audio context if it's closed or null
-        if (!this.audioContext || this.audioContext.state === 'closed') {
-            this.reinitialize();
-        }
-
-        if (!this.audioContext || !this.soundTemplates[soundType]) return;
-
-        // Only resume if not already running
-        if (this.audioContext.state !== 'running') {
-            this.resumeAudioContext();
-            // If context is still not running, we need user interaction first
-            if (this.audioContext.state !== 'running') {
-                return; // We'll try again after user interaction
-            }
-        }
-
-        // Get template and create sound
-        const template = this.soundTemplates[soundType];
-        const now = this.audioContext.currentTime;
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
-
-        // Apply template values
-        oscillator.type = template.type;
-        oscillator.frequency.value = template.frequency;
-        gainNode.gain.value = template.gainValue;
-
-        const soundDuration = template.duration || 0.3;
-
-        // Apply frequency envelope
-        if (template.frequencyEnvelope) {
-            oscillator.frequency.exponentialRampToValueAtTime(
-                template.frequencyEnvelope.targetFreq,
-                now + template.frequencyEnvelope.duration
-            );
-        }
-
-        // Apply gain envelope
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + soundDuration);
-
-        // Connect and play
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-        oscillator.start(now);
-        oscillator.stop(now + soundDuration + 0.05);
-    }
-
-    playHighScoreFanfare() {
-        // Reinitialize audio context if it's closed or null
-        if (!this.audioContext || this.audioContext.state === 'closed') {
-            this.reinitialize();
-        }
-
+        
+        // Cannot play sound without AudioContext
         if (!this.audioContext) return;
 
-        // Only resume if not already running
-        if (this.audioContext.state !== 'running') {
-            this.resumeAudioContext();
-            // If context is still not running, we need user interaction first
-            if (this.audioContext.state !== 'running') {
-                return; // We'll try again after user interaction
+        // Check if we have the requested sound template
+        if (!this.soundTemplates || !this.soundTemplates[soundType]) return;
+
+        // Try to resume the context before playing
+        const resumeAndPlay = async () => {
+            try {
+                // In case the context is suspended, try to resume it
+                if (this.audioContext.state !== 'running') {
+                    await this.audioContext.resume();
+                }
+                
+                // Only play if the context is running
+                if (this.audioContext.state === 'running') {
+                    this._createAndPlaySound(soundType, volume);
+                }
+            } catch (err) {
+                // Ignore any errors during resuming
             }
+        };
+        
+        // Start the async resume process
+        resumeAndPlay();
+    }
+    
+    // Private method to create and play a sound after context is ready
+    _createAndPlaySound(soundType, volume) {
+        try {
+            // Get template and create sound
+            const template = this.soundTemplates[soundType];
+            const now = this.audioContext.currentTime;
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+
+            // Apply template values with volume adjustment
+            oscillator.type = template.type;
+            oscillator.frequency.value = template.frequency;
+            gainNode.gain.value = template.gainValue * volume;
+
+            const soundDuration = template.duration || 0.3;
+
+            // Apply frequency envelope
+            if (template.frequencyEnvelope) {
+                oscillator.frequency.exponentialRampToValueAtTime(
+                    template.frequencyEnvelope.targetFreq,
+                    now + template.frequencyEnvelope.duration
+                );
+            }
+
+            // Apply gain envelope
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + soundDuration);
+
+            // Connect and play
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            oscillator.start(now);
+            oscillator.stop(now + soundDuration + 0.05);
+        } catch (e) {
+            console.warn('Error playing sound:', e);
         }
+    }
 
-        const now = this.audioContext.currentTime;
-
-        // Define notes
-        const notes = [
-            { freq: 392.00, time: 0.00, duration: 0.15, volume: 0.5 },  // G4
-            { freq: 523.25, time: 0.15, duration: 0.15, volume: 0.5 },  // C5
-            { freq: 659.25, time: 0.30, duration: 0.15, volume: 0.5 },  // E5
-            { freq: 783.99, time: 0.45, duration: 0.30, volume: 0.6 },  // G5
-            // Final chord
-            { freq: 783.99, time: 0.80, duration: 0.50, volume: 0.4 },  // G5
-            { freq: 987.77, time: 0.80, duration: 0.50, volume: 0.4 },  // B5
-            { freq: 1174.66, time: 0.80, duration: 0.50, volume: 0.4 }  // D6
-        ];
-
-        // Schedule all notes
-        for (const note of notes) {
-            const osc = this.audioContext.createOscillator();
-            const gain = this.audioContext.createGain();
-
-            osc.type = 'triangle';
-            osc.frequency.value = note.freq;
-
-            gain.gain.setValueAtTime(0, now + note.time);
-            gain.gain.linearRampToValueAtTime(note.volume, now + note.time + 0.05);
-            gain.gain.setValueAtTime(note.volume, now + note.time + note.duration - 0.05);
-            gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
-
-            osc.connect(gain);
-            gain.connect(this.audioContext.destination);
-
-            osc.start(now + note.time);
-            osc.stop(now + note.time + note.duration);
+    // Play high score fanfare with improved handling
+    playHighScoreFanfare() {
+        // Only play if we have user interaction and sound is enabled
+        if (!SoundManager.hasUserInteraction || !this.isSoundEnabled()) {
+            return;
         }
+        
+        // Ensure audio context is initialized and resumed
+        if (!this.audioContext || this.audioContext.state === 'closed') {
+            this.reinitialize();
+            if (!this.audioContext) return;
+        }
+        
+        // Resume context and play the fanfare
+        this.resumeAudioContext().then(success => {
+            if (!success || this.audioContext.state !== 'running') return;
+            
+            const now = this.audioContext.currentTime;
+
+            // Define notes
+            const notes = [
+                { freq: 392.00, time: 0.00, duration: 0.15, volume: 0.5 },  // G4
+                { freq: 523.25, time: 0.15, duration: 0.15, volume: 0.5 },  // C5
+                { freq: 659.25, time: 0.30, duration: 0.15, volume: 0.5 },  // E5
+                { freq: 783.99, time: 0.45, duration: 0.30, volume: 0.6 },  // G5
+                // Final chord
+                { freq: 783.99, time: 0.80, duration: 0.50, volume: 0.4 },  // G5
+                { freq: 987.77, time: 0.80, duration: 0.50, volume: 0.4 },  // B5
+                { freq: 1174.66, time: 0.80, duration: 0.50, volume: 0.4 }  // D6
+            ];
+
+            // Schedule all notes
+            for (const note of notes) {
+                try {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.value = note.freq;
+
+                    gain.gain.setValueAtTime(0, now + note.time);
+                    gain.gain.linearRampToValueAtTime(note.volume, now + note.time + 0.05);
+                    gain.gain.setValueAtTime(note.volume, now + note.time + note.duration - 0.05);
+                    gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+
+                    osc.start(now + note.time);
+                    osc.stop(now + note.time + note.duration);
+                } catch (e) {
+                    console.warn('Error scheduling note:', e);
+                }
+            }
+        }).catch(err => {
+            console.warn('Error resuming AudioContext for fanfare:', err);
+        });
     }
 
     // Check if sound is enabled

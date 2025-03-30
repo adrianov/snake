@@ -55,11 +55,20 @@ class MusicManagerUtils {
      * @param {object} gameInstance - The snake game instance
      */
     static startMusicIfEnabled(gameInstance) {
-        // Cancel any pending cleanup if we're about to start music
+        // Cancel any pending cleanup
         MusicManagerUtils.cancelPendingCleanup(gameInstance);
+        
+        // Check if we have a valid game state and music is enabled
+        if (!gameInstance.gameStateManager) return;
+        
         const gameState = gameInstance.gameStateManager.getGameState();
-
-        if (gameInstance.musicManager && gameState.musicEnabled) {
+        if (!gameState.musicEnabled) return;
+        
+        // Try to start music if we have a valid music manager with audio context
+        if (gameInstance.musicManager && 
+            gameInstance.musicManager.audioContext && 
+            gameInstance.musicManager.audioContext.state === 'running') {
+            
             gameInstance.musicManager.startMusic();
         }
     }
@@ -110,7 +119,6 @@ class MusicManagerUtils {
         // Don't schedule cleanup if game is actively playing
         // This prevents accidentally stopping music during gameplay
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            console.debug('Cleanup skipped: game is active');
             return;
         }
 
@@ -120,7 +128,6 @@ class MusicManagerUtils {
                 // Double-check game state before cleanup in case it changed during the delay
                 const currentGameState = gameInstance.gameStateManager.getGameState();
                 if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
-                    console.debug('Delayed cleanup aborted: game is now active');
                     MusicManagerUtils.cleanupTimeouts.delete(gameInstance);
                     return;
                 }

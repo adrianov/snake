@@ -24,7 +24,6 @@ class SnakeGame {
         // Managers initialization
         this.soundManager = SoundManager.getInstance();
         this.musicManager = new MusicManager();
-        this.musicManager.init();
         this.uiManager = new UIManager(this);
 
         // Drawing
@@ -35,6 +34,24 @@ class SnakeGame {
     setupEventListeners() {
         window.addEventListener('resize', () => this.resizeCanvas());
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        
+        // Add touch event listeners for mobile controls
+        // We can't use passive listeners because we need preventDefault() to block scrolling
+        // But we can handle scrolling prevention differently to avoid the console warnings
+        
+        // Create a touchStartHandler that properly handles the event
+        const touchStartHandler = (e) => this.handleTouchStart(e);
+        const touchMoveHandler = (e) => this.handleTouchMove(e);
+        const touchEndHandler = (e) => this.handleTouchEnd(e);
+        
+        // Add non-passive event listeners with proper options
+        this.canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
+        this.canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+        this.canvas.addEventListener('touchend', touchEndHandler, { passive: true });
+        
+        // Prevent page scrolling when touching the canvas using CSS overscroll behavior
+        this.canvas.style.overscrollBehavior = 'none';
+        this.canvas.style.touchAction = 'none';
     }
 
     loadImages() {
@@ -309,9 +326,20 @@ class SnakeGame {
     }
 
     unpauseGame() {
+        // Get the sound manager instance (don't force initialization since we already did that in startGame)
         this.soundManager = SoundManager.getInstance();
-        this.musicManager = MusicManagerUtils.initializeMusicManager(this);
-        MusicManagerUtils.startMusicIfEnabled(this);
+        
+        // Create a fresh music manager with the existing AudioContext
+        this.musicManager = new MusicManager(this.soundManager.audioContext);
+        
+        // Start music if enabled
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.musicEnabled) {
+            // Start music using the existing AudioContext
+            this.musicManager.startMusic();
+        }
+        
+        // Restart the game loop
         this.gameLoop.startGameLoop();
     }
 
@@ -321,9 +349,49 @@ class SnakeGame {
             return;
         }
 
+        // Initialize audio - this is a direct user gesture, perfect for starting audio
+        this.initializeAudio();
+        
         this.resetGameState();
-        this.setupAudio();
         this.gameLoop.startGameLoop();
+    }
+
+    initializeAudio() {
+        // Force initialize the sound manager with the user's first interaction
+        this.soundManager = SoundManager.getInstance(true);
+        
+        // Play a silent sound to fully activate audio on iOS/Safari
+        if (this.soundManager && this.soundManager.audioContext) {
+            // This creates a silent oscillator that ensures audio is fully unlocked
+            const silentOsc = this.soundManager.audioContext.createOscillator();
+            const silentGain = this.soundManager.audioContext.createGain();
+            silentGain.gain.value = 0.001; // Almost silent
+            silentOsc.connect(silentGain);
+            silentGain.connect(this.soundManager.audioContext.destination);
+            silentOsc.start();
+            silentOsc.stop(this.soundManager.audioContext.currentTime + 0.001);
+        }
+        
+        // Make sure we stop any existing music
+        if (this.musicManager) {
+            this.musicManager.stopMusic(true);
+        }
+        
+        // Clear UI
+        this.uiManager.clearMelodyDisplay();
+        
+        // Create a fresh music manager using the sound manager's context
+        this.musicManager = new MusicManager(this.soundManager.audioContext);
+        
+        // Start music if enabled (with a slight delay to ensure context is ready)
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.musicEnabled) {
+            // Start immediately - the silent oscillator above should have unlocked audio
+            this.musicManager.startMusic();
+        }
+        
+        // Update UI
+        this.uiManager.updateMelodyDisplay();
     }
 
     resetGameState() {
@@ -341,14 +409,6 @@ class SnakeGame {
         if (this.drawer && this.drawer.snakeDrawer) {
             this.drawer.snakeDrawer.resetLevels();
         }
-    }
-
-    setupAudio() {
-        this.soundManager = SoundManager.getInstance();
-        this.uiManager.clearMelodyDisplay();
-        this.musicManager = MusicManagerUtils.initializeMusicManager(this, true);
-        MusicManagerUtils.startMusicIfEnabled(this);
-        this.uiManager.updateMelodyDisplay();
     }
 
     manageFruits() {
@@ -641,34 +701,38 @@ class SnakeGame {
     }
 
     handleGameOverAudio(isNewHighScore) {
-        const gameState = this.gameStateManager.getGameState();
-        let cleanupDelayTime = 100;
-
-        if (isNewHighScore) {
-            cleanupDelayTime = 2500;
-        } else {
-            cleanupDelayTime = 900;
+        // Skip audio handling if we don't have a valid audio context
+        if (!this.soundManager || !this.soundManager.audioContext) {
+            return;
         }
+        
+        let cleanupDelayTime = isNewHighScore ? 2500 : 900;
 
-        if (this.soundManager) {
-            setTimeout(() => {
-                this.soundManager.playSound('crash');
-            }, 0);
-        }
+        // Play crash sound immediately
+        this.soundManager.playSound('crash');
 
+        // Stop music with a short delay
         if (this.musicManager) {
             setTimeout(() => {
                 this.musicManager.stopMusic(false);
             }, 100);
         }
 
-        if (this.soundManager && isNewHighScore) {
+        // Play high score fanfare if needed
+        if (isNewHighScore) {
             setTimeout(() => {
                 this.soundManager.playHighScoreFanfare();
             }, 800);
         }
 
-        MusicManagerUtils.cleanupAudioResources(this, cleanupDelayTime);
+        // Clean up audio resources after delays
+        setTimeout(() => {
+            // Only clean up music manager, leave sound manager alone
+            if (this.musicManager) {
+                this.musicManager.stopMusic(true);
+                this.musicManager = null;
+            }
+        }, cleanupDelayTime);
     }
 
     resetGame() {
@@ -718,28 +782,199 @@ class SnakeGame {
         const musicEnabled = this.gameStateManager.toggleMusic();
         this.uiManager.updateMusicToggleUI();
 
+        // If the user action enables music, start playing
         if (musicEnabled) {
             const gameState = this.gameStateManager.getGameState();
             if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-                this.musicManager.startMusic();
+                // Only try to play if we have a valid AudioContext from sound manager
+                if (this.soundManager && this.soundManager.audioContext) {
+                    // Ensure the music manager has the audio context
+                    if (!this.musicManager || !this.musicManager.audioContext) {
+                        this.musicManager = new MusicManager(this.soundManager.audioContext);
+                    }
+                    this.musicManager.startMusic();
+                }
             }
-        } else {
+        } else if (this.musicManager) {
             this.musicManager.stopMusic(false);
         }
     }
 
     changeMusic() {
-        // Use the utility function to handle music change
-        const newMelody = MusicManagerUtils.changeToRandomMelody(this);
+        // Only attempt to change music if we have initialized audio
+        if (!this.soundManager || !this.soundManager.audioContext || !this.musicManager) {
+            return;
+        }
 
-        if (newMelody) {
+        // Change to a new random melody if music is enabled
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.musicEnabled) {
+            const wasPlaying = this.musicManager.isPlaying;
+            
+            // Stop current melody
+            this.musicManager.stopMusic(false);
+            
+            // Select a new random melody
+            this.musicManager.selectRandomMelody();
+            
+            // Restart if it was playing
+            if (wasPlaying) {
+                this.musicManager.startMusic();
+            }
+            
             // Play a sound to indicate music change
             this.soundManager.playSound('click');
+            
+            // Update the UI
+            this.uiManager.updateMelodyDisplay();
+        }
+    }
+
+    handleTouchStart(event) {
+        // Instead of preventing default for all events, only prevent it when necessary
+        // This helps the browser optimize touch handling
+        if (event.touches.length === 2) {
+            // Always prevent default for multi-touch gestures to avoid zooming
+            event.preventDefault();
+        }
+        
+        const gameState = this.gameStateManager.getGameState();
+        
+        // Store the initial touch position
+        this.touchStartX = event.touches[0].clientX;
+        this.touchStartY = event.touches[0].clientY;
+        this.touchStartTime = new Date().getTime();
+        // Reset the movement flag on touch start
+        this.touchMoved = false;
+        // Reset accumulated swipe distance on new touch
+        this.accumulatedSwipeDistance = 0;
+        this.lastSwipeDirection = null;
+        // Reset speed adjustment flag - allow adjustment on new touch
+        this.hasAdjustedSpeed = false;
+        
+        // Handle two-finger tap for pause
+        if (event.touches.length === 2 && gameState.isGameStarted) {
+            this.togglePause();
+        }
+        
+        // Unpause game with a single touch if paused
+        if (gameState.isGameStarted && gameState.isPaused && event.touches.length === 1) {
+            this.togglePause();
+            return;
+        }
+        
+        // Start game if not started yet
+        if (!gameState.isGameStarted && !gameState.isGameOver) {
+            this.startGame();
+        } else if (gameState.isGameOver) {
+            this.resetGame();
+            this.startGame();
+        }
+    }
+    
+    handleTouchMove(event) {
+        // Only prevent default when we're handling a gameplay-related gesture
+        // This allows the browser to optimize scrolling when not playing
+        const gameState = this.gameStateManager.getGameState();
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            event.preventDefault();
+        }
+        
+        if (event.touches.length !== 1) return;
+        
+        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) return;
+        
+        // Calculate thresholds based on canvas size
+        const canvasSize = this.canvas.width;
+        const smallSwipeThreshold = canvasSize * 0.02; // 2% of canvas size for direction change
+        const wideSwipeThreshold = canvasSize * 0.33; // 33% of canvas size for speed change
+        const accumulatedThreshold = canvasSize * 0.33; // 33% of canvas size for accumulated swipes
+        
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = touch.clientY - this.touchStartY;
+        const swipeDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Only change direction if the drag distance is significant
+        if (Math.abs(deltaX) > smallSwipeThreshold || Math.abs(deltaY) > smallSwipeThreshold) {
+            // Mark that movement has occurred during this touch
+            this.touchMoved = true;
+            
+            // Determine the primary direction of the swipe
+            let newDirection;
+            let primaryDelta;
+            
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal swipe
+                newDirection = deltaX > 0 ? 'right' : 'left';
+                primaryDelta = Math.abs(deltaX);
+            } else {
+                // Vertical swipe
+                newDirection = deltaY > 0 ? 'down' : 'up';
+                primaryDelta = Math.abs(deltaY);
+            }
+            
+            // Reset accumulated distance if direction changes
+            if (this.lastSwipeDirection !== newDirection) {
+                this.accumulatedSwipeDistance = 0;
+                this.lastSwipeDirection = newDirection;
+                // Allow speed adjustment when direction changes
+                this.hasAdjustedSpeed = false;
+            }
+            
+            // Accumulate the swipe distance in the current direction
+            this.accumulatedSwipeDistance += primaryDelta;
+            
+            if (this.isValidDirectionChange(newDirection)) {
+                // Apply the direction change
+                this.nextDirection = newDirection;
+                
+                // Check if we haven't already adjusted speed for this touch or direction
+                if (!this.hasAdjustedSpeed) {
+                    // Apply speed adjustment only once per touch event
+                    this.gameLoop.updateTouchGameSpeed(newDirection, this.direction);
+                    
+                    // If it's a wide swipe in the same direction, apply one additional boost
+                    if ((newDirection === this.direction) && 
+                       (primaryDelta > wideSwipeThreshold || this.accumulatedSwipeDistance > accumulatedThreshold)) {
+                        this.gameLoop.updateTouchGameSpeed(newDirection, this.direction);
+                    }
+                    
+                    // Mark that we've adjusted speed for this touch
+                    this.hasAdjustedSpeed = true;
+                }
+            }
+            
+            // Reset starting position to allow continuous dragging
+            this.touchStartX = touch.clientX;
+            this.touchStartY = touch.clientY;
+        }
+    }
+    
+    handleTouchEnd(event) {
+        // For touchend, we don't need preventDefault as often since it won't affect scrolling
+        // We can make this passive for better performance
+        const gameState = this.gameStateManager.getGameState();
+        
+        // Reset speed adjustment flag when finger is lifted
+        this.hasAdjustedSpeed = false;
+        
+        // Handle single tap to reduce speed - only if no movement occurred
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            const touchEndTime = new Date().getTime();
+            const touchDuration = touchEndTime - this.touchStartTime;
+            
+            // If it's a quick tap (less than 250ms) AND no significant movement occurred
+            if (touchDuration < 250 && !this.touchMoved && event.changedTouches.length === 1) {
+                // Slow down the snake temporarily
+                this.gameLoop.reduceSpeed();
+            }
         }
     }
 }
 
 window.addEventListener('load', () => {
-    new SnakeGame();
+    // Create the game instance and make it globally available
+    window.SnakeGame = new SnakeGame();
 });
 
