@@ -24,10 +24,10 @@
   - [x] Keep original img/snake1.png and use ImageMagick to create a new file at 1200×630px for og:image
   - [x] Add og:url with canonical URL
 
-- [ ] Add copyright information
-  - [ ] Add "© Peter Adrianov, 2025" to footer in index.html
-  - [ ] Include copyright notice in README.md
-  - [ ] Add license information to GitHub repository
+- [x] Add copyright information
+  - [x] Add "© Peter Adrianov, 2025" to footer in index.html
+  - [x] Include copyright notice in README.md
+  - [x] Add license information to GitHub repository
 
 ## Mobile Optimization
 - [ ] Implement touch controls

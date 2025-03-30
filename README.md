@@ -76,3 +76,5 @@ The game is built using:
 ## License
 
 This project is open source and available under the MIT License.
+
+© Peter Adrianov, 2025. All rights reserved.

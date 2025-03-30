@@ -619,3 +619,20 @@ body {
         color: var(--color-text);
     }
 }
+
+/* Footer styles */
+.game-footer {
+    position: fixed;
+    bottom: 10px;
+    left: 15px;
+    text-align: left;
+    padding: 8px;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    opacity: 0.7;
+    transition: opacity var(--transition-normal);
+}
+
+.game-footer:hover {
+    opacity: 1;
+}
