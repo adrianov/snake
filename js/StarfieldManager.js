@@ -9,6 +9,10 @@ class StarfieldManager {
         
         // Default star color (white) in case a star doesn't have one
         this.defaultColor = { r: 255, g: 255, b: 255 };
+        
+        // Star movement properties
+        this.movementStartTime = Date.now();
+        this.movementCycleDuration = 1800000; // 30 minutes for a full star cycle (much slower than moon's 2 minutes)
     }
 
     updatePixelRatio(pixelRatio) {
@@ -32,35 +36,6 @@ class StarfieldManager {
             // Limit total number of stars to 100
             const count = Math.min(100, Math.floor(width * height / (this.isMobile ? 700 : 400)));
             console.log(`Generating ${count} stars`);
-            
-            // Enhanced color palette with vibrant and legendary colors
-            const colors = {
-                // Standard whites (60% chance)
-                standard: [
-                    { r: 255, g: 255, b: 255 }, // Pure white
-                    { r: 255, g: 255, b: 240 }, // Warm white
-                    { r: 240, g: 250, b: 255 }, // Cool white
-                    { r: 220, g: 235, b: 255 }  // Slight blue white
-                ],
-                // Colorful stars (30% chance)
-                colorful: [
-                    { r: 255, g: 220, b: 180 }, // Gold
-                    { r: 255, g: 200, b: 200 }, // Pink
-                    { r: 200, g: 220, b: 255 }, // Light blue
-                    { r: 220, g: 255, b: 220 }, // Light green
-                    { r: 255, g: 220, b: 160 }, // Yellow
-                    { r: 230, g: 200, b: 255 }  // Lavender
-                ],
-                // Legendary stars (10% chance) - more vibrant colors
-                legendary: [
-                    { r: 255, g: 150, b: 150 }, // Bright red
-                    { r: 150, g: 255, b: 150 }, // Bright green
-                    { r: 150, g: 150, b: 255 }, // Bright blue
-                    { r: 255, g: 200, b: 100 }, // Orange
-                    { r: 255, g: 100, b: 255 }, // Magenta
-                    { r: 100, g: 255, b: 255 }  // Cyan
-                ]
-            };
             
             // Distribute stars more evenly using grid sectors
             // Divide canvas into a grid of cells for more even distribution
@@ -115,6 +90,10 @@ class StarfieldManager {
                 const x = xMin + random(totalStars, 1) * (xMax - xMin);
                 const y = yMin + random(totalStars, 2) * (yMax - yMin);
                 
+                // Additional random properties for movement
+                const movementSpeed = 0.1 + random(totalStars, 9) * 0.3; // Speed variation between 0.1-0.4 (much slower)
+                const movementPhase = random(totalStars, 9.5) * Math.PI * 2; // Different starting phases
+                
                 // Size distribution - with bigger stars
                 const sizeBase = random(totalStars, 3);
                 let size;
@@ -123,62 +102,127 @@ class StarfieldManager {
                 // Create variety in star sizes with some truly big ones
                 if (sizeBase > 0.97) {
                     // Legendary stars (3%)
-                    size = 3.0 + sizeBase * 1.0; // 3.0-4.0 range
+                    size = 2.0 + sizeBase * 0.5; // 2.0-2.5 range (reduced from 2.5-3.0)
                     starType = 'legendary';
                 } else if (sizeBase > 0.9) {
                     // Large stars (7%)
-                    size = 2.5 + sizeBase * 0.5; // 2.5-3.0 range
+                    size = 1.8 + sizeBase * 0.2; // 1.8-2.0 range (reduced from 2.2-2.5)
                     starType = 'large';
                 } else if (sizeBase > 0.7) {
                     // Medium stars (20%)
-                    size = 2.0 + sizeBase * 0.3; // 2.0-2.3 range
+                    size = 1.5 + sizeBase * 0.3; // 1.5-1.8 range (reduced from 2.0-2.2)
                     starType = 'medium';
                 } else {
                     // Small stars (70%)
-                    size = 2.0; // All small stars exactly 2.0 pixels
+                    size = 1.2 + sizeBase * 0.3; // 1.2-1.5 range (reduced from fixed 2.0)
                 }
                 
                 // Twinkle effect
                 const twinkleSpeed = 500 + random(totalStars, 4) * 1500;
                 const twinklePhase = random(totalStars, 5) * Math.PI * 2;
                 
-                // Color selection with more variety
-                const colorType = random(totalStars, 6);
-                let colorPalette, baseColor;
+                // Create truly random star colors instead of using palettes
+                // This provides much better color distribution
+                let finalColor = {};
                 
-                // Select from different color palettes based on probability
-                if (colorType > 0.9 || starType === 'legendary') {
-                    // Legendary colors (10% chance, or always for legendary stars)
-                    colorPalette = colors.legendary;
-                } else if (colorType > 0.6) {
-                    // Colorful stars (30% chance)
-                    colorPalette = colors.colorful;
-                } else {
-                    // Standard white-ish stars (60% chance)
-                    colorPalette = colors.standard;
+                // Generate random color based on star type
+                if (starType === 'legendary') {
+                    // For legendary stars: Create vibrant, saturated colors
+                    // Emphasize one or two channels for more saturation
+                    const primaryChannel = Math.floor(random(totalStars, 6.1) * 3); // 0, 1, or 2 (R, G, or B)
+                    
+                    // Generate base components with one dominant channel
+                    finalColor.r = Math.floor(random(totalStars, 6.2) * 100) + (primaryChannel === 0 ? 155 : 50);
+                    finalColor.g = Math.floor(random(totalStars, 6.3) * 100) + (primaryChannel === 1 ? 155 : 50);
+                    finalColor.b = Math.floor(random(totalStars, 6.4) * 100) + (primaryChannel === 2 ? 155 : 50);
+                    
+                    // Add extra brightness to make legendary stars stand out
+                    finalColor.r = Math.min(255, finalColor.r + 50);
+                    finalColor.g = Math.min(255, finalColor.g + 50);
+                    finalColor.b = Math.min(255, finalColor.b + 50);
+                } 
+                else if (random(totalStars, 6.5) > 0.6) {
+                    // 40% of normal stars get interesting colors
+                    // Create a range of saturated but softer colors
+                    const baseValue = Math.floor(random(totalStars, 6.6) * 100) + 100; // 100-199
+                    const variance1 = Math.floor(random(totalStars, 6.7) * 155); // 0-154
+                    const variance2 = Math.floor(random(totalStars, 6.8) * 155); // 0-154
+                    
+                    // Randomly assign the base and variances to create color bias
+                    const colorPattern = Math.floor(random(totalStars, 6.9) * 6); // 0-5
+                    
+                    switch (colorPattern) {
+                        case 0: // Red-dominant
+                            finalColor = { r: baseValue + variance1, g: baseValue - variance2, b: baseValue };
+                            break;
+                        case 1: // Green-dominant
+                            finalColor = { r: baseValue, g: baseValue + variance1, b: baseValue - variance2 };
+                            break;
+                        case 2: // Blue-dominant
+                            finalColor = { r: baseValue - variance2, g: baseValue, b: baseValue + variance1 };
+                            break;
+                        case 3: // Yellow-dominant (red+green)
+                            finalColor = { r: baseValue + variance1, g: baseValue + variance1, b: baseValue - variance2 };
+                            break;
+                        case 4: // Cyan-dominant (green+blue)
+                            finalColor = { r: baseValue - variance2, g: baseValue + variance1, b: baseValue + variance1 };
+                            break;
+                        case 5: // Magenta-dominant (red+blue)
+                            finalColor = { r: baseValue + variance1, g: baseValue - variance2, b: baseValue + variance1 };
+                            break;
+                    }
+                } 
+                else {
+                    // 60% are white-ish stars with subtle tinting
+                    const baseWhite = 180 + Math.floor(random(totalStars, 6.91) * 75); // 180-255 base brightness
+                    const tint = Math.floor(random(totalStars, 6.92) * 30); // 0-29 tint amount
+                    
+                    // Random tint direction
+                    const tintType = Math.floor(random(totalStars, 6.93) * 6);
+                    
+                    // Create white with slight tint in different directions
+                    switch (tintType) {
+                        case 0: // Warm white (red tint)
+                            finalColor = { r: Math.min(255, baseWhite + tint), g: baseWhite, b: Math.max(140, baseWhite - tint) };
+                            break;
+                        case 1: // Cool white (blue tint)
+                            finalColor = { r: Math.max(140, baseWhite - tint), g: baseWhite, b: Math.min(255, baseWhite + tint) };
+                            break;
+                        case 2: // Green tint
+                            finalColor = { r: Math.max(140, baseWhite - tint), g: Math.min(255, baseWhite + tint), b: Math.max(140, baseWhite - tint) };
+                            break;
+                        case 3: // Pure white
+                            finalColor = { r: baseWhite, g: baseWhite, b: baseWhite };
+                            break;
+                        case 4: // Slight yellow
+                            finalColor = { r: Math.min(255, baseWhite + tint), g: Math.min(255, baseWhite + tint), b: Math.max(140, baseWhite - tint) };
+                            break;
+                        case 5: // Slight purple
+                            finalColor = { r: Math.min(255, baseWhite + tint), g: Math.max(140, baseWhite - tint), b: Math.min(255, baseWhite + tint) };
+                            break;
+                    }
                 }
                 
-                // Pick a color from the selected palette
-                const colorIndex = Math.floor(random(totalStars, 7) * colorPalette.length);
-                baseColor = colorPalette[colorIndex];
+                // Ensure all color values are within valid range
+                finalColor.r = Math.min(255, Math.max(0, Math.floor(finalColor.r)));
+                finalColor.g = Math.min(255, Math.max(0, Math.floor(finalColor.g)));
+                finalColor.b = Math.min(255, Math.max(0, Math.floor(finalColor.b)));
                 
-                // For larger stars, make them brighter
-                let finalColor = { ...baseColor };
-                if (starType === 'legendary' || starType === 'large') {
-                    // Boost brightness for large/legendary stars
+                // Make large stars brighter
+                if (starType === 'large') {
                     finalColor.r = Math.min(255, finalColor.r + 30);
                     finalColor.g = Math.min(255, finalColor.g + 30);
                     finalColor.b = Math.min(255, finalColor.b + 30);
                 }
                 
                 // Calculate effects based on star type
-                const hasDiffraction = starType === 'legendary' || (starType === 'large' && random(totalStars, 8) > 0.7);
+                const hasDiffraction = starType === 'legendary' || (starType === 'large' && random(totalStars, 8) > 0.8); // Further reduced chance
                 const hasOctoDiffraction = starType === 'legendary';
                 const glowSize = 
-                    starType === 'legendary' ? size * 3 : 
-                    starType === 'large' ? size * 2 : 
-                    starType === 'medium' ? size * 1.5 : 
-                    size * 1.2;
+                    starType === 'legendary' ? size * 1.6 : // Reduced from 2.0
+                    starType === 'large' ? size * 1.2 : // Reduced from 1.5
+                    starType === 'medium' ? size * 1.0 : // Reduced from 1.2
+                    size * 0.8; // Reduced from 1.0
                     
                 // Calculate maximum visual radius for boundary checking
                 const maxVisualRadius = Math.max(
@@ -203,7 +247,11 @@ class StarfieldManager {
                     glowSize: glowSize * this.pixelRatio,
                     hasDiffraction,
                     hasOctoDiffraction,
-                    diffractionLength: size * (hasDiffraction ? 3 : 0) * this.pixelRatio
+                    diffractionLength: size * (hasDiffraction ? 3 : 0) * this.pixelRatio,
+                    movementSpeed,
+                    movementPhase,
+                    initialX: adjustedX,
+                    initialY: adjustedY
                 });
                 
                 // Update cell stats
@@ -246,9 +294,60 @@ class StarfieldManager {
                 twinklePhase: Math.random() * Math.PI * 2,
                 color: this.defaultColor,
                 starType: 'regular',
-                glowSize: 3 * this.pixelRatio
+                glowSize: 3 * this.pixelRatio,
+                initialX: x,
+                initialY: y,
+                movementSpeed: 0.1 + Math.random() * 0.3, // Slower speed for fallback stars too
+                movementPhase: Math.random() * Math.PI * 2
             });
         }
+    }
+
+    // Update star positions based on movement cycle
+    updateStarPositions(canvas) {
+        if (this.stars.length === 0) return;
+        
+        const width = canvas.width / this.pixelRatio;
+        const height = canvas.height / this.pixelRatio;
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - this.movementStartTime;
+        
+        // Calculate overall cycle progress (0-1)
+        const cycleProgress = (elapsedTime % this.movementCycleDuration) / this.movementCycleDuration;
+        
+        // Update each star's position
+        this.stars.forEach((star, index) => {
+            // Calculate individual movement based on star's properties
+            // Each star moves at a slightly different speed and phase
+            const starProgress = (cycleProgress + star.movementPhase) % 1;
+            
+            // X coordinate moves from left to right across width
+            const moveX = width * (0.1 + (0.8 * starProgress)) * star.movementSpeed;
+            
+            // Y coordinate follows a simple sine wave arc (higher in middle)
+            const amplitude = height * 0.08; // Reduced amplitude for more subtle movement
+            const moveY = amplitude * Math.sin(starProgress * Math.PI);
+            
+            // Apply movement relative to initial position
+            // For x, we want to wrap around when it goes off screen
+            star.x = (star.initialX + moveX) % width;
+            
+            // For y, we move up and down relative to initial position
+            star.y = star.initialY - moveY;
+            
+            // Regenerate stars that go off the right edge of the screen
+            // This creates the illusion of continuous star movement
+            if (star.x > width * 0.95 && starProgress > 0.9) {
+                // Move star to the left edge with a new random y position
+                star.initialX = width * 0.05;
+                star.initialY = Math.random() * height * 0.8;
+                star.x = star.initialX;
+                star.y = star.initialY;
+                
+                // Also give it a new movement phase for variety
+                star.movementPhase = Math.random() * 0.2; // Small phase at the beginning
+            }
+        });
     }
 
     drawStars(ctx, canvas, darknessLevel, moonPosition = null) {
@@ -261,6 +360,9 @@ class StarfieldManager {
             if (this.stars.length === 0) {
                 this.generateStars(canvas);
             }
+            
+            // Update star positions for movement
+            this.updateStarPositions(canvas);
             
             // Check if we need to update the cache
             const now = Date.now();
