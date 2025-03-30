@@ -6,7 +6,7 @@ const GAME_CONSTANTS = {
     SNAKE: {
         BASE_SPEED: 200,                 // Base movement interval (higher = slower) - was 100, now 2x slower
         SPEED_INCREASE_AFTER_FOOD: 0.98, // Factor after eating food (was 0.97, now 2% increase)
-        SPEED_INCREASE_LUCK: 1.3,        // Speed factor after luck effect
+        SPEED_INCREASE_LUCK: 1.3,        // Speed factor after luck effect (1.3 = 30% slower)
         MIN_SPEED_FACTOR: 0.25,          // Minimum speed as factor of base speed
         MAX_SPEED_FACTOR: 3,             // Maximum speed as factor of base speed
         

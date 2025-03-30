@@ -109,7 +109,8 @@ class GameLoop {
 
     adjustSpeedAfterLuckEffect() {
         this.speed *= window.GAME_CONSTANTS.SNAKE.SPEED_INCREASE_LUCK;
-        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
+        // Use Math.max since higher value = slower (we need to allow it to increase for slowdown)
+        this.speed = Math.max(this.speed, this.baseSpeed * 0.7); // Ensure at least 30% slowdown
         this.frameInterval = this.speed;
     }
 
