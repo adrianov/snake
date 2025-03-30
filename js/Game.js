@@ -1330,16 +1330,17 @@ class SnakeGame {
             
             if (gameState.isPaused) return;
             
-            // IMPORTANT: Always set the nextDirection regardless of validity check
-            // This ensures the most recent arrow press is registered
+            // IMPORTANT: Call updateGameSpeed regardless of validity
+            // The function itself handles opposite direction logic for slowing down.
+            this.gameLoop.updateGameSpeed(direction, this.direction);
+
+            // Only update the nextDirection if the change is valid
             if (this.isValidDirectionChange(direction)) {
                 console.log(`Arrow button press: changing direction to ${direction}`);
                 this.nextDirection = direction;
-                
-                // Adjust speed like keyboard controls
-                this.gameLoop.updateGameSpeed(direction, this.direction);
             } else {
                 console.log(`Arrow button press: ${direction} is invalid from current direction ${this.direction}`);
+                // No need to do anything else here, updateGameSpeed handled the potential slow down
             }
         };
         

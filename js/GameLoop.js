@@ -16,6 +16,7 @@ class GameLoop {
         this.lastFrameTime = performance.now();
         this.boundGameLoop = this.gameLoop.bind(this);
         this.animationFrame = requestAnimationFrame(this.boundGameLoop);
+        this.frameInterval = this.speed;
     }
 
     gameLoop(timestamp) {
@@ -54,9 +55,10 @@ class GameLoop {
         }
     }
 
-    updateGameSpeed(keyDirection, currentDirection) {
-        const isCurrentDirection = keyDirection === currentDirection;
-        const isOppositeDirection = keyDirection === {
+    // Internal helper function for common speed update logic
+    _updateSpeedBasedOnDirection(inputDirection, currentDirection, speedMult, slowMult) {
+        const isCurrentDirection = inputDirection === currentDirection;
+        const isOppositeDirection = inputDirection === {
             'up': 'down',
             'down': 'up',
             'left': 'right',
@@ -64,9 +66,9 @@ class GameLoop {
         }[currentDirection];
 
         if (isCurrentDirection) {
-            this.speed *= this.speedMultiplier;
+            this.speed *= speedMult;
         } else if (isOppositeDirection) {
-            this.speed *= this.slowMultiplier;
+            this.speed *= slowMult;
         }
 
         // Ensure speed stays within reasonable bounds
@@ -75,30 +77,23 @@ class GameLoop {
         this.frameInterval = this.speed;
     }
 
+    updateGameSpeed(keyDirection, currentDirection) {
+        this._updateSpeedBasedOnDirection(
+            keyDirection,
+            currentDirection,
+            window.GAME_CONSTANTS.SNAKE.SPEED_MULTIPLIER,
+            window.GAME_CONSTANTS.SNAKE.SLOW_MULTIPLIER
+        );
+    }
+
     // More gradual speed adjustment for touch controls
     updateTouchGameSpeed(touchDirection, currentDirection) {
-        const isCurrentDirection = touchDirection === currentDirection;
-        const isOppositeDirection = touchDirection === {
-            'up': 'down',
-            'down': 'up',
-            'left': 'right',
-            'right': 'left'
-        }[currentDirection];
-        
-        // Touch speed multiplier - more gradual change than keyboard
-        const touchSpeedMultiplier = window.GAME_CONSTANTS.SNAKE.TOUCH_SPEED_MULTIPLIER;
-        const touchSlowMultiplier = window.GAME_CONSTANTS.SNAKE.TOUCH_SLOW_MULTIPLIER;
-        
-        if (isCurrentDirection) {
-            this.speed *= touchSpeedMultiplier;
-        } else if (isOppositeDirection) {
-            this.speed *= touchSlowMultiplier;
-        }
-        
-        // Ensure speed stays within reasonable bounds
-        this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
-        this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
-        this.frameInterval = this.speed;
+        this._updateSpeedBasedOnDirection(
+            touchDirection,
+            currentDirection,
+            window.GAME_CONSTANTS.SNAKE.TOUCH_SPEED_MULTIPLIER,
+            window.GAME_CONSTANTS.SNAKE.TOUCH_SLOW_MULTIPLIER
+        );
     }
 
     resetSpeed() {
