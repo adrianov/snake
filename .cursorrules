@@ -1,0 +1,34 @@
+# Snake Game
+
+## Features
+- Canvas-based snake game with responsive movement
+- Day-night cycle and moon phases based on snake growth
+- Multiple fruit types, dynamic soundtrack, sound effects
+- High score tracking, modern UI, responsive design
+- Auto-collision avoidance and tail-cutting survival mechanics
+
+## Directories & Files
+
+### Root
+- **index.html**: Main HTML file loading all game assets
+- **README.md**: Documentation and instructions
+
+### css/
+- **styles.css**: UI styling and animations
+
+### js/
+- **game.js**: Main game logic and initialization
+- **Snake.js**: Movement and collision detection
+- **FoodManager.js**: Food generation and collection
+- **GameStateManager.js**: Game state handling
+- **GameLoop.js**: Game timing and frame updates
+- **drawer.js**: Base drawing utilities
+- **snakeDrawer.js**: Snake rendering with effects
+- **sceneDrawer.js**: Background environment
+- **MoonDrawer.js**: Moon phases animations
+- **fruits.js**: Fruit types and properties
+- **ui-manager.js**: UI elements and interactions
+- **sound.js**: Sound effect generation
+- **music.js**: Background music playback
+- **musicUtils.js**: Music utility functions
+- **music-sheets.js**: Game melody sequences 
