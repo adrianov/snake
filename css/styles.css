@@ -103,8 +103,10 @@ body {
 .canvas-wrapper {
     position: relative;
     width: 100%;
-    max-width: min(90vh, 90vw);
+    max-width: min(80vh, 90vw);
     aspect-ratio: 1 / 1;
+    padding-bottom: min(80vh, 90vw); /* Fallback for browsers that don't support aspect-ratio */
+    height: 0;
     background: linear-gradient(135deg, #dff5e6 0%, #e7f7f5 100%);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
@@ -123,7 +125,7 @@ body {
 /* Game controls container */
 .game-controls {
     width: 100%;
-    max-width: min(90vh, 90vw);
+    max-width: min(80vh, 90vw);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -217,7 +219,9 @@ body {
     /* Fix canvas wrapper for iOS */
     .canvas-wrapper {
         width: 100%;
-        max-width: 99vw;
+        max-width: 95vw;
+        padding-bottom: 95vw; /* Square aspect ratio fallback */
+        aspect-ratio: 1 / 1;
         margin: 0 auto;
     }
     
@@ -799,10 +803,21 @@ body {
     
     .header-buttons {
         flex-direction: column;
+        margin-left: 0;
     }
     
     .game-container {
-        padding: 10px 20px;
+        padding: 0;
+    }
+    
+    .canvas-wrapper {
+        max-width: min(80vh, 75vw);
+        padding-bottom: min(80vh, 75vw); /* Maintain square aspect ratio */
+        aspect-ratio: 1 / 1;
+    }
+    
+    .game-controls {
+        max-width: min(80vh, 75vw);
     }
 }
 
@@ -848,8 +863,14 @@ body {
         margin-bottom: 8px;
     }
     
-    /* Increased max-width for mobile devices */
+    /* Square aspect ratio for mobile */
     .canvas-wrapper {
+        max-width: min(90vh, 90vw);
+        padding-bottom: min(90vh, 90vw);
+        aspect-ratio: 1 / 1;
+    }
+    
+    .game-controls {
         max-width: min(90vh, 90vw);
     }
 }
@@ -857,11 +878,13 @@ body {
 /* Tablet-specific styles */
 @media (min-width: 600px) and (max-width: 1024px) {
     .canvas-wrapper {
-        max-width: min(90vh, 90vw);
+        max-width: min(85vh, 90vw);
+        padding-bottom: min(85vh, 90vw);
+        aspect-ratio: 1 / 1;
     }
     
     .game-controls {
-        max-width: min(90vh, 90vw);
+        max-width: min(85vh, 90vw);
     }
     
     .game-header {
@@ -878,13 +901,13 @@ body {
 /* Very small screens */
 @media (max-height: 600px), (max-width: 350px) {
     .canvas-wrapper {
-        max-width: 99vw;
+        max-width: 95vw;
+        padding-bottom: 95vw;
+        aspect-ratio: 1 / 1;
     }
     
     .game-controls {
-        max-width: 99vw;
-        gap: 5px;
-        padding: 0;
+        max-width: 95vw;
     }
     
     .score-container {
@@ -944,13 +967,13 @@ body {
 /* Medium to small screens */
 @media (max-width: 480px) {
     .canvas-wrapper {
-        max-width: 98vw;
+        max-width: 95vw;
+        padding-bottom: 95vw;
+        aspect-ratio: 1 / 1;
     }
     
     .game-controls {
-        max-width: 98vw;
-        gap: 6px;
-        padding: 0;
+        max-width: 95vw;
     }
     
     .score-container {
