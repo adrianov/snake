@@ -2,83 +2,134 @@ class MusicManager {
     // Static property to store melody ID across instances
     static currentMelodyId = null;
 
-    constructor(audioContext = null) {
-        // Audio context and nodes
-        this.audioContext = audioContext;
+    constructor() {
+        // Don't create context here, get it from SoundManager later
+        this.audioContext = null;
+
         this.masterGain = null;
         this.melodyGain = null;
-
-        // Playback state
-        this.currentMelodyId = MusicManager.currentMelodyId; // Initialize from static property
         this.isPlaying = false;
-        this.melodyScheduler = null;
-        this.activeOscillators = new Set();  // Track all active sound sources
-
-        // Timing
-        this.nextNoteTime = 0;
+        this.currentMelodyId = null;
         this.currentNoteIndex = 0;
+        this.nextNoteTime = 0;
+        this.melodyScheduler = null;
+        this.activeOscillators = new Set();
 
-        // Define frequency map for notes (only includes notes actually used in melodies)
-        this.noteFrequencies = {
-            // Octave 1-2 (low bass notes)
-            'F1': 43.65, 'G1': 49.00, 'A1': 55.00, 'B1': 61.74,
-            'C2': 65.41, 'C#2': 69.30, 'D2': 73.42, 'Eb2': 77.78, 'E2': 82.41, 'F2': 87.31,
-            'F#2': 92.50, 'Gb2': 92.50, 'G2': 98.00, 'G#2': 103.83, 'Ab2': 103.83, 'A2': 110.00, 'A#2': 116.54, 'Bb2': 116.54, 'B2': 123.47,
+        // Define note frequencies using an internal method
+        this.noteFrequencies = this._generateNoteFrequencies();
 
-            // Octave 3 (bass notes)
-            'C3': 130.81, 'C#3': 138.59, 'D3': 146.83, 'D#3': 155.56, 'Eb3': 155.56, 'E3': 164.81, 'F3': 174.61,
-            'F#3': 185.00, 'Gb3': 185.00, 'G3': 196.00, 'G#3': 207.65, 'Ab3': 207.65, 'A3': 220.00, 'A#3': 233.08, 'Bb3': 233.08, 'B3': 246.94,
+        // Note: We don't start music here, only on explicit user action or game start
+    }
 
-            // Octave 4 (middle range)
-            'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'Eb4': 311.13, 'E4': 329.63, 'F4': 349.23,
-            'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'Ab4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'Bb4': 466.16, 'B4': 493.88,
+    // Internal method to generate frequencies (moved from constructor)
+    _generateNoteFrequencies() {
+        // Using a base frequency (A4 = 440 Hz)
+        const A4 = 440;
+        const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const frequencies = {};
+        
+        for (let octave = 0; octave < 9; octave++) {
+            for (let i = 0; i < notes.length; i++) {
+                const noteName = notes[i] + octave;
+                // Calculate frequency relative to A4
+                // Formula: freq = A4 * 2^((noteIndex - A4Index) / 12)
+                // A4 is the 9th note (index 9) in the 4th octave
+                const noteIndex = octave * 12 + i;
+                const a4Index = 4 * 12 + 9;
+                const frequency = A4 * Math.pow(2, (noteIndex - a4Index) / 12);
+                frequencies[noteName] = frequency;
+                
+                // Add common flat aliases (more robust)
+                if (notes[i].includes('#')) {
+                    const flatNote = notes[(i + 1) % 12].replace('#', '') + 'b' + octave;
+                     // Basic check, overwrite if Cb or Fb which are less common
+                     if (flatNote.startsWith('Cb') || flatNote.startsWith('Fb')) {
+                        frequencies[flatNote] = frequency;
+                     } else {
+                        const baseFlatNote = notes[(i + 1) % 12] + 'b' + octave;
+                        frequencies[baseFlatNote] = frequency;
+                     }
+                }
+            }
+        }
+        frequencies['REST'] = 0;
+        return frequencies;
+    }
 
-            // Octave 5 (treble range)
-            'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'Eb5': 622.25, 'E5': 659.26, 'F5': 698.46,
-            'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'Ab5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'Bb5': 932.33, 'B5': 987.77,
+    // Helper to get a valid AudioContext (NOW USES SHARED CONTEXT)
+    getValidAudioContext() {
+        // Always try to get the shared context from SoundManager
+        const context = SoundManager.getAudioContext();
 
-            // Octave 6 (high treble range)
-            'C6': 1046.50, 'C#6': 1108.73, 'D6': 1174.66, 'D#6': 1244.51, 'Eb6': 1244.51, 'E6': 1318.51, 'F6': 1396.91,
-            'F#6': 1479.98, 'G6': 1567.98, 'G#6': 1661.22, 'A6': 1760.00, 'B6': 1975.53,
+        if (context && context.state === 'running') {
+             // console.log("MusicManager: Using running shared AudioContext."); // Reduce noise
+             return context;
+        }
+        
+        if (context && context.state === 'suspended') {
+             console.log("MusicManager: Shared context is suspended. Attempting resume...");
+             // Try to resume the shared context (SoundManager handles the promise)
+             SoundManager.instance?.resumeAudioContext(); 
+             // Return the suspended context for now, resume is async
+             return context; 
+        }
+        
+        if (context && context.state === 'closed') {
+             console.warn("MusicManager: Shared context is closed. Cannot use.");
+             return null;
+        }
+        
+        // If context doesn't exist yet and we have interaction, SoundManager should create it.
+        // We might need to trigger SoundManager's init if it hasn't happened.
+        if (!context && SoundManager.hasUserInteraction) {
+             console.log("MusicManager: Shared context not found, requesting SoundManager init...");
+             SoundManager.instance?.initAudioContext(true); // Request SoundManager to create it
+             return SoundManager.getAudioContext(); // Return the newly created context (might be suspended)
+        } 
 
-            // Special case
-            'REST': 0
-        };
+        // If no interaction yet, or init failed, return null
+        console.log(`MusicManager: Cannot get valid AudioContext. Shared context state: ${context?.state}, Interaction: ${SoundManager.hasUserInteraction}`);
+        return null;
+    }
 
-        // If AudioContext is provided, setup audio nodes immediately
+    // Method called by Game.js after user interaction
+    initAudioContextIfNeeded() {
+        console.log("MusicManager initAudioContextIfNeeded called.");
+        // Try to get the shared context
+        this.audioContext = this.getValidAudioContext(); 
+        
         if (this.audioContext) {
-            this.setupGainNodes();
+            console.log(`MusicManager: Acquired shared context. State: ${this.audioContext.state}`);
+            // If context is running and gain nodes aren't set up, do it now
+            if (this.audioContext.state === 'running' && !this.masterGain) {
+                console.log("MusicManager context running, setting up gain nodes.");
+                this.setupGainNodes();
+            }
+            // No need to explicitly resume here, getValidAudioContext or startMusic will handle it
+        } else {
+            console.warn("MusicManager: Failed to acquire shared AudioContext.");
         }
     }
 
-    // Setup gain nodes for volume control
+    // Setup gain nodes (Master and Melody)
     setupGainNodes() {
-        if (!this.audioContext) return;
-        
-        // Clean up old nodes if they exist
-        if (this.masterGain) {
-            try {
-                this.masterGain.disconnect();
-            } catch (e) {
-                // Ignore disconnect errors
-            }
+        if (!this.audioContext || this.audioContext.state !== 'running') {
+             console.warn("Cannot setup gain nodes: AudioContext not available or not running.");
+             return;
         }
-        if (this.melodyGain) {
-            try {
-                this.melodyGain.disconnect();
-            } catch (e) {
-                // Ignore disconnect errors
-            }
-        }
-        
-        // Create gain nodes
-        this.masterGain = this.audioContext.createGain();
-        this.masterGain.gain.value = 0.5;
-        this.masterGain.connect(this.audioContext.destination);
+        if (this.masterGain) return; // Already setup
 
+        console.log("Setting up MusicManager gain nodes...");
+        this.masterGain = this.audioContext.createGain();
         this.melodyGain = this.audioContext.createGain();
-        this.melodyGain.gain.value = 0.9;
+        
+        // Connect melody gain to master gain, and master gain to destination
         this.melodyGain.connect(this.masterGain);
+        this.masterGain.connect(this.audioContext.destination);
+        
+        // Set initial volumes (master gain often controlled by user later)
+        this.masterGain.gain.value = 0.5; // Default master volume
+        this.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
     }
 
     // Save melody ID to static property
@@ -123,80 +174,96 @@ class MusicManager {
         return this.currentMelodyId;
     }
 
-    // Start music
+    // Start playing music
     startMusic() {
-        // Always stop any existing music first
-        this.stopMusic();
-
-        // Check if music is enabled in game settings
-        if (window.SnakeGame && window.SnakeGame.gameStateManager) {
-            const gameState = window.SnakeGame.gameStateManager.getGameState();
-            if (!gameState.musicEnabled) {
-                return; // Don't play music if it's disabled
-            }
+        // 1. Ensure we have user interaction (checked by SoundManager now)
+        if (!SoundManager.hasUserInteraction) {
+             console.log("MusicManager start deferred: No user interaction yet.");
+             return;
         }
 
-        // We need a valid AudioContext to play music
-        if (!this.audioContext) {
+        // 2. Ensure shared context is initialized and potentially running
+        this.initAudioContextIfNeeded(); // Get/ensure shared context exists
+        
+        // Use the acquired shared context
+        const context = this.audioContext; 
+        
+        if (!context) {
+            console.warn("Cannot start music: Failed to acquire shared AudioContext.");
             return;
         }
-        
-        // If AudioContext is suspended, try to resume it
-        if (this.audioContext.state === 'suspended') {
-            try {
-                // Resume and continue with playback
-                this.audioContext.resume().then(() => {
-                    if (this.audioContext && this.audioContext.state === 'running') {
-                        this._continueStartMusic();
-                    }
-                }).catch(() => {});
-                return; // Wait for resume to complete
-            } catch (e) {
-                return; // Failed to resume
+
+        // 3. Attempt to resume the shared context just before playing
+        // Use SoundManager's resume method as it manages the shared context
+        SoundManager.instance?.resumeAudioContext().then(resumed => {
+            // Re-check context state *after* resume attempt
+            const currentContext = SoundManager.getAudioContext(); 
+            if (!resumed || !currentContext || currentContext.state !== 'running') {
+                console.warn(`MusicManager: Failed to resume shared context for playback. State: ${currentContext?.state}`);
+                return;
             }
-        }
-        
-        // Continue with starting music if context is already running
-        this._continueStartMusic();
-    }
+
+            // --- Context is running, proceed with setup and playback ---
+            console.log("MusicManager: Shared context is running. Proceeding with music setup.");
+
+            // 4. Ensure gain nodes are set up (using the running shared context)
+            this.setupGainNodes(); // setupGainNodes uses this.audioContext which is now the shared one
+             if (!this.masterGain || !this.melodyGain) {
+                 console.error("MusicManager: Failed to setup gain nodes on shared context.");
+                 return;
+             }
     
-    // Helper method to continue starting music after audio context checks
-    _continueStartMusic() {
-        // Make sure we have the necessary audio nodes
-        if (!this.masterGain || !this.melodyGain) {
-            this.setupGainNodes();
-        }
-        
-        // Select a melody if we don't have one
-        if (!this.currentMelodyId) {
-            this.selectRandomMelody();
-        }
-        
-        // Get melody data
-        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
-        if (!musicData) {
-            return;
-        }
-        
-        // Start playback
-        this.startMusicPlayback(musicData);
+            // 5. If already playing, don't restart
+            if (this.isPlaying) {
+                console.log("Music is already playing.");
+                return;
+            }
+            
+            // 6. Select a melody if needed
+            if (!this.currentMelodyId) {
+                this.restoreMelodyId() || this.selectRandomMelody(); // Try restoring first
+            }
+            
+            // 7. Get melody data
+            const musicData = window.MusicData?.getMelody(this.currentMelodyId);
+            if (!musicData) {
+                console.error(`Melody data not found for ID: ${this.currentMelodyId}`);
+                return;
+            }
+            
+            console.log(`Starting music playback on shared context: ${this.currentMelodyId}`);
+            // 8. Start actual playback
+            this.startMusicPlayback(musicData);
+        });
     }
 
     // Start actual music playback
     startMusicPlayback(musicData) {
-        // Bail if we're missing required components
-        if (!this.audioContext || !this.masterGain || !this.melodyGain) {
+        // Use the shared context stored in this.audioContext
+        const context = this.audioContext;
+        if (!context || context.state !== 'running') {
+            console.error("Cannot start playback: Shared context not available or not running.");
             return;
         }
 
+        // Bail if we're missing required components
+        if (!this.masterGain || !this.melodyGain) {
+            this.setupGainNodes();
+             // Check again if setup failed
+             if (!this.masterGain || !this.melodyGain) {
+                 console.error("Failed to setup gain nodes. Cannot start music.");
+                 return;
+             }
+        }
+
         // Make sure master gain is set to audible level
-        this.masterGain.gain.cancelScheduledValues(this.audioContext.currentTime);
-        this.masterGain.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+        this.masterGain.gain.cancelScheduledValues(context.currentTime);
+        this.masterGain.gain.setValueAtTime(0.5, context.currentTime);
 
         // Reset playback state
         this.isPlaying = true;
         this.currentNoteIndex = 0;
-        this.nextNoteTime = this.audioContext.currentTime;
+        this.nextNoteTime = context.currentTime;
 
         // Start scheduler
         this.scheduleNotes();

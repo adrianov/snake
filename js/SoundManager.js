@@ -1,10 +1,11 @@
 class SoundManager {
-    // Static reference to the current instance
+    // Static flag to track if user interaction has occurred
+    static hasUserInteraction = false;
+
+    // Singleton instance
     static instance = null;
-    
-    // Flag to track if audio has been initialized by a real user action
-    static audioInitialized = false;
-    
+    static audioContext = null; // Store the single shared AudioContext statically
+
     /**
      * Get or create a SoundManager instance
      * @param {boolean} forceInit - Force initialization of AudioContext (use during user gestures)
@@ -20,13 +21,22 @@ class SoundManager {
         return SoundManager.instance;
     }
 
+    // Static getter for the shared AudioContext
+    static getAudioContext() {
+        // Optionally, we could auto-initialize here if needed, but Game.js handles it
+        return SoundManager.audioContext;
+    }
+
     constructor(forceInit = false) {
+        if (SoundManager.instance) {
+            throw new Error("SoundManager is a singleton, use getInstance().");
+        }
         // Register this instance as the singleton
         SoundManager.instance = this;
         
         // Initialize without creating AudioContext by default
-        this.audioContext = null;
-        this.soundTemplates = null;
+        this.soundTemplates = {};
+        this.silentNode = null;
         
         // Only initialize immediately if explicitly forced (from a user gesture)
         if (forceInit) {
@@ -34,104 +44,139 @@ class SoundManager {
         }
     }
     
+    // Initialize AudioContext - manages the *static* shared context
     initAudioContext(fromUserGesture = false) {
-        // Only initialize once or if we're forcing a new initialization
-        if (this.audioContext && this.audioContext.state !== 'closed' && !fromUserGesture) {
-            return;
+        const currentContext = SoundManager.audioContext;
+        
+        // Prevent re-initialization if context exists and is not closed
+        if (currentContext && currentContext.state !== 'closed') {
+            // If called from user gesture and context is suspended, try resuming
+            if (fromUserGesture && currentContext.state === 'suspended') {
+                console.log("SoundManager: Shared context exists but suspended, attempting resume...");
+                this.resumeAudioContext(); // Attempt resume
+            }
+             else {
+                 console.log(`SoundManager: Shared context already exists. State: ${currentContext.state}`);
+             }
+            return currentContext != null;
         }
         
-        try {
-            // Clean up existing context if needed
-            if (this.audioContext && this.audioContext.state !== 'closed') {
-                try {
-                    this.audioContext.close().catch(() => {});
-                } catch (e) {
-                    // Ignore errors closing context
-                }
-            }
-            
-            // Create audio context with options for best performance
-            const contextOptions = {
-                latencyHint: 'interactive',
-                sampleRate: 44100
-            };
+        // Only proceed if we have user interaction OR if forced by gesture
+        if (!SoundManager.hasUserInteraction && !fromUserGesture) {
+             console.log("AudioContext creation deferred until first user interaction.");
+             return false;
+        }
 
-            this.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+        console.log(`Initializing AudioContext (fromUserGesture: ${fromUserGesture}). Current state: ${currentContext?.state}`);
+
+        try {
+            const contextOptions = {
+                sampleRate: 44100, // Standard sample rate
+                latencyHint: 'interactive' // Prioritize low latency
+            };
+            SoundManager.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
+            console.log(`SoundManager: Shared AudioContext created. Initial state: ${SoundManager.audioContext.state}`);
             
             // Create sound templates
             this.initSoundTemplates();
-
-            // When forced from a user gesture, resume right away and create a silent sound
-            // to fully unlock audio on iOS/Safari
-            if (fromUserGesture) {
-                try {
-                    // First try to resume the context
-                    this.audioContext.resume().then(() => {
-                        // After resume, play a short silent sound to fully unlock audio
-                        // This is critical for iOS Safari
-                        try {
-                            const unlockOsc = this.audioContext.createOscillator();
-                            const unlockGain = this.audioContext.createGain();
-                            unlockGain.gain.value = 0.001;  // Effectively silent
-                            unlockOsc.connect(unlockGain);
-                            unlockGain.connect(this.audioContext.destination);
-                            unlockOsc.start(0);
-                            unlockOsc.stop(this.audioContext.currentTime + 0.001);
-                        } catch (e) {
-                            // Ignore unlock errors
-                        }
-                    }).catch(() => {});
-                } catch (e) {
-                    // Ignore errors resuming
-                }
+            
+            // If created from a user gesture, immediately try to resume and play silent sound
+            if (fromUserGesture && SoundManager.audioContext.state === 'suspended') {
+                console.log("SoundManager: Shared context is suspended, attempting resume...");
+                this.resumeAudioContext().then(resumed => {
+                    if (resumed && SoundManager.audioContext?.state === 'running') {
+                         console.log("SoundManager: Shared context resumed successfully after gesture.");
+                         this.playSilentSound(); // Play silent sound AFTER resuming
+                    } else {
+                         console.warn("Failed to resume AudioContext immediately after gesture or state is not running.");
+                    }
+                });
+            } else if (SoundManager.audioContext.state === 'running') {
+                 console.log("SoundManager: Shared context started in running state.");
+                 this.playSilentSound(); // Play silent sound if already running
             }
             
-            // Mark that audio has been properly initialized
-            SoundManager.audioInitialized = true;
+            // Keep context alive (optional, can sometimes help)
+            // this.keepContextAlive();
             
             return true;
         } catch (e) {
-            console.error('Error creating AudioContext:', e);
-            this.audioContext = null;
+            console.error('Error creating shared AudioContext:', e);
+            SoundManager.audioContext = null;
             return false;
         }
     }
     
-    // Helper method to resume audio context
+    // Helper to play a short, silent sound to unlock audio on some platforms (like iOS)
+    playSilentSound() {
+        const context = SoundManager.audioContext; // Use static context
+        if (!context || context.state !== 'running') {
+             console.warn("Cannot play silent sound: Shared AudioContext not available or not running.");
+             return;
+        }
+        try {
+            console.log("Playing silent sound to unlock shared audio...");
+            const unlockOsc = context.createOscillator();
+            const unlockGain = context.createGain();
+            unlockGain.gain.value = 0.0001;
+            unlockOsc.connect(unlockGain);
+            unlockGain.connect(context.destination);
+            unlockOsc.start(0);
+            unlockOsc.stop(context.currentTime + 0.01);
+            console.log("Silent sound played on shared context.");
+        } catch (e) {
+            console.warn('Error playing silent unlock sound on shared context:', e);
+        }
+    }
+
+    // Helper method to resume audio context - returns a Promise
     resumeAudioContext() {
-        // Don't try to resume if we don't have user interaction yet
-        if (!SoundManager.hasUserInteraction) {
-            return false;
+        const context = SoundManager.audioContext; // Use static context
+        if (!context) {
+             console.warn("SoundManager cannot resume: Shared AudioContext does not exist.");
+             return Promise.resolve(false);
+        }
+
+        if (context.state === 'running') {
+             // console.log("SoundManager: Shared context already running."); // Reduce noise
+             return Promise.resolve(true);
         }
         
-        if (this.audioContext && this.audioContext.state !== 'running') {
-            try {
-                // Wrap in a try/catch and return a promise that resolves when resumed
-                return this.audioContext.resume().catch(e => {
-                    console.warn('Could not resume AudioContext:', e);
-                    return false;
-                });
-            } catch (e) {
-                console.warn('Error resuming AudioContext:', e);
-                return Promise.resolve(false);
-            }
+        if (context.state === 'closed') {
+             console.warn("SoundManager cannot resume: Shared AudioContext is closed.");
+             return Promise.resolve(false);
         }
-        return Promise.resolve(true);
+
+        // Attempt resume only if suspended
+        if (context.state === 'suspended') {
+            console.log("SoundManager attempting to resume suspended shared AudioContext...");
+            return context.resume().then(() => {
+                console.log(`SoundManager: Shared context resumed. New state: ${context?.state}`);
+                return context?.state === 'running';
+            }).catch(e => {
+                console.warn('SoundManager could not resume shared AudioContext:', e);
+                return false;
+            });
+        } else {
+             console.warn(`SoundManager cannot resume: Shared context in unexpected state: ${context.state}`);
+             return Promise.resolve(false);
+        }
     }
 
     // Keep audio context alive with a silent node
     keepContextAlive() {
-        if (!this.audioContext) return;
+        if (!SoundManager.audioContext) return;
 
         // Create a silent oscillator that runs continuously
-        this.silentNode = this.audioContext.createGain();
+        this.silentNode = SoundManager.audioContext.createGain();
         this.silentNode.gain.value = 0; // Completely silent
-        this.silentNode.connect(this.audioContext.destination);
+        this.silentNode.connect(SoundManager.audioContext.destination);
     }
 
     // Close the audio context to free up resources
     closeAudioContext() {
-        if (!this.audioContext) return;
+        const context = SoundManager.audioContext; // Use static context
+        if (!context) return;
 
         try {
             // Disconnect any silent node if it exists
@@ -141,18 +186,19 @@ class SoundManager {
             }
 
             // Close the audio context
-            if (this.audioContext.state !== 'closed') {
-                this.audioContext.close();
+            if (context.state !== 'closed') {
+                console.log("Closing shared AudioContext.");
+                context.close();
             }
-            this.audioContext = null;
+            SoundManager.audioContext = null; // Clear static reference
         } catch (e) {
-            console.error('Error closing audio context:', e);
+            console.error('Error closing shared audio context:', e);
         }
     }
 
     // Reinitialize audio context if needed
     reinitialize() {
-        if (this.audioContext && this.audioContext.state !== 'closed') return;
+        if (SoundManager.audioContext && SoundManager.audioContext.state !== 'closed') return;
         
         // Only initialize if we've had user interaction
         if (SoundManager.hasUserInteraction) {
@@ -230,45 +276,53 @@ class SoundManager {
 
     // Play sound from template
     playSound(soundType, volume = 1) {
-        // Check if sound is enabled in localStorage
-        const soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false';
-        if (!soundEnabled) return;
+        // Check if sound is enabled globally
+        if (!this.isSoundEnabled()) return;
         
-        // Cannot play sound without AudioContext
-        if (!this.audioContext) return;
+        // Cannot play sound without user interaction
+        if (!SoundManager.hasUserInteraction) {
+             console.warn(`Cannot play sound '${soundType}': No user interaction detected yet.`);
+             return;
+        }
 
-        // Check if we have the requested sound template
-        if (!this.soundTemplates || !this.soundTemplates[soundType]) return;
-
-        // Try to resume the context before playing
-        const resumeAndPlay = async () => {
-            try {
-                // In case the context is suspended, try to resume it
-                if (this.audioContext.state !== 'running') {
-                    await this.audioContext.resume();
-                }
-                
-                // Only play if the context is running
-                if (this.audioContext.state === 'running') {
-                    this._createAndPlaySound(soundType, volume);
-                }
-            } catch (err) {
-                // Ignore any errors during resuming
+        // Ensure context is initialized (create if needed)
+        if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
+            console.log(`SoundManager: Initializing shared context before playing sound '${soundType}'.`);
+            if (!this.initAudioContext(true)) { // Try to initialize, forced by gesture
+                 console.warn(`Cannot play sound '${soundType}': Failed to initialize shared AudioContext.`);
+                 return; // Exit if initialization failed
             }
-        };
-        
-        // Start the async resume process
-        resumeAndPlay();
+        }
+
+        // Check for sound template *after* ensuring context exists
+        if (!this.soundTemplates || !this.soundTemplates[soundType]) {
+            console.warn(`Sound template '${soundType}' not found.`);
+            return;
+        }
+
+        // ALWAYS attempt to resume the context *before* playing, returns a promise
+        this.resumeAudioContext().then(resumed => {
+            // Only play if the context is running after attempting resume
+            const context = SoundManager.audioContext; // Check static context
+            if (context?.state === 'running') {
+                this._createAndPlaySound(soundType, volume);
+            } else {
+                 console.warn(`Cannot play sound '${soundType}': Shared AudioContext state is '${context?.state}' after attempting resume.`);
+            }
+        });
     }
     
-    // Private method to create and play a sound after context is ready
+    // Private method to create and play a sound (assumes context is running)
     _createAndPlaySound(soundType, volume) {
+        const context = SoundManager.audioContext; // Use static context
+        if (!context) return; // Should not happen if checks in playSound work
+        
         try {
             // Get template and create sound
             const template = this.soundTemplates[soundType];
-            const now = this.audioContext.currentTime;
-            const oscillator = this.audioContext.createOscillator();
-            const gainNode = this.audioContext.createGain();
+            const now = context.currentTime;
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
 
             // Apply template values with volume adjustment
             oscillator.type = template.type;
@@ -290,7 +344,7 @@ class SoundManager {
 
             // Connect and play
             oscillator.connect(gainNode);
-            gainNode.connect(this.audioContext.destination);
+            gainNode.connect(context.destination);
             oscillator.start(now);
             oscillator.stop(now + soundDuration + 0.05);
         } catch (e) {
@@ -306,16 +360,16 @@ class SoundManager {
         }
         
         // Ensure audio context is initialized and resumed
-        if (!this.audioContext || this.audioContext.state === 'closed') {
+        if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
             this.reinitialize();
-            if (!this.audioContext) return;
+            if (!SoundManager.audioContext) return;
         }
         
         // Resume context and play the fanfare
         this.resumeAudioContext().then(success => {
-            if (!success || this.audioContext.state !== 'running') return;
+            if (!success || SoundManager.audioContext.state !== 'running') return;
             
-            const now = this.audioContext.currentTime;
+            const now = SoundManager.audioContext.currentTime;
 
             // Define notes
             const notes = [
@@ -332,8 +386,8 @@ class SoundManager {
             // Schedule all notes
             for (const note of notes) {
                 try {
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
+                    const osc = SoundManager.audioContext.createOscillator();
+                    const gain = SoundManager.audioContext.createGain();
 
                     osc.type = 'triangle';
                     osc.frequency.value = note.freq;
@@ -344,7 +398,7 @@ class SoundManager {
                     gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
 
                     osc.connect(gain);
-                    gain.connect(this.audioContext.destination);
+                    gain.connect(SoundManager.audioContext.destination);
 
                     osc.start(now + note.time);
                     osc.stop(now + note.time + note.duration);
