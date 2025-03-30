@@ -8,10 +8,10 @@
   - [x] Add "Donate" button to trigger panel
   - [x] Style panel to match game theme
 
-- [ ] Add GitHub integration
-  - [ ] Add link to https://github.com/adrianov/snake
-  - [ ] Include Octocat icon
-  - [ ] Add "Support project development" text
+- [x] Add GitHub integration
+  - [x] Add link to https://github.com/adrianov/snake
+  - [x] Include Octocat icon
+  - [x] Add GitHub label
 
 - [x] Add favicon
   - [x] Create green snake head icon

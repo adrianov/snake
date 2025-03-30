@@ -70,6 +70,9 @@ body {
     top: 15px;
     left: 15px;
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 /* Canvas Container - Square */
@@ -566,6 +569,7 @@ body {
     background-clip: text;
     color: transparent;
     font-weight: 700;
+    font-size: 0.9rem;
 }
 
 .button-icon {
@@ -577,5 +581,41 @@ body {
 @media (max-width: 600px) {
     .donation-panel {
         width: 100%;
+    }
+}
+
+/* GitHub Integration Styling */
+.github-button {
+    background-color: #24292e;
+    display: flex;
+    align-items: center;
+    transition: var(--transition-normal);
+    text-decoration: none;
+}
+
+.github-button:hover {
+    background-color: #2b3137;
+    transform: translateY(-2px);
+}
+
+.github-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    filter: invert(100%);
+}
+
+@media (max-width: 600px) {
+    .button-text {
+        font-size: 0.7rem;
+    }
+    
+    .github-button .button-text {
+        display: none;
+    }
+    
+    .github-button::after {
+        content: "GitHub";
+        font-size: 0.7rem;
+        color: var(--color-text);
     }
 }
