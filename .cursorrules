@@ -17,18 +17,18 @@
 - **styles.css**: UI styling and animations
 
 ### js/
-- **game.js**: Main game logic and initialization
+- **Game.js**: Main game logic and initialization
 - **Snake.js**: Movement and collision detection
 - **FoodManager.js**: Food generation and collection
 - **GameStateManager.js**: Game state handling
 - **GameLoop.js**: Game timing and frame updates
-- **drawer.js**: Base drawing utilities
-- **snakeDrawer.js**: Snake rendering with effects
-- **sceneDrawer.js**: Background environment
+- **GameDrawer.js**: Base drawing utilities
+- **SnakeDrawer.js**: Snake rendering with effects
+- **SceneDrawer.js**: Background environment
 - **MoonDrawer.js**: Moon phases animations
-- **fruits.js**: Fruit types and properties
-- **ui-manager.js**: UI elements and interactions
-- **sound.js**: Sound effect generation
-- **music.js**: Background music playback
-- **musicUtils.js**: Music utility functions
-- **music-sheets.js**: Game melody sequences 
+- **Fruits.js**: Fruit types and properties
+- **UIManager.js**: UI elements and interactions
+- **SoundManager.js**: Sound effect generation
+- **MusicManager.js**: Background music playback
+- **MusicUtils.js**: Music utility functions
+- **MusicSheets.js**: Game melody sequences 
