@@ -188,102 +188,6 @@ body {
     display: none;
 }
 
-/* iOS-specific fixes */
-@supports (-webkit-touch-callout: none) {
-    /* iOS only */
-    .desktop-only-tip,
-    .mobile-only-tip {
-        width: 100%;
-        max-width: 99vw;
-        margin: 0 auto; /* Center the container */
-        padding: 0;
-    }
-    
-    .game-controls {
-        width: 100%;
-        max-width: 99vw;
-        margin: 0 auto;
-        gap: 6px;
-    }
-    
-    .tip-item {
-        /* Ensure tip items don't get clipped */
-        flex-shrink: 0;
-        display: inline-block; /* Reinforced to ensure proper display */
-        margin: 0 2px; /* Add horizontal margin for better spacing */
-        padding: 3px 6px; /* Slightly reduce padding to fit more text */
-        max-width: none; /* Ensure no max-width is applied */
-        white-space: nowrap; /* Ensure text stays on one line */
-    }
-    
-    /* Fix canvas wrapper for iOS */
-    .canvas-wrapper {
-        width: 100%;
-        max-width: 95vw;
-        padding-bottom: 95vw; /* Square aspect ratio fallback */
-        aspect-ratio: 1 / 1;
-        margin: 0 auto;
-    }
-    
-    /* Fix mobile arrow controls for iOS */
-    .mobile-arrow-controls {
-        width: 100%;
-        max-width: 99vw;
-        margin: 0 auto;
-        margin-bottom: 6px;
-    }
-    
-    /* Fix arrow button rows for iOS */
-    .arrow-button-row {
-        width: 100%;
-        justify-content: center;
-        display: flex;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    
-    /* Specific fix for top arrow row */
-    .arrow-button-row:first-child {
-        justify-content: center;
-        display: flex;
-        margin: 0 auto 6px auto;
-    }
-    
-    /* Fix for the spacers in arrow controls */
-    .spacer {
-        flex: 1;
-        max-width: 60px;
-    }
-    
-    /* Fix score container for iOS */
-    .score-container {
-        width: 100%;
-        max-width: 99vw;
-        margin: 0 auto;
-        padding: 6px 8px;
-        gap: 10px;
-    }
-    
-    /* Ensure game container has proper spacing */
-    .game-container {
-        padding: 0;
-        gap: 6px;
-        width: 100%;
-        max-width: 100%;
-    }
-    
-    /* Reduce header padding */
-    .game-header {
-        padding: 2px 0;
-        width: 100%;
-    }
-    
-    .header-buttons {
-        margin-left: 0;
-        justify-content: center;
-    }
-}
-
 /* =========== SCORE CONTAINER =========== */
 .score-container {
     display: grid;
@@ -833,11 +737,13 @@ body {
     
     .game-header {
         justify-content: center;
-        padding: 3px;
+        padding: 3px 0;
+        width: 100%;
     }
     
     .header-buttons {
         justify-content: center;
+        margin-left: 0;
     }
     
     .game-container {
@@ -848,6 +754,8 @@ body {
     
     .game-controls {
         gap: 10px;
+        max-width: min(90vh, 95vw);
+        margin: 0 auto;
     }
     
     .game-footer {
@@ -857,44 +765,61 @@ body {
     
     .mobile-arrow-controls {
         margin-bottom: 10px;
+        max-width: min(90vh, 95vw);
+        margin: 0 auto 10px;
     }
     
     .mobile-only-tip {
         margin-bottom: 8px;
     }
     
+    .desktop-only-tip,
+    .mobile-only-tip {
+        width: 100%;
+        max-width: min(90vh, 95vw);
+        margin: 0 auto;
+        padding: 0 5px 2px 5px;
+    }
+    
     /* Square aspect ratio for mobile */
     .canvas-wrapper {
-        max-width: min(90vh, 90vw);
-        padding-bottom: min(90vh, 90vw);
+        max-width: min(90vh, 95vw);
+        padding-bottom: min(90vh, 95vw);
         aspect-ratio: 1 / 1;
+        margin: 0 auto;
     }
     
-    .game-controls {
-        max-width: min(90vh, 90vw);
-    }
-}
-
-/* Tablet-specific styles */
-@media (min-width: 600px) and (max-width: 1024px) {
-    .canvas-wrapper {
-        max-width: min(85vh, 90vw);
-        padding-bottom: min(85vh, 90vw);
-        aspect-ratio: 1 / 1;
+    /* Reduced spacing for score container */
+    .score-container {
+        max-width: min(90vh, 95vw);
+        margin: 0 auto;
+        padding: 6px 10px;
+        gap: 15px;
     }
     
-    .game-controls {
-        max-width: min(85vh, 90vw);
-    }
-    
-    .game-header {
-        padding: 5px;
-    }
-    
-    .game-container {
-        padding: 0;
-        gap: 10px;
+    /* Fix for arrow buttons */
+    .arrow-button-row {
         width: 100%;
+        justify-content: center;
+        display: flex;
+        margin: 0 auto 6px auto;
+    }
+    
+    .arrow-button-row:first-child {
+        margin: 0 auto 6px auto;
+    }
+    
+    .spacer {
+        flex: 1;
+        max-width: 60px;
+    }
+    
+    /* For tip items */
+    .tip-item {
+        flex-shrink: 0;
+        margin: 0 2px;
+        padding: 3px 6px;
+        white-space: nowrap;
     }
 }
 
@@ -908,6 +833,8 @@ body {
     
     .game-controls {
         max-width: 95vw;
+        gap: 5px;
+        padding: 0;
     }
     
     .score-container {
@@ -937,7 +864,7 @@ body {
     }
     
     .game-container {
-        padding: 0 3px;
+        padding: 0;
         gap: 8px;
     }
     
@@ -974,6 +901,8 @@ body {
     
     .game-controls {
         max-width: 95vw;
+        gap: 6px;
+        padding: 0;
     }
     
     .score-container {
@@ -983,17 +912,20 @@ body {
     
     .mobile-arrow-controls {
         margin-bottom: 8px;
+        max-width: 95vw;
     }
     
     .mobile-only-tip,
     .desktop-only-tip {
         padding: 0 5px 2px 5px;
         gap: 6px;
+        max-width: 95vw;
     }
     
     .game-container {
-        padding: 0 5px;
+        padding: 0;
         gap: 10px;
+        width: 100%;
     }
     
     .arrow-button-row {
@@ -1003,6 +935,44 @@ body {
     
     .tip-item {
         padding: 3px 5px;
+    }
+    
+    .game-header {
+        padding: 2px 0;
+        width: 100%;
+    }
+    
+    .header-buttons {
+        margin-left: 0;
+        justify-content: center;
+    }
+}
+
+/* Tablet-specific styles */
+@media (min-width: 600px) and (max-width: 1024px) {
+    .canvas-wrapper {
+        max-width: min(85vh, 95vw);
+        padding-bottom: min(85vh, 95vw);
+        aspect-ratio: 1 / 1;
+    }
+    
+    .game-controls {
+        max-width: min(85vh, 95vw);
+    }
+    
+    .game-header {
+        padding: 5px 0;
+    }
+    
+    .game-container {
+        padding: 0;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .score-container {
+        max-width: min(85vh, 95vw);
+        margin: 0 auto;
     }
 }
 
@@ -1015,38 +985,6 @@ body {
     width: 100%;
     max-width: 240px; /* Limiting width to force center alignment */
     margin: 0 auto;
-}
-
-@supports (-webkit-touch-callout: none) {
-    /* Fix mobile arrow controls for iOS */
-    .mobile-arrow-controls {
-        width: 100%;
-        max-width: 95vw;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    /* Additional container for iOS */
-    .arrow-controls-container {
-        width: 100%;
-        max-width: 240px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    /* Fix arrow button rows for iOS */
-    .arrow-button-row {
-        width: 100%;
-        justify-content: center;
-        display: flex;
-        margin-left: auto;
-        margin-right: auto;
-    }
 }
 
 /* iPad and larger tablets */

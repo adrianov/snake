@@ -1251,9 +1251,26 @@ class SnakeGame {
         
         if (!upButton || !downButton || !leftButton || !rightButton) return;
         
+        // Function to trigger haptic feedback if available
+        const triggerHapticFeedback = () => {
+            // Check if vibration API is available
+            if (navigator.vibrate) {
+                navigator.vibrate(15); // 15ms short vibration
+            }
+        };
+        
         // Helper function to handle button press
         const handleArrowButtonPress = (direction) => {
             const gameState = this.gameStateManager.getGameState();
+            
+            // Trigger haptic feedback
+            triggerHapticFeedback();
+            
+            // If game over, ignore arrow presses to prevent accidental restarts
+            if (gameState.isGameOver) {
+                console.log("Game is over, arrow buttons are disabled until manual restart");
+                return;
+            }
             
             // If game hasn't started, handle game start
             if (!gameState.isGameStarted) {
@@ -1291,7 +1308,7 @@ class SnakeGame {
                 return;
             }
             
-            if (gameState.isPaused || gameState.isGameOver) return;
+            if (gameState.isPaused) return;
             
             // IMPORTANT: Always set the nextDirection regardless of validity check
             // This ensures the most recent arrow press is registered
