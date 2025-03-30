@@ -1,6 +1,8 @@
 class MusicManager {
     // Static property to store melody ID across instances
     static currentMelodyId = null;
+    // Store cleanup timeouts
+    static cleanupTimeouts = new Map();
 
     constructor() {
         // Don't create context here, get it from SoundManager later
@@ -528,6 +530,64 @@ class MusicManager {
         }
 
         return this.getCurrentMelody();
+    }
+
+    // Clean up audio resources completely
+    static cleanupAudioResources(gameInstance, delay = 0) {
+        // Cancel any pending cleanup first
+        const timeoutId = MusicManager.cleanupTimeouts.get(gameInstance);
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            MusicManager.cleanupTimeouts.delete(gameInstance);
+        }
+
+        const gameState = gameInstance.gameStateManager.getGameState();
+
+        // Don't schedule cleanup if game is actively playing
+        // This prevents accidentally stopping music during gameplay
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            return;
+        }
+
+        if (delay > 0) {
+            // Store the timeout ID so it can be cancelled if needed
+            const newTimeoutId = setTimeout(() => {
+                // Double-check game state before cleanup in case it changed during the delay
+                const currentGameState = gameInstance.gameStateManager.getGameState();
+                if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
+                    MusicManager.cleanupTimeouts.delete(gameInstance);
+                    return;
+                }
+
+                // Perform cleanup
+                if (gameInstance.musicManager && (currentGameState.isGameOver || currentGameState.isPaused)) {
+                    gameInstance.musicManager.stopMusic(true);
+                    gameInstance.musicManager = null;
+                }
+
+                // Only clean up sound manager if game is over or paused
+                if (gameInstance.soundManager && (currentGameState.isGameOver || currentGameState.isPaused)) {
+                    gameInstance.soundManager.closeAudioContext();
+                }
+
+                // Remove from tracking map once completed
+                MusicManager.cleanupTimeouts.delete(gameInstance);
+            }, delay);
+
+            // Store the timeout ID for possible cancellation
+            MusicManager.cleanupTimeouts.set(gameInstance, newTimeoutId);
+        } else {
+            // Perform immediate cleanup
+            if (gameInstance.musicManager && (gameState.isGameOver || gameState.isPaused)) {
+                gameInstance.musicManager.stopMusic(true);
+                gameInstance.musicManager = null;
+            }
+
+            // Only clean up sound manager if game is over or paused
+            if (gameInstance.soundManager && (gameState.isGameOver || gameState.isPaused)) {
+                gameInstance.soundManager.closeAudioContext();
+            }
+        }
     }
 }
 

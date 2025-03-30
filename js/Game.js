@@ -58,6 +58,9 @@ class SnakeGame {
         
         // Add click listener to document to pause the game when clicking outside the game field
         document.addEventListener('click', (e) => this.handleDocumentClick(e));
+
+        // Initialize mobile arrow buttons if on a touch device
+        this.initMobileArrowButtons();
     }
 
     addInteractionListeners() {
@@ -416,7 +419,7 @@ class SnakeGame {
             this.musicManager.stopMusic(true);
         }
 
-        MusicManagerUtils.cleanupAudioResources(this, 200);
+        MusicManager.cleanupAudioResources(this, 200);
     }
 
     unpauseGame() {
@@ -1179,7 +1182,9 @@ class SnakeGame {
                 !event.target.closest('.donation-panel') &&
                 !event.target.closest('.music-info') &&  // Added music-info check to prevent pause when clicking music controls
                 !event.target.closest('#soundToggle') && // Also explicitly exclude sound toggle
-                !event.target.closest('#musicToggle')) { // Also explicitly exclude music toggle
+                !event.target.closest('#musicToggle') && // Also explicitly exclude music toggle
+                !event.target.closest('.mobile-arrow-controls') && // Exclude mobile arrow controls
+                !event.target.closest('.arrow-button')) { // Explicitly exclude arrow buttons
                 console.log("[handleDocumentClick] Pausing game via outside click.");
                 this.togglePause();
                 this.uiManager.showTemporaryMessage('Game paused', 1500);
@@ -1203,6 +1208,95 @@ class SnakeGame {
         }
         
         console.log("[handleDocumentClick] Click did not trigger pause or start.");
+    }
+
+    // Check if the device is a touch device
+    isTouchDevice() {
+        return ('ontouchstart' in window) || 
+               (navigator.maxTouchPoints > 0) ||
+               (navigator.msMaxTouchPoints > 0);
+    }
+    
+    // Initialize mobile arrow button controls
+    initMobileArrowButtons() {
+        // Only initialize on touch devices
+        if (!this.isTouchDevice()) return;
+        
+        // Get button references
+        const upButton = document.getElementById('upArrow');
+        const downButton = document.getElementById('downArrow');
+        const leftButton = document.getElementById('leftArrow');
+        const rightButton = document.getElementById('rightArrow');
+        
+        if (!upButton || !downButton || !leftButton || !rightButton) return;
+        
+        // Helper function to handle button press
+        const handleArrowButtonPress = (direction) => {
+            const gameState = this.gameStateManager.getGameState();
+            
+            // If game hasn't started, handle game start
+            if (!gameState.isGameStarted) {
+                // Set request flag for user interaction
+                this.startRequested = true;
+                
+                // Ensure interaction flag is set
+                this.handleFirstInteraction();
+                
+                // Start game and loops
+                this.startGame();
+                this.gameLoop.startGameLoop();
+                this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
+                
+                // Explicitly start music if enabled
+                if (gameState.musicEnabled && this.musicManager) {
+                    console.log("Starting music for new game (mobile arrows)");
+                    // Select a new random melody for the game
+                    this.musicManager.selectRandomMelody();
+                    // Start the music
+                    this.musicManager.startMusic();
+                }
+                
+                return;
+            }
+            
+            if (gameState.isPaused || gameState.isGameOver) return;
+            
+            if (this.isValidDirectionChange(direction)) {
+                this.nextDirection = direction;
+                
+                // Adjust speed like keyboard controls
+                this.gameLoop.updateGameSpeed(direction, this.direction);
+            }
+        };
+        
+        // Add event listeners for buttons
+        upButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            handleArrowButtonPress('up');
+        });
+        
+        downButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            handleArrowButtonPress('down');
+        });
+        
+        leftButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            handleArrowButtonPress('left');
+        });
+        
+        rightButton.addEventListener('touchstart', (e) => {
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+            handleArrowButtonPress('right');
+        });
     }
 }
 

@@ -848,3 +848,91 @@ a.github-button .btn-text {
         width: 100%;
     }
 }
+
+/* Mobile arrow controls */
+.mobile-arrow-controls {
+    display: none; /* Hidden by default */
+    width: 100%;
+    max-width: calc(100vh - 120px);
+    margin: 10px 0;
+    padding: 10px;
+}
+
+.arrow-button-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.arrow-button {
+    width: 80px;
+    height: 80px;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: rgba(30, 41, 59, 0.8);
+    color: var(--color-primary);
+    cursor: pointer;
+    touch-action: manipulation; /* Improve touch performance */
+    position: relative;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Add keyboard-like appearance */
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 3px solid rgba(0, 0, 0, 0.4);
+}
+
+.arrow-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.arrow-button svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.spacer {
+    width: 80px;
+    height: 80px;
+}
+
+/* Only display the controls on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-arrow-controls {
+        display: block;
+    }
+}
+
+/* Adjust layout on smaller screens */
+@media (max-width: 480px) {
+    .arrow-button {
+        width: 65px;
+        height: 65px;
+    }
+    
+    .spacer {
+        width: 65px;
+        height: 65px;
+    }
+}
+
+/* Adjust layout on very small screens */
+@media (max-width: 360px) {
+    .arrow-button {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .spacer {
+        width: 55px;
+        height: 55px;
+    }
+}
