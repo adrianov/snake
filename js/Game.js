@@ -123,7 +123,7 @@ class SnakeGame {
     resizeCanvas() {
         const container = this.canvas.parentElement;
         
-        // Calculate size based on container dimensions, without special casing
+        // Calculate square size based on available width/height in container
         const size = Math.min(container.clientWidth, container.clientHeight);
         
         // Calculate grid size based on container 
@@ -144,20 +144,16 @@ class SnakeGame {
         this.canvas.height = adjustedSize * dpr;
         
         // Set CSS dimensions for proper sizing on screen
-        this.canvas.style.width = `${adjustedSize}px`;
-        this.canvas.style.height = `${adjustedSize}px`;
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
         
-        // Clear any previous inline styles that might interfere
-        container.style.paddingBottom = '';
-        container.style.height = '';
+        // Clear inline styles from container to allow CSS to control dimensions
         container.style.width = '';
+        container.style.height = '';
+        container.style.paddingBottom = '';
+        container.style.minHeight = '';
+        container.style.display = '';
         
-        // Set container dimensions explicitly to match canvas exactly
-        container.style.width = `${adjustedSize}px`;
-        container.style.height = `${adjustedSize}px`;
-        container.style.paddingBottom = '0';
-        container.style.display = 'block'; // Ensure block display
-
         // Ensure the canvas container maintains its border-radius
         container.style.borderRadius = 'var(--radius-md)';
 
