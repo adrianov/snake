@@ -1,12 +1,12 @@
 # Snake Game TODO List
 
 ## UI/UX Improvements
-- [ ] Add donation panel
-  - [ ] Create panel layout to the left of main game area
-  - [ ] Add QR codes for bank transfer (placeholder: example.com)
-  - [ ] Add QR codes for USDT transfer (placeholder: example.com)
-  - [ ] Add "Donate" button to trigger panel
-  - [ ] Style panel to match game theme
+- [x] Add donation panel
+  - [x] Create panel layout to the left of main game area
+  - [x] Add QR codes for bank transfer (placeholder: example.com)
+  - [x] Add QR codes for USDT transfer (placeholder: example.com)
+  - [x] Add "Donate" button to trigger panel
+  - [x] Style panel to match game theme
 
 - [ ] Add GitHub integration
   - [ ] Add link to https://github.com/adrianov/snake

@@ -10,6 +10,11 @@ class UIManager {
         this.resetButton = document.getElementById('resetHighScore');
         this.melodyElement = document.getElementById('currentMelody');
         this.musicInfoElement = document.querySelector('.music-info');
+        
+        // Donation panel elements
+        this.donateButton = document.getElementById('donateButton');
+        this.donationPanel = document.getElementById('donationPanel');
+        this.closeDonationButton = document.getElementById('closeDonationPanel');
 
         // Element for temporary messages
         this.tempMessageElement = document.createElement('div');
@@ -52,6 +57,113 @@ class UIManager {
                 e.preventDefault();
                 this.resetHighScore();
             });
+        }
+        
+        // Set up donation panel controls
+        this.initializeDonationControls();
+    }
+    
+    initializeDonationControls() {
+        // Set up donate button
+        if (this.donateButton) {
+            this.donateButton.addEventListener('click', () => {
+                this.toggleDonationPanel(true);
+            });
+        }
+        
+        // Set up close donation panel button
+        if (this.closeDonationButton) {
+            this.closeDonationButton.addEventListener('click', () => {
+                this.toggleDonationPanel(false);
+            });
+        }
+        
+        // Close donation panel when clicking outside
+        document.addEventListener('click', (e) => {
+            // If donation panel is open
+            if (this.donationPanel && this.donationPanel.classList.contains('active')) {
+                // Check if click was outside the panel
+                if (!this.donationPanel.contains(e.target) && e.target !== this.donateButton) {
+                    this.toggleDonationPanel(false);
+                }
+            }
+        });
+        
+        // Add escape key listener to close panel
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.donationPanel && this.donationPanel.classList.contains('active')) {
+                this.toggleDonationPanel(false);
+            }
+        });
+        
+        // Set up copy buttons for cryptocurrency addresses
+        this.initializeCopyButtons();
+    }
+    
+    initializeCopyButtons() {
+        const copyButtons = document.querySelectorAll('.copy-btn');
+        
+        copyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const addressId = button.getAttribute('data-address');
+                const addressInput = document.getElementById(addressId);
+                
+                if (addressInput) {
+                    // Select the text
+                    addressInput.select();
+                    addressInput.setSelectionRange(0, 99999); // For mobile devices
+                    
+                    // Copy to clipboard
+                    try {
+                        navigator.clipboard.writeText(addressInput.value)
+                            .then(() => {
+                                // Show success message
+                                this.showTemporaryMessage('Address copied to clipboard!', 1500);
+                                
+                                // Visual feedback on button
+                                const originalText = button.querySelector('.copy-icon').textContent;
+                                button.querySelector('.copy-icon').textContent = '✓';
+                                
+                                setTimeout(() => {
+                                    button.querySelector('.copy-icon').textContent = originalText;
+                                }, 1500);
+                            })
+                            .catch(err => {
+                                console.error('Could not copy text: ', err);
+                                this.showTemporaryMessage('Failed to copy. Try manually selecting the text.', 2000);
+                            });
+                    } catch (err) {
+                        // Fallback for older browsers
+                        document.execCommand('copy');
+                        this.showTemporaryMessage('Address copied to clipboard!', 1500);
+                        
+                        // Visual feedback
+                        const originalText = button.querySelector('.copy-icon').textContent;
+                        button.querySelector('.copy-icon').textContent = '✓';
+                        
+                        setTimeout(() => {
+                            button.querySelector('.copy-icon').textContent = originalText;
+                        }, 1500);
+                    }
+                }
+            });
+        });
+    }
+    
+    toggleDonationPanel(show) {
+        if (!this.donationPanel) return;
+        
+        if (show) {
+            this.donationPanel.classList.add('active');
+            // Pause the game if it's running
+            if (this.game.gameStateManager.getGameState().isGameStarted && 
+                !this.game.gameStateManager.getGameState().isPaused) {
+                this.game.pauseGame();
+                // Show message to user
+                this.showTemporaryMessage('Game paused', 1500);
+            }
+        } else {
+            this.donationPanel.classList.remove('active');
         }
     }
 

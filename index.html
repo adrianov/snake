@@ -7,7 +7,7 @@
     <!-- Open Graph meta tags for Facebook sharing -->
     <meta property="og:title" content="Snake Game - Classic Arcade with Modern Features">
     <meta property="og:description" content="Classic Snake game with a mesmerizing soundtrack, day-night cycles, and modern gameplay. Experience nostalgic gaming with an amazing twist!">
-    <meta property="og:image" content="https://adrianov.github.io/snake/img/snake1-og.png">
+    <meta property="og:image" content="https://adrianov.github.io/snake/img/snake1-og.jpg">
     <meta property="og:url" content="https://adrianov.github.io/snake/">
     <meta property="og:type" content="website">
     <link rel="stylesheet" href="css/styles.css">
@@ -23,7 +23,15 @@
     <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon-180x180.png">
 </head>
 <body>
-    <div class="game-wrapper">
+    <!-- Donation Button - Positioned at top-left of page -->
+    <div class="donation-button-container">
+        <button id="donateButton" class="control-button" title="Support this project">
+            <span class="button-icon">❤</span>
+            <span class="button-text">Donate</span>
+        </button>
+    </div>
+    
+    <div class="game-wrapper">        
         <div class="canvas-container">
             <canvas id="gameCanvas"></canvas>
         </div>
@@ -55,6 +63,44 @@
                 <span class="score-label">High Score</span>
                 <span class="score-value" id="highScore">0</span>
                 <button id="resetHighScore" class="reset-button" title="Reset High Score">↺</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donation Panel -->
+    <div id="donationPanel" class="donation-panel">
+        <div class="donation-header">
+            <h3>Support Snake Game</h3>
+            <button id="closeDonationPanel" class="close-button">×</button>
+        </div>
+        <div class="donation-content">
+            <div class="donation-method">
+                <h4>Sber Bank Transfer</h4>
+                <div class="qr-code-container">
+                    <a href="https://www.sberbank.com/sms/pbpn?requisiteNumber=79057632663" target="_blank" rel="nofollow" class="qr-code-link">
+                        <div class="qr-code">
+                            <img src="img/sber-qr.png" alt="Sber Bank QR Code" class="qr-image">
+                        </div>
+                    </a>
+                    <span class="qr-label">Scan or click to donate via Sber Bank (SBP)</span>
+                </div>
+            </div>
+            <div class="donation-method">
+                <h4>USDT (TRC20)</h4>
+                <div class="qr-code-container">
+                    <a href="https://t.me/wallet" target="_blank" rel="nofollow" class="qr-code-link">
+                        <div class="qr-code">
+                            <img src="img/usdt-trc20-qr.png" alt="USDT TRC20 QR Code" class="qr-image">
+                        </div>
+                    </a>
+                    <span class="qr-label">Use Telegram @wallet or any preferred wallet to donate via USDT on TRC20</span>
+                    <div class="crypto-address-container">
+                        <input type="text" readonly value="TSeDwNMq6rpm1vf94dXVC4gB93R3iMm6TE" class="crypto-address" id="usdt-address">
+                        <button class="copy-btn" data-address="usdt-address" title="Copy USDT address">
+                            <span class="copy-icon">📋</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
