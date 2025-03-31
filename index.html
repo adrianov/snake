@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Snake Game - Classic Arcade with Modern Features</title>
-    
+
     <!-- Primary Meta Tags -->
     <meta name="title" content="Snake Game - Classic Arcade with Modern Features">
     <meta name="description" content="Play the nostalgic Snake game reimagined with day-night cycles, dynamic soundtrack, and modern gameplay mechanics. Free to play in your browser!">
@@ -17,7 +17,7 @@
     <meta name="language" content="English">
     <meta name="canonical" href="https://snake-game.app/">
     <meta name="theme-color" content="#4CAF50">
-    
+
     <!-- Open Graph / Facebook Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://snake-game.app/">
@@ -36,7 +36,7 @@
     <meta property="og:image:type" content="image/png">
     <meta property="og:site_name" content="Snake Game">
     <meta property="og:locale" content="en_US">
-    
+
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://snake-game.app/">
@@ -44,26 +44,26 @@
     <meta name="twitter:description" content="Classic Snake game with mesmerizing soundtrack, day-night cycles, and modern gameplay. Play for free in your browser!">
     <meta name="twitter:image" content="/img/snake1-og.jpg">
     <meta name="twitter:image:alt" content="Snake Game with starry night background">
-    
+
     <!-- Additional tags for better Telegram compatibility -->
     <meta itemprop="image" content="/img/snake1.png">
     <link rel="image_src" href="/img/snake1.png">
-    
+
     <!-- Stylesheets -->
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-    
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
     <link rel="shortcut icon" href="img/favicon.ico">
-    
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
     <link rel="apple-touch-icon" sizes="152x152" href="img/apple-touch-icon-152x152.png">
     <link rel="apple-touch-icon" sizes="167x167" href="img/apple-touch-icon-167x167.png">
     <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon-180x180.png">
-    
+
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
     {
@@ -93,7 +93,7 @@
                     <span class="btn-icon button-icon">❤</span>
                     <span class="btn-text button-text">Donate</span>
                 </button>
-                
+
                 <a href="https://github.com/adrianov/snake" target="_blank" class="btn control-button github-button" title="View on GitHub">
                     <span class="btn-icon button-icon">
                         <img src="img/github-icon.svg" alt="GitHub" class="github-icon">
@@ -102,14 +102,14 @@
                 </a>
             </div>
         </header>
-        
+
         <!-- Main game container -->
         <main class="game-container">
             <!-- Game canvas wrapper -->
             <div class="canvas-wrapper">
                 <canvas id="gameCanvas"></canvas>
             </div>
-            
+
             <!-- Game controls and info -->
             <div class="game-controls">
                 <!-- Control tips for desktop -->
@@ -118,7 +118,7 @@
                     <span class="tip-item">Opposite direction to slow down</span>
                     <span class="tip-item">Space to pause</span>
                 </div>
-                
+
                 <!-- Mobile Arrow Controls - Only visible on touch devices -->
                 <div id="mobileArrowControls" class="mobile-arrow-controls">
                     <div class="arrow-controls-container">
@@ -150,13 +150,13 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Mobile-only tip -->
                 <div class="mobile-only-tip">
                     <span class="tip-item">Opposite direction to slow down</span>
                     <span class="tip-item">Swipe gestures also available</span>
                 </div>
-                
+
                 <!-- Game score section -->
                 <div class="score-container">
                     <div class="score-item">
@@ -190,7 +190,7 @@
                 </div>
             </div>
         </main>
-        
+
         <!-- Footer -->
         <footer class="game-footer">
             <p>© Peter Adrianov, 2025</p>
@@ -250,7 +250,7 @@
     <script src="js/TipsManager.js"></script>
     <script src="js/BackgroundManager.js"></script>
     <script src="js/StarfieldManager.js"></script>
-    
+
     <!-- Load remaining drawing classes -->
     <script src="js/SnakeDrawer.js"></script>
     <script src="js/MoonDrawer.js"></script>
@@ -264,6 +264,11 @@
     <script src="js/FoodManager.js"></script>
     <script src="js/GameStateManager.js"></script>
     <script src="js/GameLoop.js"></script>
+
+    <!-- Load new utility classes and managers -->
+    <script src="js/GameUtils.js"></script>
+    <script src="js/AudioManager.js"></script>
+    <script src="js/InputManager.js"></script>
 
     <!-- Load main game -->
     <script src="js/Game.js"></script>

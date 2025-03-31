@@ -11,9 +11,7 @@ class SnakeGame {
         this.startRequested = false;
 
         this.initializeGameSettings();
-        this.setupEventListeners();
-        this.addInteractionListeners();
-
+        this.setupManagers();
         this.loadImages();
 
         window.addEventListener('resize', this.resizeCanvas.bind(this));
@@ -24,9 +22,9 @@ class SnakeGame {
         // Canvas and grid settings
         this.resizeCanvas();
         this.hasUserInteraction = false;
-        this.startRequested = false; // Add flag to track if start was requested before interaction
+        this.startRequested = false;
 
-        // Game components and managers
+        // Game components
         this.gameStateManager = new GameStateManager();
         this.snake = new Snake(5, 5);
         this.direction = 'right';
@@ -36,44 +34,20 @@ class SnakeGame {
 
         // Time tracking
         this.lastEatenTime = 0;
+    }
 
-        // Managers initialization
+    setupManagers() {
+        // Create managers
         this.soundManager = SoundManager.getInstance();
         this.musicManager = new MusicManager();
         this.uiManager = new UIManager(this);
 
-        // Drawing
-        this.imagesLoaded = false;
-        this.loadImages();
-    }
+        // Create new managers for refactored functionality
+        this.audioManager = new AudioManager(this);
+        this.inputManager = new InputManager(this);
 
-    setupEventListeners() {
-        window.addEventListener('resize', () => this.resizeCanvas());
-        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
-
-        // Add touch event listeners for mobile controls
-        // We can't use passive listeners because we need preventDefault() to block scrolling
-        // But we can handle scrolling prevention differently to avoid the console warnings
-
-        // Create a touchStartHandler that properly handles the event
-        const touchStartHandler = (e) => this.handleTouchStart(e);
-        const touchMoveHandler = (e) => this.handleTouchMove(e);
-        const touchEndHandler = (e) => this.handleTouchEnd(e);
-
-        // Add non-passive event listeners with proper options
-        this.canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
-        this.canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
-        this.canvas.addEventListener('touchend', touchEndHandler, { passive: true });
-
-        // Prevent page scrolling when touching the canvas using CSS overscroll behavior
-        this.canvas.style.overscrollBehavior = 'none';
-        this.canvas.style.touchAction = 'none';
-
-        // Add click listener to document to pause the game when clicking outside the game field
-        document.addEventListener('click', (e) => this.handleDocumentClick(e));
-
-        // Initialize mobile arrow buttons if on a touch device
-        this.initMobileArrowButtons();
+        // Add listener for first interaction
+        this.addInteractionListeners();
     }
 
     addInteractionListeners() {
@@ -89,38 +63,13 @@ class SnakeGame {
         console.log("First user interaction detected. Initializing audio...");
 
         // Initialize audio contexts immediately
-        this.initializeAudio();
+        this.audioManager.init();
 
         // If a game start was requested by the interaction, start the game now
         if (this.startRequested) {
             console.log("Starting game now after interaction and audio initialization.");
             this.startGame();
             this.startRequested = false; // Reset the flag
-        }
-    }
-
-    initializeAudio() {
-        if (!this.hasUserInteraction) {
-            console.warn("Attempted to initialize audio before user interaction.");
-            return;
-        }
-
-        console.log("Initializing SoundManager and MusicManager contexts...");
-
-        // Tell SoundManager to initialize its context now that interaction has happened
-        // Passing 'true' indicates it's called due to user gesture
-        if (this.soundManager) {
-            SoundManager.hasUserInteraction = true; // Inform SoundManager directly
-            this.soundManager.initAudioContext(true); // Force initialization/resume
-        } else {
-            console.warn("SoundManager not available during audio initialization.");
-        }
-
-        // Tell MusicManager to initialize/resume its context
-        if (this.musicManager) {
-            this.musicManager.initAudioContextIfNeeded(); // Create/resume context
-        } else {
-            console.warn("MusicManager not available during audio initialization.");
         }
     }
 
@@ -141,7 +90,6 @@ class SnakeGame {
         const containerHeight = container.clientHeight;
 
         // Calculate square size based on the smallest dimension
-        // to ensure a perfect square that fits within the container
         const size = Math.min(containerWidth, containerHeight);
 
         // Calculate grid size based on container
@@ -151,7 +99,6 @@ class SnakeGame {
         this.tileCount = Math.floor(size / this.gridSize);
 
         // Adjust canvas size to be exactly a multiple of gridSize
-        // This eliminates partial cells at the edges
         const adjustedSize = this.tileCount * this.gridSize;
 
         // Get the device pixel ratio
@@ -241,170 +188,8 @@ class SnakeGame {
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
     }
 
-    handleKeyDown(event) {
-        // Feature toggles
-        if (this.handleFeatureToggleKeys(event)) {
-            return;
-        }
-
-        // Prevent default for game control keys
-        if ([37, 38, 39, 40, 32].includes(event.keyCode)) {
-            event.preventDefault();
-        }
-
-        // Game state controls
-        if (this.handleGameStateKeys(event)) {
-            return;
-        }
-
-        // Direction controls (only if game is running)
-        const gameState = this.gameStateManager.getGameState();
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            this.handleDirectionKeys(event);
-        }
-    }
-
-    handleFeatureToggleKeys(event) {
-        const key = event.key && event.key.toLowerCase();
-        const gameState = this.gameStateManager.getGameState();
-
-        if (key === 's') {
-            event.preventDefault();
-            this.toggleSound();
-            return true;
-        }
-
-        if (key === 'm') {
-            event.preventDefault();
-            this.toggleMusic();
-            return true;
-        }
-
-        if (key === 'n') {
-            event.preventDefault();
-            this.changeMusic();
-            return true;
-        }
-
-        if (key === 'l') {
-            event.preventDefault();
-            const luckEnabled = this.gameStateManager.toggleLuck();
-            if (gameState.soundEnabled) {
-                this.soundManager.playSound('click', 0.3);
-            }
-            this.uiManager.showTemporaryMessage(
-                luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
-                1500
-            );
-            return true;
-        }
-
-        if (key === 'v') {
-            event.preventDefault();
-            const shakeEnabled = this.gameStateManager.toggleShake();
-
-            // No need to modify the intensity here
-            // The draw method will set it to 0 if disabled, or leave it as is if enabled
-
-            if (gameState.soundEnabled) {
-                this.soundManager.playSound('click', 0.3);
-            }
-            this.uiManager.showTemporaryMessage(
-                shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF",
-                1500
-            );
-            return true;
-        }
-
-        if (key === 'a') {
-            event.preventDefault();
-            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-                this.foodManager.spawnFruitInSnakeDirection(
-                    this.snake,
-                    this.direction,
-                    this.getRandomFruit.bind(this),
-                    this.soundManager
-                );
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    handleGameStateKeys(event) {
-        const gameState = this.gameStateManager.getGameState();
-
-        if (event.keyCode === 32) { // Spacebar
-            event.preventDefault(); // Prevent space scrolling
-            if (gameState.isGameOver) {
-                this.resetGame();
-                // Set request flag BEFORE calling interaction handler
-                this.startRequested = true;
-                this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
-
-                // Start game loops
-                this.gameLoop.startGameLoop();
-                this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-
-                // Music will be initialized by startGame() when called from handleFirstInteraction
-                // We don't need to call initializeGameMusic here
-
-            } else if (gameState.isGameStarted) {
-                this.togglePause();
-            } else {
-                // Set request flag BEFORE calling interaction handler
-                this.startRequested = true;
-                this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
-                // startGame() will be called from handleFirstInteraction which initializes music
-            }
-            return true; // Handled
-        }
-
-        // Start game with arrow keys if not started
-        if (!gameState.isGameStarted && !gameState.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
-            event.preventDefault(); // Prevent arrow key scrolling
-            // Set request flag BEFORE calling interaction handler
-            this.startRequested = true;
-            this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
-
-            // startGame() will be called from handleFirstInteraction which initializes music
-            // We don't need to call these explicitly - they're called by startGame
-            // this.gameLoop.startGameLoop();
-            // this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-            // this.initializeGameMusic(true);
-
-            return true; // Handled
-        }
-
-        return false;
-    }
-
-    handleDirectionKeys(event) {
-        let keyDirection = null;
-        if (event.keyCode === 37) keyDirection = 'left';
-        else if (event.keyCode === 38) keyDirection = 'up';
-        else if (event.keyCode === 39) keyDirection = 'right';
-        else if (event.keyCode === 40) keyDirection = 'down';
-
-        if (keyDirection) {
-            const validDirectionChange = this.isValidDirectionChange(keyDirection);
-            if (validDirectionChange) {
-                this.nextDirection = keyDirection;
-            }
-            this.gameLoop.updateGameSpeed(keyDirection, this.direction);
-        }
-    }
-
     isValidDirectionChange(newDirection) {
-        const oppositeDirections = {
-            'up': 'down',
-            'down': 'up',
-            'left': 'right',
-            'right': 'left'
-        };
-
-        return newDirection !== oppositeDirections[this.direction];
+        return GameUtils.isValidDirectionChange(newDirection, this.direction);
     }
 
     togglePause() {
@@ -439,25 +224,24 @@ class SnakeGame {
         MusicManager.cleanupAudioResources(this, 200);
 
         // Show header and footer when game is paused on mobile
-        if (this.isTouchDevice()) {
-            this.showHeaderFooterOnMobile();
+        if (GameUtils.isTouchDevice()) {
+            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
         }
     }
 
     unpauseGame() {
-        // Get the sound manager instance (don't force initialization since we already did that in startGame)
+        // Get the sound manager instance
         this.soundManager = SoundManager.getInstance();
 
-        // Create a fresh music manager (it will get the shared context automatically)
+        // Create a fresh music manager
         this.musicManager = new MusicManager();
 
-        // Initialize music using centralized method, but don't force a new melody when unpausing
-        // Just continue with the melody from before pause
-        this.initializeGameMusic(false);
+        // Initialize music using the AudioManager, don't force a new melody when unpausing
+        this.audioManager.initializeGameMusic(false);
 
         // Hide header and footer when game is unpaused on mobile
-        if (this.isTouchDevice()) {
-            this.hideHeaderFooterOnMobile();
+        if (GameUtils.isTouchDevice()) {
+            GameUtils.hideHeaderFooterOnMobile(this.gameLayout);
         }
 
         // Restart the game loop
@@ -470,47 +254,38 @@ class SnakeGame {
             return;
         }
 
-        // Ensure audio is initialized if interaction happened (redundant check, but safe)
+        // Ensure audio is initialized if interaction happened
         if (this.hasUserInteraction) {
-            this.initializeAudio();
+            this.audioManager.initializeAudio();
         }
 
-        // Check if the game is over - shouldn't reach here if resetGame() was called properly
+        // Check if the game is over
         if (this.gameStateManager.getGameState().isGameOver) {
-            console.log("[startGame] StartGame called when game is already over. This shouldn't happen if resetGame() was called.");
-            this.resetGame(); // Should ideally be handled before calling startGame
+            this.resetGame();
         }
-
-        console.log("[startGame] Starting game process...");
-        console.log("[startGame] State BEFORE resetGameState:", JSON.stringify(this.gameStateManager.getGameState()));
 
         // Reset game elements FIRST
         this.resetGameState();
-        console.log("[startGame] State AFTER resetGameState:", JSON.stringify(this.gameStateManager.getGameState()));
 
         // THEN set the game state to started
         this.gameStateManager.startGame();
-        console.log("[startGame] State AFTER gameStateManager.startGame():", JSON.stringify(this.gameStateManager.getGameState()));
 
         // Start loops
         this.gameLoop.startGameLoop();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-        console.log("[startGame] Game loops started.");
 
-        // Initialize music using the centralized method
-        this.initializeGameMusic(true);
+        // Initialize music
+        this.audioManager.initializeGameMusic(true);
 
         // Hide header and footer on mobile devices
-        if (this.isTouchDevice()) {
-            this.hideHeaderFooterOnMobile();
+        if (GameUtils.isTouchDevice()) {
+            GameUtils.hideHeaderFooterOnMobile(this.gameLayout);
         }
 
         this.draw(); // Initial draw after starting
-        console.log("[startGame] Initial draw completed.");
     }
 
     resetGameState() {
-        console.log("Resetting game elements (snake, food, score, etc.)..."); // Added log for clarity
         this.drawer.generateNewSnakeColor();
         this.gameStateManager.resetGameState();
         this.uiManager.updateScore(this.gameStateManager.getScore());
@@ -557,7 +332,8 @@ class SnakeGame {
     }
 
     moveSnake() {
-        const nextHeadPos = this.getNextHeadPosition();
+        const headPos = this.snake.head();
+        const nextHeadPos = GameUtils.getNextHeadPosition(headPos, this.direction);
 
         if (this.checkCollision(nextHeadPos)) {
             this.handleCollision(nextHeadPos);
@@ -570,10 +346,9 @@ class SnakeGame {
         const gameState = this.gameStateManager.getGameState();
 
         // First, determine what type of collision this is
-        const isWallCollision = nextHeadPos.x < 0 || nextHeadPos.x >= this.tileCount ||
-            nextHeadPos.y < 0 || nextHeadPos.y >= this.tileCount;
+        const isWallCollision = !GameUtils.isPositionInBounds(nextHeadPos.x, nextHeadPos.y, this.tileCount);
 
-        // Check if it's a self collision by finding which segment we're colliding with
+        // Check if it's a self collision
         const isSelfCollision = !isWallCollision && this.snake.isOccupyingPosition(nextHeadPos.x, nextHeadPos.y, true);
 
         if (isSelfCollision && Math.random() < 0.5) {
@@ -616,14 +391,14 @@ class SnakeGame {
             const newScore = currentScore - scoreReduction;
 
             // Update the score in the game state and UI
-            this.gameStateManager.score = newScore; // Direct assignment as there's no "updateScoreAbsolute" method
+            this.gameStateManager.score = newScore;
             this.uiManager.updateScore(newScore);
 
             // Cut the tail by removing segments from collisionIndex to the end
             this.snake.cutTailAt(collisionIndex);
 
             // Play a sound to indicate tail cutting
-            if (this.gameStateManager.getGameState().soundEnabled) {
+            if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
                 this.soundManager.playSound('click', 0.5);
             }
 
@@ -665,14 +440,7 @@ class SnakeGame {
         // Check which directions are safe
         for (const direction of possibleDirections) {
             const headPos = this.snake.head();
-            const testPos = { x: headPos.x, y: headPos.y };
-
-            switch (direction) {
-                case 'up': testPos.y--; break;
-                case 'down': testPos.y++; break;
-                case 'left': testPos.x--; break;
-                case 'right': testPos.x++; break;
-            }
+            const testPos = GameUtils.getNextHeadPosition(headPos, direction);
 
             if (this.isPositionSafe(testPos.x, testPos.y)) {
                 safeDirections.push({
@@ -718,10 +486,10 @@ class SnakeGame {
             this.nextDirection = this.direction;
         }
 
-        const safeHeadPos = this.getNextHeadPosition();
+        const safeHeadPos = GameUtils.getNextHeadPosition(this.snake.head(), this.direction);
         const gameState = this.gameStateManager.getGameState();
 
-        if (gameState.soundEnabled) {
+        if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
             this.soundManager.playSound('click', 0.3);
         }
 
@@ -762,7 +530,8 @@ class SnakeGame {
             this.drawer.incrementDarknessLevel();
         }
 
-        if (gameState.soundEnabled) {
+        // Only play sound if we have user interaction and sound is enabled
+        if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
             this.soundManager.playSound(eatenFood.type);
         }
 
@@ -773,22 +542,8 @@ class SnakeGame {
         }
     }
 
-    getNextHeadPosition() {
-        const headPos = this.snake.head();
-        const nextPos = { x: headPos.x, y: headPos.y };
-
-        switch (this.direction) {
-            case 'up': nextPos.y--; break;
-            case 'down': nextPos.y++; break;
-            case 'left': nextPos.x--; break;
-            case 'right': nextPos.x++; break;
-        }
-
-        return nextPos;
-    }
-
     isPositionSafe(x, y) {
-        if (x < 0 || x >= this.tileCount || y < 0 || y >= this.tileCount) {
+        if (!GameUtils.isPositionInBounds(x, y, this.tileCount)) {
             return false;
         }
 
@@ -796,8 +551,7 @@ class SnakeGame {
     }
 
     checkCollision(headPos) {
-        if (headPos.x < 0 || headPos.x >= this.tileCount ||
-            headPos.y < 0 || headPos.y >= this.tileCount) {
+        if (!GameUtils.isPositionInBounds(headPos.x, headPos.y, this.tileCount)) {
             return true;
         }
 
@@ -814,68 +568,15 @@ class SnakeGame {
         this.draw();
 
         // Show header and footer when game is over on mobile
-        if (this.isTouchDevice()) {
-            this.showHeaderFooterOnMobile();
+        if (GameUtils.isTouchDevice()) {
+            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
         }
 
-        this.handleGameOverAudio(isNewHighScore);
-    }
-
-    handleGameOverAudio(isNewHighScore) {
-        // Skip audio handling if we don't have a valid audio context
-        const sharedContext = SoundManager.getAudioContext();
-        if (!this.soundManager || !sharedContext) {
-            console.warn("Cannot handle game over audio: SoundManager or shared context unavailable.");
-            return;
-        }
-
-        // Calculate delay for potential high score sound
-        const highScoreFanfareDelay = 800;
-
-        // The high score fanfare takes approximately 1.3 seconds to complete
-        const fanfareDuration = 1300;
-
-        // Calculate total cleanup delay - add buffer time after all sounds finish
-        const cleanupDelay = isNewHighScore
-            ? highScoreFanfareDelay + fanfareDuration + 200  // After fanfare completes + buffer
-            : 1000;                                          // Basic delay for crash sound
-
-        // 1. Stop music but don't fully clean up (preserve the AudioContext)
-        if (this.musicManager) {
-            console.log("Game Over: Stopping music without AudioContext cleanup.");
-            this.musicManager.stopMusic(false); // Use false to avoid full cleanup
-        }
-
-        // 2. Play crash sound immediately
-        this.soundManager.playSound('crash');
-
-        // 3. Play high score fanfare if needed, after a delay
-        if (isNewHighScore) {
-            console.log("Game Over: Scheduling high score fanfare.");
-            setTimeout(() => {
-                this.soundManager.playHighScoreFanfare();
-            }, highScoreFanfareDelay);
-        }
-
-        // 4. Schedule final cleanup after all sounds have played
-        console.log(`Game Over: Scheduling audio resources cleanup in ${cleanupDelay}ms`);
-        setTimeout(() => {
-            console.log("Game Over: Performing final audio cleanup");
-            // Use the static method to clean up all audio resources
-            MusicManager.cleanupAudioResources(this, 0); // Use 0 for immediate cleanup
-        }, cleanupDelay);
+        this.audioManager.handleGameOverAudio(isNewHighScore);
     }
 
     resetGame() {
-        console.log("Resetting game state...");
         this.gameStateManager.resetGame();
-        console.log("Game State after reset:",
-            JSON.stringify({
-                isGameStarted: this.gameStateManager.isGameStarted,
-                isGameOver: this.gameStateManager.isGameOver,
-                isPaused: this.gameStateManager.isPaused
-            })
-        );
 
         // Generate a new color for the snake
         if (this.drawer) {
@@ -886,15 +587,11 @@ class SnakeGame {
         this.soundManager = SoundManager.getInstance();
 
         // Always create a fresh MusicManager instance for the new game
-        // This ensures a clean state after the cleanup from the previous game
-        console.log("Creating new MusicManager instance for reset game.");
         this.musicManager = new MusicManager();
 
         // Ensure audio context is initialized if user interaction has occurred
         if (this.hasUserInteraction && SoundManager.getAudioContext()) {
             this.musicManager.initAudioContextIfNeeded();
-            // Note: We DON'T select a random melody here anymore
-            // It will be handled by initializeGameMusic when the game actually starts
         }
 
         // Reinitialize snake and game elements for a clean slate
@@ -913,8 +610,8 @@ class SnakeGame {
         this.startRequested = false;
 
         // Show header and footer when game is reset on mobile
-        if (this.isTouchDevice()) {
-            this.showHeaderFooterOnMobile();
+        if (GameUtils.isTouchDevice()) {
+            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
         }
 
         // Force a redraw to show the new state
@@ -955,532 +652,15 @@ class SnakeGame {
     }
 
     toggleSound() {
-        // Initialize audio on first toggle if interaction hasn't happened yet
-        if (!this.hasUserInteraction) {
-            this.handleFirstInteraction(); // Just set the flag
-            // Audio will be fully initialized when startGame or playSound is called
-        }
-
-        const soundEnabled = this.gameStateManager.toggleSound();
-        this.uiManager.updateSoundToggleUI();
-        if (soundEnabled && this.soundManager?.audioContext?.state === 'running') {
-            this.soundManager.playSound('click'); // Play click sound if enabling
-        }
-        localStorage.setItem('snakeSoundEnabled', soundEnabled);
+        this.audioManager.toggleSound();
     }
 
     toggleMusic() {
-        // Initialize audio on first toggle if interaction hasn't happened yet
-        if (!this.hasUserInteraction) {
-            this.handleFirstInteraction(); // Just set the flag
-            // Audio will be fully initialized when startGame or startMusic is called
-        }
-
-        const musicEnabled = this.gameStateManager.toggleMusic();
-        this.uiManager.updateMusicToggleUI();
-
-        if (musicEnabled) {
-            // Use the centralized method but don't force a new melody when simply toggling
-            this.initializeGameMusic(false);
-        } else {
-            this.musicManager.stopMusic();
-            this.uiManager.updateMelodyDisplay(null); // Clear display when music stops
-        }
-
-        localStorage.setItem('snakeMusicEnabled', musicEnabled);
-        if (this.gameStateManager.getGameState().soundEnabled && this.soundManager?.audioContext?.state === 'running') {
-            this.soundManager.playSound('click', 0.5); // Play click sound when toggling
-        }
+        this.audioManager.toggleMusic();
     }
 
     changeMusic() {
-        // Set interaction flag if not already set
-        if (!this.hasUserInteraction) {
-            this.handleFirstInteraction();
-        }
-
-        if (this.musicManager && this.gameStateManager.getGameState().musicEnabled) {
-            // changeToRandomMelody calls startMusic internally, which handles context
-            this.musicManager.changeToRandomMelody();
-            this.uiManager.updateMelodyDisplay(this.musicManager.getCurrentMelody());
-            if (this.gameStateManager.getGameState().soundEnabled) {
-                // playSound handles context check internally
-                this.soundManager?.playSound('click', 0.5);
-            }
-        } else if (!this.gameStateManager.getGameState().musicEnabled) {
-            // If music is off, still select a new melody but don't play it
-            this.musicManager?.selectRandomMelody(); // Selects without playing
-            this.uiManager.updateMelodyDisplay(this.musicManager?.getCurrentMelody()); // Update display even if off
-            if (this.gameStateManager.getGameState().soundEnabled && this.soundManager?.audioContext?.state === 'running') {
-                this.soundManager?.playSound('click', 0.5);
-            }
-        }
-    }
-
-    handleTouchStart(event) {
-        // Prevent default for multi-touch to avoid zooming, allow single touch default for now
-        if (event.touches.length > 1) {
-            event.preventDefault();
-        }
-
-        const gameState = this.gameStateManager.getGameState();
-
-        // Store initial touch details
-        this.touchStartX = event.touches[0].clientX;
-        this.touchStartY = event.touches[0].clientY;
-        this.touchStartTime = new Date().getTime();
-        // Reset the movement flag on touch start
-        this.touchMoved = false;
-        // Reset accumulated swipe distance on new touch
-        this.accumulatedSwipeDistance = 0;
-        this.lastSwipeDirection = null;
-        // Reset speed adjustment flag - allow adjustment on new touch
-        this.hasAdjustedSpeed = false;
-
-        // Handle two-finger tap for pause
-        if (event.touches.length === 2 && gameState.isGameStarted && !gameState.isPaused) {
-            event.preventDefault(); // Prevent default for the pause gesture
-            this.togglePause();
-            return; // Don't process further for pause gesture
-        }
-
-        // Unpause game with a single touch if paused
-        if (gameState.isGameStarted && gameState.isPaused && event.touches.length === 1) {
-            event.preventDefault(); // Prevent default for unpause
-            this.togglePause();
-            return; // Don't process further for unpause
-        }
-
-        // Handle game over state - reset and start a new game
-        if (gameState.isGameOver) {
-            console.log("[handleTouchStart] Touch detected on game over screen - resetting and starting new game");
-            event.preventDefault(); // Prevent default for game restart touch
-
-            // Reset game state first
-            this.resetGame();
-
-            // Since resetGame now sets isGameStarted = true via GameStateManager.resetGame(),
-            // we can start the game loop immediately
-            this.gameLoop.startGameLoop();
-            this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-
-            // Ensure interaction has happened (should be true if clicking game over screen)
-            if (!this.hasUserInteraction) {
-                this.handleFirstInteraction(); // Should ideally not be needed here
-                // No need to initialize music - handleFirstInteraction will call startGame() which handles it
-            } else {
-                // Only initialize music if we didn't call handleFirstInteraction
-                this.initializeGameMusic(true);
-            }
-
-            return; // Handled game over restart
-        }
-
-        // Start game if not started yet
-        if (!gameState.isGameStarted) {
-            console.log("[handleTouchStart] Touch detected on start screen.");
-            event.preventDefault(); // Prevent default for game start touch
-
-            // Check if this is the *first* interaction
-            if (!this.hasUserInteraction) {
-                console.log("[handleTouchStart] First interaction via touch, setting startRequested.");
-                // Set request flag BEFORE calling interaction handler
-                this.startRequested = true;
-                this.handleFirstInteraction(); // Ensure interaction flag is set & potentially start game
-            } else {
-                // Interaction already happened (e.g., clicked outside), start game directly
-                console.log("[handleTouchStart] Interaction already occurred, starting game directly.");
-                this.startGame();
-            }
-            return; // Handled start request
-        }
-
-        // If game is running and it's a single touch, prevent default if needed later in move/end
-        if (event.touches.length === 1) {
-            // We might prevent default in handleTouchMove if actual swipe occurs
-        }
-    }
-
-    handleTouchMove(event) {
-        // Only prevent default when we're handling a gameplay-related gesture
-        // This allows the browser to optimize scrolling when not playing
-        const gameState = this.gameStateManager.getGameState();
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            event.preventDefault();
-        }
-
-        if (event.touches.length !== 1) return;
-
-        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) return;
-
-        // Calculate thresholds based on canvas size
-        const canvasSize = this.canvas.width;
-        const smallSwipeThreshold = canvasSize * 0.02; // 2% of canvas size for direction change
-        const wideSwipeThreshold = canvasSize * 0.33; // 33% of canvas size for speed change
-        const accumulatedThreshold = canvasSize * 0.33; // 33% of canvas size for accumulated swipes
-
-        const touch = event.touches[0];
-        const deltaX = touch.clientX - this.touchStartX;
-        const deltaY = touch.clientY - this.touchStartY;
-        const swipeDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-        // Only change direction if the drag distance is significant
-        if (Math.abs(deltaX) > smallSwipeThreshold || Math.abs(deltaY) > smallSwipeThreshold) {
-            // Mark that movement has occurred during this touch
-            this.touchMoved = true;
-
-            // Determine the primary direction of the swipe
-            let newDirection;
-            let primaryDelta;
-
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                // Horizontal swipe
-                newDirection = deltaX > 0 ? 'right' : 'left';
-                primaryDelta = Math.abs(deltaX);
-            } else {
-                // Vertical swipe
-                newDirection = deltaY > 0 ? 'down' : 'up';
-                primaryDelta = Math.abs(deltaY);
-            }
-
-            // Reset accumulated distance if direction changes
-            if (this.lastSwipeDirection !== newDirection) {
-                this.accumulatedSwipeDistance = 0;
-                this.lastSwipeDirection = newDirection;
-                // Allow speed adjustment when direction changes
-                this.hasAdjustedSpeed = false;
-            }
-
-            // Accumulate the swipe distance in the current direction
-            this.accumulatedSwipeDistance += primaryDelta;
-
-            if (this.isValidDirectionChange(newDirection)) {
-                // Apply the direction change
-                this.nextDirection = newDirection;
-
-                // Check if we haven't already adjusted speed for this touch or direction
-                if (!this.hasAdjustedSpeed) {
-                    // Apply speed adjustment only once per touch event
-                    this.gameLoop.updateTouchGameSpeed(newDirection, this.direction);
-
-                    // If it's a wide swipe in the same direction, apply one additional boost
-                    if ((newDirection === this.direction) &&
-                        (primaryDelta > wideSwipeThreshold || this.accumulatedSwipeDistance > accumulatedThreshold)) {
-                        this.gameLoop.updateTouchGameSpeed(newDirection, this.direction);
-                    }
-
-                    // Mark that we've adjusted speed for this touch
-                    this.hasAdjustedSpeed = true;
-                }
-            }
-
-            // Reset starting position to allow continuous dragging
-            this.touchStartX = touch.clientX;
-            this.touchStartY = touch.clientY;
-        }
-    }
-
-    handleTouchEnd(event) {
-        // For touchend, we don't need preventDefault as often since it won't affect scrolling
-        // We can make this passive for better performance
-        const gameState = this.gameStateManager.getGameState();
-
-        // Reset speed adjustment flag when finger is lifted
-        this.hasAdjustedSpeed = false;
-
-        // Handle single tap to reduce speed - only if no movement occurred
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            const touchEndTime = new Date().getTime();
-            const touchDuration = touchEndTime - this.touchStartTime;
-
-            // If it's a quick tap (less than 250ms) AND no significant movement occurred
-            if (touchDuration < 250 && !this.touchMoved && event.changedTouches.length === 1) {
-                // Slow down the snake temporarily
-                this.gameLoop.reduceSpeed();
-            }
-        }
-    }
-
-    handleDocumentClick(event) {
-        console.log("[handleDocumentClick] Click detected.");
-        // Prerequisite: User must have interacted at least once for clicks to matter for game state
-        if (!this.hasUserInteraction) {
-            // If the first interaction is a click, the 'once' listener in
-            // addInteractionListeners should handle it. This function shouldn't
-            // need to do anything until interaction has occurred.
-            console.log("[handleDocumentClick] Ignored: No user interaction yet.");
-            return;
-        }
-
-        console.log(`[handleDocumentClick] User interaction detected (hasUserInteraction: ${this.hasUserInteraction}).`);
-        const gameState = this.gameStateManager.getGameState();
-        console.log("[handleDocumentClick] Current Game State:", JSON.stringify(gameState));
-
-        // Get all elements that should NOT pause the game when clicked
-        const nonPausingElements = [
-            '.canvas-wrapper',
-            '#gameCanvas',
-            '.controls',
-            '.donation-panel',
-            '.music-info',
-            '#soundToggle',
-            '#musicToggle',
-            '.mobile-arrow-controls',
-            '.arrow-button',
-            '.game-controls',
-            '.mobile-only-tip',
-            '.desktop-only-tip',
-            '.tip-item',
-            '.score-container',
-            '.score-item',
-            '.reset-button',
-            '.control-toggle',
-            '.melody-display'
-        ];
-
-        // Pause logic: Click outside when running & not paused
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            console.log("[handleDocumentClick] Checking pause condition...");
-
-            // Check if the clicked element (or any of its parents) is in the non-pausing list
-            const shouldNotPause = nonPausingElements.some(selector => {
-                return event.target.closest(selector) !== null;
-            });
-
-            if (!shouldNotPause) {
-                console.log("[handleDocumentClick] Pausing game via outside click.");
-                this.togglePause();
-                this.uiManager.showTemporaryMessage('Game paused', 1500);
-                return; // Handled
-            }
-            console.log("[handleDocumentClick] Pause condition not met (click was inside UI element).");
-        }
-
-        // Start logic: Click inside canvas when not started
-        if (!gameState.isGameStarted && !gameState.isGameOver) {
-            console.log("[handleDocumentClick] Checking start condition...");
-            if (this.canvas.contains(event.target)) {
-                console.log("[handleDocumentClick] Starting game via canvas click.");
-                // Ensure startRequested is set (potentially redundant, but safe)
-                this.startRequested = true;
-                // Call startGame directly. Audio is ready because hasUserInteraction is true.
-                this.startGame();
-                return; // Handled
-            }
-            console.log("[handleDocumentClick] Start condition not met (click was outside canvas).");
-        }
-
-        console.log("[handleDocumentClick] Click did not trigger pause or start.");
-    }
-
-    // Check if the device is a touch device
-    isTouchDevice() {
-        return ('ontouchstart' in window) ||
-            (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0);
-    }
-
-    // Initialize mobile arrow button controls
-    initMobileArrowButtons() {
-        // Only initialize on touch devices
-        if (!this.isTouchDevice()) return;
-
-        // Get button references
-        const upButton = document.getElementById('upArrow');
-        const downButton = document.getElementById('downArrow');
-        const leftButton = document.getElementById('leftArrow');
-        const rightButton = document.getElementById('rightArrow');
-
-        if (!upButton || !downButton || !leftButton || !rightButton) return;
-
-        // Function to trigger haptic feedback if available
-        const triggerHapticFeedback = () => {
-            // Check if vibration API is available
-            if (navigator.vibrate) {
-                navigator.vibrate(15); // 15ms short vibration
-            }
-        };
-
-        // Helper function to handle button press
-        const handleArrowButtonPress = (direction) => {
-            const gameState = this.gameStateManager.getGameState();
-
-            // Trigger haptic feedback
-            triggerHapticFeedback();
-
-            // If game over, ignore arrow presses to prevent accidental restarts
-            if (gameState.isGameOver) {
-                console.log("Game is over, arrow buttons are disabled until manual restart");
-                return;
-            }
-
-            // If game hasn't started, handle game start
-            if (!gameState.isGameStarted) {
-                console.log("Game not started, starting via arrow button: " + direction);
-                // Set request flag for user interaction
-                this.startRequested = true;
-
-                // Check if this is the first interaction
-                const isFirstInteraction = !this.hasUserInteraction;
-
-                // Ensure interaction flag is set and audio is initialized
-                this.handleFirstInteraction();
-
-                // If this was the first interaction, startGame was already called by handleFirstInteraction
-                if (!isFirstInteraction) {
-                    // Explicitly initialize audio contexts - redundant but ensures audio works
-                    this.initializeAudio();
-
-                    // Start game and loops
-                    this.startGame();
-                    this.gameLoop.startGameLoop();
-                    this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-
-                    // No need for separate music initialization since startGame does it
-                }
-
-                // Also set initial direction based on the button pressed
-                if (this.isValidDirectionChange(direction)) {
-                    console.log(`Setting initial direction to ${direction}`);
-                    this.direction = direction;
-                    this.nextDirection = direction;
-                }
-
-                return;
-            }
-
-            if (gameState.isPaused) {
-                return;
-            }
-
-            // IMPORTANT: Call updateGameSpeed regardless of validity
-            // The function itself handles opposite direction logic for slowing down.
-            this.gameLoop.updateGameSpeed(direction, this.direction);
-
-            // Only update the nextDirection if the change is valid
-            const isValid = this.isValidDirectionChange(direction);
-            if (isValid) {
-                this.nextDirection = direction;
-            }
-        };
-
-        // Add event listeners for buttons - use both touchstart and mousedown for better compatibility
-        upButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.hasUserInteraction) {
-                this.hasUserInteraction = true;
-                this.initializeAudio();
-            }
-
-            handleArrowButtonPress('up');
-        });
-
-        downButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.hasUserInteraction) {
-                this.hasUserInteraction = true;
-                this.initializeAudio();
-            }
-
-            handleArrowButtonPress('down');
-        });
-
-        leftButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.hasUserInteraction) {
-                this.hasUserInteraction = true;
-                this.initializeAudio();
-            }
-
-            handleArrowButtonPress('left');
-        });
-
-        rightButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.hasUserInteraction) {
-                this.hasUserInteraction = true;
-                this.initializeAudio();
-            }
-
-            handleArrowButtonPress('right');
-        });
-
-        // Add mouse event listeners as fallback for hybrid devices
-        upButton.addEventListener('mousedown', () => handleArrowButtonPress('up'));
-        downButton.addEventListener('mousedown', () => handleArrowButtonPress('down'));
-        leftButton.addEventListener('mousedown', () => handleArrowButtonPress('left'));
-        rightButton.addEventListener('mousedown', () => handleArrowButtonPress('right'));
-    }
-
-    // Centralized method to handle music initialization and starting
-    initializeGameMusic(forceNewMelody = true) {
-        // Only proceed if user interaction has happened
-        if (!this.hasUserInteraction) {
-            console.log("[initializeGameMusic] User interaction required");
-            return false;
-        }
-
-        // Only proceed if there's a music manager
-        if (!this.musicManager) {
-            console.log("[initializeGameMusic] No music manager available");
-            return false;
-        }
-
-        // Only start music if it's enabled in game settings
-        const gameState = this.gameStateManager.getGameState();
-        if (!gameState.musicEnabled) {
-            console.log("[initializeGameMusic] Music is disabled in game settings");
-            return false;
-        }
-
-        console.log("[initializeGameMusic] Initializing game music");
-
-        // Make sure the audio context is initialized
-        this.musicManager.initAudioContextIfNeeded();
-
-        // Select a new random melody if requested
-        if (forceNewMelody) {
-            console.log("[initializeGameMusic] Selecting new random melody");
-            this.musicManager.selectRandomMelody();
-        }
-
-        // Start the music
-        console.log("[initializeGameMusic] Starting music playback");
-        this.musicManager.startMusic();
-
-        // Update the melody display
-        this.uiManager.updateMelodyDisplay(this.musicManager.getCurrentMelody());
-
-        return true;
-    }
-
-    // Methods to control header and footer visibility on mobile
-    hideHeaderFooterOnMobile() {
-        if (this.gameLayout) {
-            this.gameLayout.classList.add('mobile-game-active');
-        }
-    }
-
-    showHeaderFooterOnMobile() {
-        if (this.gameLayout) {
-            this.gameLayout.classList.remove('mobile-game-active');
-        }
+        this.audioManager.changeMusic();
     }
 }
 
