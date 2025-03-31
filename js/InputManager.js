@@ -556,34 +556,14 @@ class InputManager {
 
     // Add helper method to ensure audio is initialized on touch devices
     ensureAudioInitialized() {
-        // Set both interaction flags
+        // Set interaction flag
         if (!this.game.hasUserInteraction) {
             this.game.hasUserInteraction = true;
-            SoundManager.hasUserInteraction = true;
-
-            // Force context initialization directly from touch event
+            
+            // Use the centralized audio manager method to initialize audio context
             if (this.game.audioManager) {
                 console.log("InputManager: Ensuring audio is initialized from touch event");
-                this.game.audioManager.initializeAudio(true);
-
-                // Force a direct resume attempt - only if we haven't confirmed audio is working
-                if (SoundManager.audioContext &&
-                    SoundManager.audioContext.state === 'suspended' &&
-                    !SoundManager.hasPlayedAudio) {
-                    SoundManager.audioContext.resume().then(() => {
-                        console.log("InputManager: Resumed audio context from touch: ",
-                            SoundManager.audioContext.state);
-
-                        // Play silent sound after successful resume only if needed
-                        if (SoundManager.audioContext.state === 'running' &&
-                            this.game.soundManager &&
-                            !SoundManager.hasPlayedAudio) {
-                            this.game.soundManager.playSilentSound();
-                        }
-                    }).catch(err => {
-                        console.error("InputManager: Failed to resume context from touch:", err);
-                    });
-                }
+                this.game.audioManager.ensureAudioContext(true, true);
             }
         }
     }
@@ -599,21 +579,9 @@ class InputManager {
         SoundManager.hasUserInteraction = true;
         this.game.audioManager.initializeAudio(true);
 
-        // For mobile browsers, especially iOS, try to resume the context directly
-        // but only if we haven't confirmed audio is working yet
-        if (SoundManager.audioContext &&
-            SoundManager.audioContext.state === 'suspended' &&
-            !SoundManager.hasPlayedAudio) {
-            SoundManager.audioContext.resume().then(() => {
-                console.log("Context resumed on game start:", SoundManager.audioContext.state);
-                // Play silent sound to fully unlock audio on iOS only if needed
-                if (SoundManager.audioContext.state === 'running' &&
-                    this.game.soundManager &&
-                    !SoundManager.hasPlayedAudio) {
-                    this.game.soundManager.playSilentSound();
-                }
-            });
-        }
+        // Use the centralized method to ensure audio context is ready
+        // and play a click sound to help unlock audio
+        this.game.audioManager.ensureAudioContext(true, true);
 
         // Start the game
         this.game.startGame();

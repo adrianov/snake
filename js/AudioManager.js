@@ -1,202 +1,250 @@
 /**
  * Coordinates sound and music systems with browser audio constraints.
- * - Implements safe audio initialization respecting browser autoplay policies
  * - Orchestrates communication between sound effects and music subsystems
  * - Manages global audio state (enabled/disabled, volume levels)
- * - Handles audio context resumption after user interaction
- * - Implements browser-specific workarounds for audio limitations
+ * - Coordinates audio initialization across the game
  * - Provides a unified interface for triggering game audio events
  * - Maintains synchronization between audio state and user preferences
+ * - Delegates core audio functionality to SoundManager
  */
 class AudioManager {
+    /**
+     * Create a new AudioManager instance
+     * @param {SnakeGame} game - The game instance
+     */
     constructor(game) {
         this.game = game;
+        this.pendingMusicPromise = null;
+        this.isInitializing = false;
+        this.lastMusicInitTime = 0;
     }
 
-    // Check if audio is ready to be played
+    /**
+     * Check if audio is ready to be played
+     * @returns {boolean} Whether audio is ready
+     */
     isAudioReady() {
         return this.game.hasUserInteraction &&
             SoundManager.hasUserInteraction &&
             SoundManager.audioContext?.state === 'running';
     }
 
+    /**
+     * Initialize audio systems on user interaction
+     */
     init() {
-        // Set the SoundManager's global flag
+        // Prevent multiple simultaneous initializations
+        if (this.isInitializing) {
+            console.log("AudioManager: Already initializing, ignoring duplicate call");
+            return;
+        }
+        
+        this.isInitializing = true;
+        
+        // Set the interaction flag
         SoundManager.hasUserInteraction = true;
-
         console.log("AudioManager: Initializing audio with user interaction");
-        this.initializeAudio(true); // Force initialization
+        
+        // Initialize audio with force flag
+        this.initializeAudio(true);
+        
+        // Play a click sound to fully unlock audio
+        this.ensureAudioContext(true, true)
+            .finally(() => {
+                this.isInitializing = false;
+            });
     }
 
+    /**
+     * Ensure the audio context is properly initialized and running
+     * @param {boolean} playClickSound - Whether to play a click sound
+     * @param {boolean} force - Whether to force initialization
+     * @returns {Promise<boolean>} Success status
+     */
+    ensureAudioContext(playClickSound = false, force = true) {
+        if (!this.game.hasUserInteraction) {
+            console.warn("AudioManager: Cannot ensure audio context without user interaction");
+            return Promise.resolve(false);
+        }
+        
+        // Use SoundManager's unlockAudio method to handle initialization and unlocking
+        if (this.game.soundManager) {
+            return this.game.soundManager.unlockAudio(playClickSound);
+        }
+        
+        return Promise.resolve(false);
+    }
+
+    /**
+     * Initialize audio subsystems
+     * @param {boolean} forceInitialization - Whether to force initialization
+     * @returns {boolean} Success status
+     */
     initializeAudio(forceInitialization = false) {
         if (!this.game.hasUserInteraction) {
-            console.warn("Attempted to initialize audio before user interaction.");
+            console.warn("AudioManager: Attempted to initialize audio before user interaction");
             return false;
         }
 
-        console.log("Initializing SoundManager and MusicManager contexts...");
+        console.log("AudioManager: Initializing SoundManager and MusicManager contexts...");
 
-        // Update SoundManager's flag
+        // Update the interaction flag
         SoundManager.hasUserInteraction = true;
 
-        // Initialize SoundManager context
+        // Initialize SoundManager (if available)
         if (this.game.soundManager) {
-            // On mobile browsers, force initialization with user interaction
-            this.game.soundManager.initAudioContext(true); // Force initialization/resume
-
-            // On iOS and some mobile browsers, we need to ensure the context is resumed
-            // after a short delay to give the browser time to process the user interaction
-            // Only do this if we haven't confirmed audio is working yet
+            // Force audio context initialization
+            this.game.soundManager.initAudioContext(forceInitialization);
+            
+            // For mobile devices, ensure audio is fully unlocked after a delay
+            // This helps on iOS and some Android browsers
             if (!SoundManager.hasPlayedAudio) {
                 setTimeout(() => {
-                    if (SoundManager.audioContext &&
-                        SoundManager.audioContext.state === 'suspended' &&
-                        !SoundManager.hasPlayedAudio) {
-                        console.log("AudioManager: Attempting delayed resume of AudioContext for mobile browsers");
-                        this.game.soundManager.resumeAudioContext().then((resumed) => {
-                            if (resumed) {
-                                console.log("AudioManager: Successfully resumed AudioContext after delay");
-                                // Play a silent sound to fully unlock audio on iOS
-                                // but only if we haven't confirmed audio is working yet
-                                if (!SoundManager.hasPlayedAudio) {
-                                    this.game.soundManager.playSilentSound();
-                                }
-
-                                // Re-initialize music if it was supposed to be playing
-                                if (this.game.gameStateManager.getGameState().musicEnabled &&
-                                    !MusicManager.isPlaying) {
-                                    console.log("AudioManager: Restarting music after successful resume");
-                                    this.initializeGameMusic(false);
-                                }
-                            }
-                        });
+                    if (!this.isInitializing) { // Prevent overlapping initializations
+                        this.ensureAudioContext(false, true);
                     }
                 }, 100);
             }
         } else {
-            console.warn("SoundManager not available during audio initialization.");
+            console.warn("AudioManager: SoundManager not available for initialization");
             return false;
         }
 
-        // Initialize MusicManager context
+        // Initialize MusicManager context if needed
         MusicManager.initAudioContextIfNeeded();
 
         return true;
     }
 
+    /**
+     * Initialize and start game background music
+     * @param {boolean} forceNewMelody - Whether to force selection of a new melody
+     * @returns {Promise<boolean>} Success status
+     */
     initializeGameMusic(forceNewMelody = true) {
+        // Prevent rapid successive calls to music initialization to reduce race conditions
+        const now = Date.now();
+        if (now - this.lastMusicInitTime < 500) {
+            console.log("AudioManager: Skipping music initialization due to debounce");
+            return this.pendingMusicPromise || Promise.resolve(false);
+        }
+        this.lastMusicInitTime = now;
+        
         // Only proceed if user interaction has happened
         if (!this.game.hasUserInteraction) {
-            console.log("[initializeGameMusic] User interaction required");
-            return false;
+            console.log("AudioManager: User interaction required for music initialization");
+            return Promise.resolve(false);
         }
 
         // Only start music if it's enabled in game settings
         const gameState = this.game.gameStateManager.getGameState();
         if (!gameState.musicEnabled) {
-            console.log("[initializeGameMusic] Music is disabled in game settings");
-            return false;
+            console.log("AudioManager: Music is disabled in game settings");
+            return Promise.resolve(false);
         }
 
-        console.log("[initializeGameMusic] Initializing game music");
+        console.log("AudioManager: Initializing game music");
 
-        // Force audio context initialization first
+        // First ensure audio context is initialized
         this.initializeAudio(true);
 
-        // Ensure we have a running audio context
-        if (!SoundManager.audioContext || SoundManager.audioContext.state !== 'running') {
-            console.log("[initializeGameMusic] AudioContext not running, attempting to resume");
-            if (SoundManager.audioContext && SoundManager.audioContext.state === 'suspended') {
-                this.game.soundManager.resumeAudioContext().then((resumed) => {
-                    if (resumed) {
-                        console.log("[initializeGameMusic] Successfully resumed AudioContext, now starting music");
-                        this._startMusicAfterContextResumed(forceNewMelody);
-                    }
-                });
-                return false;
-            }
-            return false;
-        }
-
-        // Check if music is already playing
-        const musicIsPlaying = MusicManager.isPlaying;
-
-        // Determine if we need to select a new melody
-        if (forceNewMelody || !MusicManager.currentMelodyId) {
-            console.log("[initializeGameMusic] Selecting new random melody");
-            MusicManager.selectRandomMelody();
-        }
-
-        // Start the music
-        console.log("[initializeGameMusic] Starting music playback");
-        MusicManager.startMusic();
-
-        // Update the melody display
-        this.game.uiManager.updateMelodyDisplay();
-
-        return true;
+        // Keep track of the promise for debouncing
+        this.pendingMusicPromise = this.ensureAudioContext(false, true)
+            .then(success => {
+                if (!success) {
+                    console.log("AudioManager: Failed to ensure audio context for music");
+                    return false;
+                }
+                
+                // Cancel any pending cleanups to avoid conflicts
+                for (const [gameInstance, timeoutId] of MusicManager.cleanupTimeouts.entries()) {
+                    clearTimeout(timeoutId);
+                    MusicManager.cleanupTimeouts.delete(gameInstance);
+                }
+                
+                // Select a new melody if needed
+                if (forceNewMelody || !MusicManager.currentMelodyId) {
+                    console.log("AudioManager: Selecting new random melody");
+                    MusicManager.selectRandomMelody();
+                }
+                
+                // Start the music playback
+                console.log("AudioManager: Starting music playback");
+                const result = MusicManager.startMusic();
+                
+                // Update UI display
+                this.game.uiManager.updateMelodyDisplay();
+                
+                return result;
+            })
+            .finally(() => {
+                this.pendingMusicPromise = null;
+            });
+            
+        return this.pendingMusicPromise;
     }
 
-    // Helper method to start music after the audio context has been successfully resumed
-    _startMusicAfterContextResumed(forceNewMelody) {
-        // Determine if we need to select a new melody
-        if (forceNewMelody || !MusicManager.currentMelodyId) {
-            console.log("[_startMusicAfterContextResumed] Selecting new random melody");
-            MusicManager.selectRandomMelody();
-        }
-
-        // Start the music
-        console.log("[_startMusicAfterContextResumed] Starting music playback after context resume");
-        MusicManager.startMusic();
-
-        // Update the melody display
-        this.game.uiManager.updateMelodyDisplay();
-    }
-
+    /**
+     * Toggle sound on/off
+     * @returns {boolean} The new sound state
+     */
     toggleSound() {
-        // Initialize audio on first toggle if interaction hasn't happened yet
+        // Initialize audio first if needed
         if (!this.game.hasUserInteraction) {
-            console.warn("Cannot toggle sound before user interaction");
+            console.warn("AudioManager: Cannot toggle sound before user interaction");
             return false;
         }
 
+        // Initialize audio subsystems
         this.initializeAudio();
 
+        // Toggle sound using the game state manager
         const soundEnabled = this.game.gameStateManager.toggleSound();
         this.game.uiManager.updateSoundToggleUI();
 
-        // Play click sound if enabling sound
-        if (soundEnabled && this.game.soundManager?.audioContext?.state === 'running') {
+        // Play click sound when enabling sound
+        if (soundEnabled && this.isAudioReady()) {
             this.game.soundManager.playSound('click');
         }
 
+        // Save preference
         localStorage.setItem('snakeSoundEnabled', soundEnabled);
         return soundEnabled;
     }
 
+    /**
+     * Toggle music on/off
+     * @returns {boolean} The new music state
+     */
     toggleMusic() {
-        // Initialize audio on first toggle if interaction hasn't happened yet
+        // Initialize audio first if needed
         if (!this.game.hasUserInteraction) {
-            console.warn("Cannot toggle music before user interaction");
+            console.warn("AudioManager: Cannot toggle music before user interaction");
             return false;
         }
 
+        // Initialize audio subsystems
         this.initializeAudio();
 
+        // Toggle music using the game state manager
         const musicEnabled = this.game.gameStateManager.toggleMusic();
         this.game.uiManager.updateMusicToggleUI();
 
+        // Start or stop music based on new state
         if (musicEnabled) {
-            // Don't force a new melody when simply toggling
             this.initializeGameMusic(false);
         } else {
-            MusicManager.stopMusic();
-            this.game.uiManager.updateMelodyDisplay(); // Clear display when music stops
+            // Only stop if actually playing to avoid unnecessary cleanup
+            if (MusicManager.isPlaying) {
+                MusicManager.stopMusic();
+                this.game.uiManager.updateMelodyDisplay();
+            }
         }
 
+        // Save preference
         localStorage.setItem('snakeMusicEnabled', musicEnabled);
 
-        // Play click sound when toggling if sound is enabled
+        // Play click sound for feedback
         if (this.game.gameStateManager.getGameState().soundEnabled && this.isAudioReady()) {
             this.game.soundManager.playSound('click', 0.5);
         }
@@ -204,52 +252,63 @@ class AudioManager {
         return musicEnabled;
     }
 
+    /**
+     * Change to a different background melody
+     * @returns {boolean} Success status
+     */
     changeMusic() {
         // Check for user interaction
         if (!this.game.hasUserInteraction) {
-            console.warn("Cannot change music before user interaction");
+            console.warn("AudioManager: Cannot change music before user interaction");
             return false;
         }
 
+        // Initialize audio subsystems
         this.initializeAudio();
 
+        // Handle based on whether music is enabled
         if (this.game.gameStateManager.getGameState().musicEnabled) {
-            // Change melody and update UI
+            // Change to a new melody
             MusicManager.changeToRandomMelody();
             this.game.uiManager.updateMelodyDisplay();
 
-            // Play click sound if sound is enabled
+            // Play feedback sound
             if (this.game.gameStateManager.getGameState().soundEnabled) {
                 this.game.soundManager?.playSound('click', 0.5);
             }
             return true;
         } else {
-            // If music is off, still select a new melody but don't play it
+            // Just select a new melody but don't play it
             MusicManager.selectRandomMelody();
             this.game.uiManager.updateMelodyDisplay();
 
-            // Play click sound if sound is enabled
+            // Play feedback sound
             if (this.game.gameStateManager.getGameState().soundEnabled && this.isAudioReady()) {
                 this.game.soundManager?.playSound('click', 0.5);
             }
             return true;
         }
-        return false;
     }
 
+    /**
+     * Handle audio for game over state
+     * @param {boolean} isNewHighScore - Whether a new high score was achieved
+     */
     handleGameOverAudio(isNewHighScore) {
-        // Quick exit if no user interaction 
+        // Exit if no user interaction
         if (!this.game.hasUserInteraction) return;
 
-        // Stop background music immediately
-        MusicManager.stopMusic(false);
+        // Stop background music
+        if (MusicManager.isPlaying) {
+            MusicManager.stopMusic(false);
+        }
         
-        // Play crash sound through sound manager (it will handle all checks internally)
+        // Play crash sound
         if (this.game.soundManager) {
             this.game.soundManager.playSound('crash');
         }
 
-        // Play high score fanfare if needed (sound manager will handle sound enabled check)
+        // Play high score fanfare if needed
         if (isNewHighScore && this.game.soundManager) {
             const highScoreFanfareDelay = 800;
             setTimeout(() => {
@@ -265,7 +324,12 @@ class AudioManager {
 
         // Schedule cleanup with appropriate delay based on sounds being played
         const cleanupDelay = isNewHighScore ? 2400 : 1500;
-        MusicManager.clearCurrentMelody();
+        
+        // Only clear melody ID if we're not going to restart immediately
+        if (!this.game.startRequested) {
+            MusicManager.clearCurrentMelody();
+        }
+        
         MusicManager.cleanupAudioResources(this.game, cleanupDelay);
     }
 }

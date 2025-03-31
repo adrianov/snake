@@ -8,6 +8,7 @@
  * - Controls audio node lifecycle to prevent memory leaks during long gameplay sessions
  * - Synchronizes music state with game events (pause, resume, game over)
  * - Implements dynamic instrument and timbre selection for musical variety
+ * - Relies on SoundManager for core audio context management
  */
 class MusicManager {
     // Static properties
@@ -16,7 +17,7 @@ class MusicManager {
     static noteFrequencies = MusicManager._generateNoteFrequencies();
 
     // Audio-related properties
-    static audioContext = null;
+    static audioContext = null; // Will be initialized from SoundManager
     static masterGain = null;
     static melodyGain = null;
     static isPlaying = false;
@@ -65,43 +66,53 @@ class MusicManager {
         return frequencies;
     }
 
-    // Method called by AudioManager after user interaction
+    /**
+     * Initializes the audio context for music if needed
+     * @returns {boolean} Success status
+     */
     static initAudioContextIfNeeded() {
-        console.log("MusicManager initAudioContextIfNeeded called.");
-        // Get the shared context from SoundManager
-        MusicManager.audioContext = SoundManager.getAudioContext();
-
-        if (MusicManager.audioContext) {
-            console.log(`MusicManager: Acquired shared context. State: ${MusicManager.audioContext.state}`);
-            // If context is running and gain nodes aren't set up, do it now
-            if (MusicManager.audioContext.state === 'running' && !MusicManager.masterGain) {
-                console.log("MusicManager context running, setting up gain nodes.");
+        // Use SoundManager's shared context instead of creating our own
+        if (SoundManager.audioContext) {
+            MusicManager.audioContext = SoundManager.audioContext;
+            
+            // Setup gain nodes if needed
+            if (!MusicManager.masterGain) {
                 MusicManager.setupGainNodes();
             }
-        } else {
-            console.warn("MusicManager: Failed to acquire shared AudioContext.");
+            
+            return true;
         }
+        
+        return false;
     }
 
     // Setup gain nodes (Master and Melody)
     static setupGainNodes() {
         if (!MusicManager.audioContext || MusicManager.audioContext.state !== 'running') {
-            console.warn("Cannot setup gain nodes: AudioContext not available or not running.");
-            return;
+            console.warn("MusicManager: Cannot setup gain nodes: AudioContext not available or not running");
+            return false;
         }
-        if (MusicManager.masterGain) return; // Already setup
+        
+        if (MusicManager.masterGain) return true; // Already setup
 
-        console.log("Setting up MusicManager gain nodes...");
-        MusicManager.masterGain = MusicManager.audioContext.createGain();
-        MusicManager.melodyGain = MusicManager.audioContext.createGain();
+        console.log("MusicManager: Setting up gain nodes...");
+        try {
+            MusicManager.masterGain = MusicManager.audioContext.createGain();
+            MusicManager.melodyGain = MusicManager.audioContext.createGain();
 
-        // Connect melody gain to master gain, and master gain to destination
-        MusicManager.melodyGain.connect(MusicManager.masterGain);
-        MusicManager.masterGain.connect(MusicManager.audioContext.destination);
+            // Connect melody gain to master gain, and master gain to destination
+            MusicManager.melodyGain.connect(MusicManager.masterGain);
+            MusicManager.masterGain.connect(MusicManager.audioContext.destination);
 
-        // Set initial volumes (master gain often controlled by user later)
-        MusicManager.masterGain.gain.value = 0.5; // Default master volume
-        MusicManager.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
+            // Set initial volumes
+            MusicManager.masterGain.gain.value = 0.5; // Default master volume
+            MusicManager.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
+            
+            return true;
+        } catch (e) {
+            console.error("MusicManager: Error setting up gain nodes:", e);
+            return false;
+        }
     }
 
     // Select a random melody
@@ -128,85 +139,44 @@ class MusicManager {
         return MusicManager.currentMelodyId;
     }
 
-    // Start playing music
+    /**
+     * Starts background music playback
+     * @returns {boolean} Success status
+     */
     static startMusic() {
-        // Prevent starting if already playing
-        if (MusicManager.isPlaying) {
-            console.log("MusicManager: startMusic called but already playing.");
-            return;
+        // Cancel any pending cleanups to prevent interference with music startup
+        for (const [gameInstance, timeoutId] of MusicManager.cleanupTimeouts.entries()) {
+            clearTimeout(timeoutId);
+            MusicManager.cleanupTimeouts.delete(gameInstance);
+            console.log("MusicManager: Cancelled pending cleanup for music start");
         }
-
-        // 1. Ensure we have user interaction
-        if (!SoundManager.hasUserInteraction) {
-            console.log("MusicManager start deferred: No user interaction yet.");
-            return;
-        }
-
-        // 2. Ensure shared context exists and is RUNNING
-        MusicManager.initAudioContextIfNeeded();
-        const context = MusicManager.audioContext;
-
-        // Check if context is actually running
-        if (!context) {
-            console.warn("MusicManager: Cannot start music because shared context doesn't exist.");
-            return;
-        }
-
-        // If context is suspended, try to resume it first
-        if (context.state === 'suspended') {
-            console.log("MusicManager: AudioContext is suspended, attempting to resume before starting music...");
-
-            // Attempt to resume the context
-            context.resume().then(() => {
-                if (context.state === 'running') {
-                    console.log("MusicManager: AudioContext resumed successfully, now starting music");
-                    // Set up gain nodes and continue with music playback
-                    MusicManager.setupGainNodes();
-                    MusicManager._continueStartMusic();
-                } else {
-                    console.warn(`MusicManager: Failed to resume AudioContext. State: ${context.state}`);
-                }
-            }).catch(err => {
-                console.error("MusicManager: Error resuming AudioContext:", err);
-            });
-
-            return; // Exit early, _continueStartMusic will be called after resume
-        }
-
-        if (context.state !== 'running') {
-            console.warn(`MusicManager: Cannot start music because shared context is not running. State: ${context.state}.`);
-            return;
-        }
-
-        // Set up gain nodes if needed
-        MusicManager.setupGainNodes();
-        if (!MusicManager.masterGain || !MusicManager.melodyGain) {
-            console.error("MusicManager: Failed to setup gain nodes on shared context.");
-            return;
-        }
-
-        // Continue with music start process
-        MusicManager._continueStartMusic();
-    }
-
-    // Helper method to continue music startup after context is confirmed running
-    static _continueStartMusic() {
-        // Select a melody if needed
+        
+        // Make sure we have a melody selected
         if (!MusicManager.currentMelodyId) {
-            console.log("No melody selected, selecting a new random melody");
             MusicManager.selectRandomMelody();
+            if (!MusicManager.currentMelodyId) {
+                console.warn("MusicManager: No melody available to play");
+                return false;
+            }
         }
 
         // Get melody data
-        const musicData = window.MusicData?.getMelody(MusicManager.currentMelodyId);
-        if (!musicData) {
-            console.error(`Melody data not found for ID: ${MusicManager.currentMelodyId}`);
-            return;
+        const melody = window.MusicData?.getMelody(MusicManager.currentMelodyId);
+        if (!melody) {
+            console.warn("MusicManager: Selected melody not found");
+            return false;
         }
 
-        console.log(`Starting music playback on shared context: ${MusicManager.currentMelodyId}`);
-        // Start actual playback
-        MusicManager.startMusicPlayback(musicData);
+        // Use SoundManager's shared context
+        MusicManager.audioContext = SoundManager.getAudioContext();
+        if (!MusicManager.audioContext || MusicManager.audioContext.state !== 'running') {
+            console.warn("MusicManager: AudioContext not available or not running");
+            return false;
+        }
+
+        // Start playing the melody
+        MusicManager.startMusicPlayback(melody);
+        return true;
     }
 
     // Start actual music playback
@@ -407,7 +377,17 @@ class MusicManager {
         };
     }
 
+    /**
+     * Stops music playback
+     * @param {boolean} fullCleanup - Whether to perform full cleanup of audio nodes
+     */
     static stopMusic(fullCleanup = false) {
+        // Check if we're already stopped to avoid duplicate cleanup
+        if (!MusicManager.isPlaying && !fullCleanup) {
+            console.log("MusicManager: Music already stopped, skipping basic stop");
+            return;
+        }
+        
         // Immediately set playing state to false to prevent scheduled callbacks
         MusicManager.isPlaying = false;
 
@@ -417,7 +397,7 @@ class MusicManager {
             MusicManager.melodyScheduler = null;
         }
 
-        // Only continue if we have the shared audio context
+        // Only continue if we have an audio context
         const context = MusicManager.audioContext;
         if (!context) return;
 
@@ -464,7 +444,7 @@ class MusicManager {
             }
 
         } catch (e) {
-            console.error("Error stopping music:", e);
+            console.error("MusicManager: Error stopping music:", e);
         }
     }
 
@@ -503,70 +483,49 @@ class MusicManager {
         return MusicManager.getCurrentMelody();
     }
 
-    // Clean up audio resources completely
+    /**
+     * Clean up audio resources after a delay
+     * @param {Object} gameInstance - The game instance
+     * @param {number} delay - Cleanup delay in milliseconds
+     */
     static cleanupAudioResources(gameInstance, delay = 0) {
-        // Cancel any pending cleanup first
-        const timeoutId = MusicManager.cleanupTimeouts.get(gameInstance);
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            MusicManager.cleanupTimeouts.delete(gameInstance);
+        // Cancel any existing cleanup for this game instance
+        const existingTimeout = MusicManager.cleanupTimeouts.get(gameInstance);
+        if (existingTimeout) {
+            clearTimeout(existingTimeout);
         }
-
-        const gameState = gameInstance.gameStateManager.getGameState();
-
-        // Don't schedule cleanup if game is actively playing
-        // This prevents accidentally stopping music during gameplay
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            return;
-        }
-
-        if (delay > 0) {
-            // Store the timeout ID so it can be cancelled if needed
-            const newTimeoutId = setTimeout(() => {
-                // Double-check game state before cleanup in case it changed during the delay
-                const currentGameState = gameInstance.gameStateManager.getGameState();
-
-                // Critical fix: Don't perform cleanup if game is now active again
-                // This prevents the cleanup from stopping music after a quick restart
-                if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
-                    console.log("MusicManager: Cancelling scheduled cleanup because game is now active");
-                    MusicManager.cleanupTimeouts.delete(gameInstance);
-                    return;
-                }
-
-                // Perform cleanup only if game is still over or paused
-                if ((currentGameState.isGameOver || currentGameState.isPaused)) {
-                    MusicManager.stopMusic(true);
-
-                    // Only clean up sound manager if game is over or paused
-                    if (gameInstance.soundManager) {
-                        gameInstance.soundManager.closeAudioContext();
-                    }
-                }
-
-                // Remove from tracking map once completed
-                MusicManager.cleanupTimeouts.delete(gameInstance);
-            }, delay);
-
-            // Store the timeout ID for possible cancellation
-            MusicManager.cleanupTimeouts.set(gameInstance, newTimeoutId);
-        } else {
-            // Perform immediate cleanup
-            if ((gameState.isGameOver || gameState.isPaused)) {
+        
+        // Store the current melody ID to check later if it changed
+        const currentMelodyId = MusicManager.currentMelodyId;
+        
+        // Schedule a new cleanup
+        const timeoutId = setTimeout(() => {
+            // Only clean up if we're not playing music or if the melody ID has changed
+            // This prevents cleanup from interfering with active music
+            if (!MusicManager.isPlaying || MusicManager.currentMelodyId !== currentMelodyId) {
+                console.log("MusicManager: Cleaning up audio resources");
                 MusicManager.stopMusic(true);
-
-                // Only clean up sound manager if game is over or paused
-                if (gameInstance.soundManager) {
-                    gameInstance.soundManager.closeAudioContext();
-                }
+                MusicManager.cleanupTimeouts.delete(gameInstance);
+            } else {
+                console.log("MusicManager: Skipping cleanup because music is currently playing");
             }
-        }
+        }, delay);
+        
+        // Store the timeout ID for possible cancellation
+        MusicManager.cleanupTimeouts.set(gameInstance, timeoutId);
     }
 
-    // Clear the melody ID, used after game over
+    /**
+     * Clear the current melody ID
+     */
     static clearCurrentMelody() {
-        MusicManager.currentMelodyId = null;
-        console.log("MusicManager: Cleared melody ID for next game");
+        // Only clear if we're not currently playing music
+        if (!MusicManager.isPlaying) {
+            MusicManager.currentMelodyId = null;
+            console.log("MusicManager: Cleared melody ID for next game");
+        } else {
+            console.log("MusicManager: Skipped clearing melody ID because music is playing");
+        }
     }
 }
 

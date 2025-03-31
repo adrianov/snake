@@ -291,9 +291,11 @@ class SnakeGame {
         this.gameLoop.startGameLoop();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
 
-        // Initialize music
+        // Initialize music with a small delay to avoid race conditions
         // Force new melody ONLY on the first game start, not on restart after game over
-        this.audioManager.initializeGameMusic(isFirstStart);
+        setTimeout(() => {
+            this.audioManager.initializeGameMusic(isFirstStart);
+        }, 100);
 
         // Hide header and footer during gameplay
         GameUtils.hideHeaderFooter(this.gameLayout);
