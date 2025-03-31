@@ -172,11 +172,7 @@ class InputManager {
         else if (event.keyCode === 40) keyDirection = 'down';
 
         if (keyDirection) {
-            const validDirectionChange = this.game.isValidDirectionChange(keyDirection);
-            if (validDirectionChange) {
-                this.game.nextDirection = keyDirection;
-            }
-            this.game.gameLoop.updateGameSpeed(keyDirection, this.game.direction);
+            this.handleDirectionAndSpeed(keyDirection, false);
         }
     }
 
@@ -301,22 +297,15 @@ class InputManager {
             // Accumulate the swipe distance in the current direction
             this.accumulatedSwipeDistance += primaryDelta;
 
-            if (this.game.isValidDirectionChange(newDirection)) {
-                // Apply the direction change
-                this.game.nextDirection = newDirection;
-
-                // Check if we haven't already adjusted speed for this touch or direction
-                if (!this.hasAdjustedSpeed) {
-                    this.game.gameLoop.updateTouchGameSpeed(newDirection, this.game.direction);
-
-                    // If it's a wide swipe in the same direction, apply one additional boost
-                    if ((newDirection === this.game.direction) &&
-                        (primaryDelta > wideSwipeThreshold || this.accumulatedSwipeDistance > accumulatedThreshold)) {
-                        this.game.gameLoop.updateTouchGameSpeed(newDirection, this.game.direction);
-                    }
-
-                    this.hasAdjustedSpeed = true;
-                }
+            // Check if we haven't already adjusted speed for this touch or direction
+            if (!this.hasAdjustedSpeed) {
+                this.handleDirectionAndSpeed(newDirection, true, {
+                    primaryDelta,
+                    isWideSwipe: primaryDelta > wideSwipeThreshold,
+                    accumulatedDistance: this.accumulatedSwipeDistance,
+                    accumulatedThreshold
+                });
+                this.hasAdjustedSpeed = true;
             }
 
             // Reset starting position to allow continuous dragging
@@ -512,15 +501,8 @@ class InputManager {
                 return;
             }
 
-            // Call updateGameSpeed regardless of validity
-            // The function itself handles opposite direction logic for slowing down.
-            this.game.gameLoop.updateGameSpeed(direction, this.game.direction);
-
-            // Only update the nextDirection if the change is valid
-            const isValid = this.game.isValidDirectionChange(direction);
-            if (isValid) {
-                this.game.nextDirection = direction;
-            }
+            // Use the shared method for handling direction changes and speed adjustments
+            this.handleDirectionAndSpeed(direction, false);
         };
 
         // Add event listeners for buttons with proper event handling
@@ -645,5 +627,37 @@ class InputManager {
                 this.game.nextDirection = direction;
             }, 50);
         }
+    }
+
+    // Centralized method to handle direction changes and speed adjustments
+    handleDirectionAndSpeed(newDirection, isTouch = false, options = {}) {
+        const {
+            primaryDelta = 0,
+            isWideSwipe = false,
+            accumulatedDistance = 0,
+            accumulatedThreshold = 0
+        } = options;
+
+        // Always adjust speed based on direction, regardless of whether direction change is valid
+        if (isTouch) {
+            // Touch controls use different speed multipliers
+            this.game.gameLoop.updateTouchGameSpeed(newDirection, this.game.direction);
+
+            // Apply an extra boost for wide or accumulated swipes in the same direction
+            if (newDirection === this.game.direction &&
+                (isWideSwipe || accumulatedDistance > accumulatedThreshold)) {
+                this.game.gameLoop.updateTouchGameSpeed(newDirection, this.game.direction);
+            }
+        } else {
+            // Keyboard and arrow button controls
+            this.game.gameLoop.updateGameSpeed(newDirection, this.game.direction);
+        }
+
+        // Only update the direction if the change is valid
+        if (this.game.isValidDirectionChange(newDirection)) {
+            this.game.nextDirection = newDirection;
+            return true;
+        }
+        return false;
     }
 }
