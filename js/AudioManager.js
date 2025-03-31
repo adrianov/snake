@@ -238,42 +238,20 @@ class AudioManager {
     }
 
     handleGameOverAudio(isNewHighScore) {
-        // Skip audio handling if no user interaction
-        if (!this.game.hasUserInteraction) {
-            console.warn("Cannot handle game over audio: No user interaction");
-            return;
-        }
+        // Quick exit if no user interaction 
+        if (!this.game.hasUserInteraction) return;
 
-        // Skip audio handling if we don't have a valid audio context
-        const sharedContext = SoundManager.getAudioContext();
-        if (!this.game.soundManager || !sharedContext) {
-            console.warn("Cannot handle game over audio: SoundManager or shared context unavailable.");
-            return;
-        }
-
-        // Force initialize audio context if needed
-        this.initializeAudio();
-
-        // Calculate delay for potential high score sound
-        const highScoreFanfareDelay = 800;
-        const fanfareDuration = 1300;
-
-        // Calculate total cleanup delay - increase delay to give more time for quick restarts
-        const cleanupDelay = isNewHighScore
-            ? highScoreFanfareDelay + fanfareDuration + 300  // After fanfare completes + buffer
-            : 1500;                                          // Increased delay for crash sound
-
-        // 1. Stop music but don't fully clean up
+        // Stop background music immediately
         MusicManager.stopMusic(false);
-
-        // 2. Play crash sound immediately
+        
+        // Play crash sound through sound manager (it will handle all checks internally)
         if (this.game.soundManager) {
             this.game.soundManager.playSound('crash');
         }
 
-        // 3. Play high score fanfare if needed
+        // Play high score fanfare if needed (sound manager will handle sound enabled check)
         if (isNewHighScore && this.game.soundManager) {
-            console.log("Game Over: Scheduling high score fanfare.");
+            const highScoreFanfareDelay = 800;
             setTimeout(() => {
                 this.game.soundManager.playHighScoreFanfare();
             }, highScoreFanfareDelay);
@@ -285,11 +263,8 @@ class AudioManager {
             clearTimeout(existingTimeoutId);
         }
 
-        // 4. Schedule final cleanup after all sounds have played
-        console.log(`Game Over: Scheduling audio resources cleanup in ${cleanupDelay}ms`);
-
-        // Use MusicManager's own cleanup mechanism with delay
-        // This lets the cleanup be properly cancelled if the game is restarted
+        // Schedule cleanup with appropriate delay based on sounds being played
+        const cleanupDelay = isNewHighScore ? 2400 : 1500;
         MusicManager.clearCurrentMelody();
         MusicManager.cleanupAudioResources(this.game, cleanupDelay);
     }

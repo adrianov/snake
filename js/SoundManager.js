@@ -64,20 +64,15 @@ class SoundManager {
         if (currentContext && currentContext.state !== 'closed') {
             // If called from user gesture and context is suspended, try resuming
             if (fromUserGesture && currentContext.state === 'suspended') {
-                console.log("SoundManager: Shared context exists but suspended, attempting resume...");
                 return this.resumeAudioContext(); // Attempt resume and return promise result
             }
-            console.log(`SoundManager: Shared context already exists. State: ${currentContext.state}`);
             return currentContext != null;
         }
 
         // Only proceed if we have user interaction OR if forced by gesture
         if (!SoundManager.hasUserInteraction && !fromUserGesture) {
-            console.log("AudioContext creation deferred until first user interaction.");
             return false;
         }
-
-        console.log(`Initializing AudioContext (fromUserGesture: ${fromUserGesture}). Current state: ${currentContext?.state}`);
 
         try {
             const contextOptions = {
@@ -85,30 +80,23 @@ class SoundManager {
                 latencyHint: 'interactive' // Prioritize low latency
             };
             SoundManager.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
-            console.log(`SoundManager: Shared AudioContext created. Initial state: ${SoundManager.audioContext.state}`);
 
             // Create sound templates
             this.initSoundTemplates();
 
             // If created from a user gesture, immediately try to resume and play silent sound
             if (fromUserGesture && SoundManager.audioContext.state === 'suspended') {
-                console.log("SoundManager: Shared context is suspended, attempting resume...");
                 this.resumeAudioContext().then(resumed => {
                     if (resumed && SoundManager.audioContext?.state === 'running') {
-                        console.log("SoundManager: Shared context resumed successfully after gesture.");
                         this.playSilentSound(); // Play silent sound AFTER resuming
-                    } else {
-                        console.warn("Failed to resume AudioContext immediately after gesture or state is not running.");
                     }
                 });
             } else if (SoundManager.audioContext.state === 'running') {
-                console.log("SoundManager: Shared context started in running state.");
                 this.playSilentSound(); // Play silent sound if already running
             }
 
             return true;
         } catch (e) {
-            console.error('Error creating shared AudioContext:', e);
             SoundManager.audioContext = null;
             return false;
         }
@@ -118,7 +106,6 @@ class SoundManager {
     resumeAudioContext() {
         const context = SoundManager.audioContext; // Use static context
         if (!context) {
-            console.warn("SoundManager cannot resume: Shared AudioContext does not exist.");
             return Promise.resolve(false);
         }
 
@@ -127,7 +114,6 @@ class SoundManager {
         }
 
         if (context.state === 'closed') {
-            console.warn("SoundManager cannot resume: Shared AudioContext is closed.");
             return Promise.resolve(false);
         }
 
@@ -140,12 +126,8 @@ class SoundManager {
 
         // Attempt resume only if suspended
         if (context.state === 'suspended') {
-            console.log(`SoundManager attempting to resume suspended shared AudioContext... (iOS: ${isIOS}, Safari: ${isSafari})`);
-
-            // Return the promise from resume()
             return context.resume().then(() => {
                 const isRunning = context?.state === 'running';
-                console.log(`SoundManager: Shared context resume attempt finished. State: ${context?.state}`);
 
                 // For iOS/Safari, force playing a silent sound immediately after resume
                 // but only if we haven't already played audio successfully
@@ -166,11 +148,9 @@ class SoundManager {
 
                 return isRunning; // Return true if running, false otherwise
             }).catch(e => {
-                console.warn('SoundManager could not resume shared AudioContext:', e);
                 return false;
             });
         } else {
-            console.warn(`SoundManager cannot resume: Shared context in unexpected state: ${context.state}`);
             return Promise.resolve(false);
         }
     }
@@ -179,20 +159,15 @@ class SoundManager {
     playSilentSound() {
         const context = SoundManager.audioContext; // Use static context
         if (!context || context.state !== 'running') {
-            console.warn("Cannot play silent sound: Shared AudioContext not available or not running.");
             return;
         }
 
         // Skip if we've already successfully played audio
         if (SoundManager.hasPlayedAudio) {
-            console.debug("Skipping silent sound - audio already unlocked");
             return;
         }
 
         try {
-            console.log("Playing silent sound to unlock shared audio...");
-
-            // Create oscillator and gain node
             const unlockOsc = context.createOscillator();
             const unlockGain = context.createGain();
 
@@ -206,10 +181,8 @@ class SoundManager {
             // Play a short sound (iOS needs actual sound to unlock audio)
             unlockOsc.start(0);
             unlockOsc.stop(context.currentTime + 0.05);
-
-            console.log("Silent sound played on shared context.");
         } catch (e) {
-            console.warn('Error playing silent unlock sound on shared context:', e);
+            // Ignore errors, silent sound is not critical
         }
     }
 
@@ -221,12 +194,8 @@ class SoundManager {
             const gameState = gameInstance.gameStateManager.getGameState();
             // If music is enabled but not currently playing, try starting it now
             if (gameState.musicEnabled && !gameInstance.musicManager.isPlaying) {
-                console.log("SoundManager: Context resumed, triggering music start.");
-                // Use a minimal timeout to avoid potential immediate re-entry issues
                 setTimeout(() => gameInstance.musicManager.startMusic(), 0);
             }
-        } else {
-            console.warn("SoundManager: Could not access game instance or managers to potentially start music after resume.");
         }
     }
 
@@ -244,12 +213,11 @@ class SoundManager {
 
             // Close the audio context
             if (context.state !== 'closed') {
-                console.log("Closing shared AudioContext.");
                 context.close();
             }
             SoundManager.audioContext = null; // Clear static reference
         } catch (e) {
-            console.error('Error closing shared audio context:', e);
+            // Ignore errors, closing is not critical
         }
     }
 
@@ -323,38 +291,27 @@ class SoundManager {
 
     // Play sound from template
     playSound(soundType, volume = 1) {
-        // Check if sound is enabled globally
-        if (!this.isSoundEnabled()) return;
-
-        // Cannot play sound without user interaction
-        if (!SoundManager.hasUserInteraction) {
-            console.warn(`Cannot play sound '${soundType}': No user interaction detected yet.`);
+        // Validation checks all in one place - quick exit if any condition fails
+        if (!this.isSoundEnabled() || 
+            !SoundManager.hasUserInteraction || 
+            !this.soundTemplates || 
+            !this.soundTemplates[soundType]) {
             return;
         }
 
         // Ensure context is initialized (create if needed)
         if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
-            console.log(`SoundManager: Initializing shared context before playing sound '${soundType}'.`);
-            if (!this.initAudioContext(true)) { // Try to initialize, forced by gesture
-                console.warn(`Cannot play sound '${soundType}': Failed to initialize shared AudioContext.`);
+            if (!this.initAudioContext(true)) {
                 return; // Exit if initialization failed
             }
         }
 
-        // Check for sound template *after* ensuring context exists
-        if (!this.soundTemplates || !this.soundTemplates[soundType]) {
-            console.warn(`Sound template '${soundType}' not found.`);
-            return;
-        }
-
-        // ALWAYS attempt to resume the context *before* playing, returns a promise
+        // Attempt to resume the context before playing
         this.resumeAudioContext().then(resumed => {
             // Only play if the context is running after attempting resume
-            const context = SoundManager.audioContext; // Check static context
+            const context = SoundManager.audioContext;
             if (context?.state === 'running') {
                 this._createAndPlaySound(soundType, volume);
-            } else {
-                console.warn(`Cannot play sound '${soundType}': Shared AudioContext state is '${context?.state}' after attempting resume.`);
             }
         });
     }
@@ -398,13 +355,13 @@ class SoundManager {
             // Set flag that audio has been successfully played
             SoundManager.hasPlayedAudio = true;
         } catch (e) {
-            console.warn('Error playing sound:', e);
+            console.error('Error playing sound:', e);
         }
     }
 
     // Play high score fanfare with improved handling
     playHighScoreFanfare() {
-        // Only play if we have user interaction and sound is enabled
+        // Single validation check - exit early if any condition fails
         if (!SoundManager.hasUserInteraction || !this.isSoundEnabled()) {
             return;
         }
@@ -452,11 +409,11 @@ class SoundManager {
                     osc.start(now + note.time);
                     osc.stop(now + note.time + note.duration);
                 } catch (e) {
-                    console.warn('Error scheduling note:', e);
+                    // Ignore errors, music is not critical
                 }
             }
         }).catch(err => {
-            console.warn('Error resuming AudioContext for fanfare:', err);
+            // Ignore errors, music is not critical
         });
     }
 
