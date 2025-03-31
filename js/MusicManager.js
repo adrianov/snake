@@ -1,31 +1,25 @@
 class MusicManager {
-    // Static property to store melody ID across instances
+    // Static properties
     static currentMelodyId = null;
-    // Store cleanup timeouts
     static cleanupTimeouts = new Map();
-    // Static property to store note frequencies computed once
     static noteFrequencies = MusicManager._generateNoteFrequencies();
 
+    // Audio-related properties
+    static audioContext = null;
+    static masterGain = null;
+    static melodyGain = null;
+    static isPlaying = false;
+    static currentNoteIndex = 0;
+    static nextNoteTime = 0;
+    static melodyScheduler = null;
+    static activeOscillators = new Set();
+
+    // Prevent instantiation - this is a static-only class
     constructor() {
-        // Don't create context here, get it from SoundManager later
-        this.audioContext = null;
-
-        this.masterGain = null;
-        this.melodyGain = null;
-        this.isPlaying = false;
-        this.currentMelodyId = null;
-        this.currentNoteIndex = 0;
-        this.nextNoteTime = 0;
-        this.melodyScheduler = null;
-        this.activeOscillators = new Set();
-
-        // Use the static note frequencies instead of generating them per instance
-        this.noteFrequencies = MusicManager.noteFrequencies;
-
-        // Note: We don't start music here, only on explicit user action or game start
+        throw new Error("MusicManager is a static class and should not be instantiated.");
     }
 
-    // Internal method to generate frequencies (moved from constructor and made static)
+    // Internal method to generate frequencies
     static _generateNoteFrequencies() {
         // Using a base frequency (A4 = 440 Hz)
         const A4 = 440;
@@ -60,100 +54,47 @@ class MusicManager {
         return frequencies;
     }
 
-    // Helper to get a valid AudioContext (NOW USES SHARED CONTEXT)
-    getValidAudioContext() {
-        // Always try to get the shared context from SoundManager
-        const context = SoundManager.getAudioContext();
-
-        if (context && context.state === 'running') {
-            // console.log("MusicManager: Using running shared AudioContext."); // Reduce noise
-            return context;
-        }
-
-        if (context && context.state === 'suspended') {
-            console.log("MusicManager: Shared context is suspended. Attempting resume...");
-            // Try to resume the shared context (SoundManager handles the promise)
-            SoundManager.instance?.resumeAudioContext();
-            // Return the suspended context for now, resume is async
-            return context;
-        }
-
-        if (context && context.state === 'closed') {
-            console.warn("MusicManager: Shared context is closed. Cannot use.");
-            return null;
-        }
-
-        // If context doesn't exist yet and we have interaction, SoundManager should create it.
-        // We might need to trigger SoundManager's init if it hasn't happened.
-        if (!context && SoundManager.hasUserInteraction) {
-            console.log("MusicManager: Shared context not found, requesting SoundManager init...");
-            SoundManager.instance?.initAudioContext(true); // Request SoundManager to create it
-            return SoundManager.getAudioContext(); // Return the newly created context (might be suspended)
-        }
-
-        // If no interaction yet, or init failed, return null
-        console.log(`MusicManager: Cannot get valid AudioContext. Shared context state: ${context?.state}, Interaction: ${SoundManager.hasUserInteraction}`);
-        return null;
-    }
-
-    // Method called by Game.js after user interaction
-    initAudioContextIfNeeded() {
+    // Method called by AudioManager after user interaction
+    static initAudioContextIfNeeded() {
         console.log("MusicManager initAudioContextIfNeeded called.");
-        // Try to get the shared context
-        this.audioContext = this.getValidAudioContext();
+        // Get the shared context from SoundManager
+        MusicManager.audioContext = SoundManager.getAudioContext();
 
-        if (this.audioContext) {
-            console.log(`MusicManager: Acquired shared context. State: ${this.audioContext.state}`);
+        if (MusicManager.audioContext) {
+            console.log(`MusicManager: Acquired shared context. State: ${MusicManager.audioContext.state}`);
             // If context is running and gain nodes aren't set up, do it now
-            if (this.audioContext.state === 'running' && !this.masterGain) {
+            if (MusicManager.audioContext.state === 'running' && !MusicManager.masterGain) {
                 console.log("MusicManager context running, setting up gain nodes.");
-                this.setupGainNodes();
+                MusicManager.setupGainNodes();
             }
-            // No need to explicitly resume here, getValidAudioContext or startMusic will handle it
         } else {
             console.warn("MusicManager: Failed to acquire shared AudioContext.");
         }
     }
 
     // Setup gain nodes (Master and Melody)
-    setupGainNodes() {
-        if (!this.audioContext || this.audioContext.state !== 'running') {
+    static setupGainNodes() {
+        if (!MusicManager.audioContext || MusicManager.audioContext.state !== 'running') {
             console.warn("Cannot setup gain nodes: AudioContext not available or not running.");
             return;
         }
-        if (this.masterGain) return; // Already setup
+        if (MusicManager.masterGain) return; // Already setup
 
         console.log("Setting up MusicManager gain nodes...");
-        this.masterGain = this.audioContext.createGain();
-        this.melodyGain = this.audioContext.createGain();
+        MusicManager.masterGain = MusicManager.audioContext.createGain();
+        MusicManager.melodyGain = MusicManager.audioContext.createGain();
 
         // Connect melody gain to master gain, and master gain to destination
-        this.melodyGain.connect(this.masterGain);
-        this.masterGain.connect(this.audioContext.destination);
+        MusicManager.melodyGain.connect(MusicManager.masterGain);
+        MusicManager.masterGain.connect(MusicManager.audioContext.destination);
 
         // Set initial volumes (master gain often controlled by user later)
-        this.masterGain.gain.value = 0.5; // Default master volume
-        this.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
-    }
-
-    // Save melody ID to static property
-    saveMelodyId() {
-        if (this.currentMelodyId) {
-            MusicManager.currentMelodyId = this.currentMelodyId;
-        }
-    }
-
-    // Restore melody ID from static property
-    restoreMelodyId() {
-        if (MusicManager.currentMelodyId) {
-            this.currentMelodyId = MusicManager.currentMelodyId;
-            return true;
-        }
-        return false;
+        MusicManager.masterGain.gain.value = 0.5; // Default master volume
+        MusicManager.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
     }
 
     // Select a random melody
-    selectRandomMelody() {
+    static selectRandomMelody() {
         if (!window.MusicData) return null;
 
         // Select a random melody ID from the available melodies
@@ -161,136 +102,152 @@ class MusicManager {
         if (melodyIds.length > 0) {
             // If we have more than one melody and we're already playing one,
             // make sure we select a different one
-            if (melodyIds.length > 1 && this.currentMelodyId) {
+            if (melodyIds.length > 1 && MusicManager.currentMelodyId) {
                 // Filter out the current melody ID
-                const availableMelodyIds = melodyIds.filter(id => id !== this.currentMelodyId);
+                const availableMelodyIds = melodyIds.filter(id => id !== MusicManager.currentMelodyId);
                 // Select a random melody from the filtered list
                 const randomIndex = Math.floor(Math.random() * availableMelodyIds.length);
-                this.currentMelodyId = availableMelodyIds[randomIndex];
+                MusicManager.currentMelodyId = availableMelodyIds[randomIndex];
             } else {
                 // Either we're not playing anything yet or there's only one melody
                 const randomIndex = Math.floor(Math.random() * melodyIds.length);
-                this.currentMelodyId = melodyIds[randomIndex];
+                MusicManager.currentMelodyId = melodyIds[randomIndex];
             }
-            // Save to static property
-            MusicManager.currentMelodyId = this.currentMelodyId;
         }
-        return this.currentMelodyId;
+        return MusicManager.currentMelodyId;
     }
 
     // Start playing music
-    startMusic() {
+    static startMusic() {
         // Prevent starting if already playing
-        if (this.isPlaying) {
+        if (MusicManager.isPlaying) {
             console.log("MusicManager: startMusic called but already playing.");
             return;
         }
 
-        // 1. Ensure we have user interaction (checked by SoundManager now)
+        // 1. Ensure we have user interaction
         if (!SoundManager.hasUserInteraction) {
             console.log("MusicManager start deferred: No user interaction yet.");
             return;
         }
 
         // 2. Ensure shared context exists and is RUNNING
-        // initAudioContextIfNeeded gets the context but doesn't guarantee it's running
-        this.initAudioContextIfNeeded();
-        const context = this.audioContext;
+        MusicManager.initAudioContextIfNeeded();
+        const context = MusicManager.audioContext;
 
-        // *** Check if context is actually running now ***
-        if (!context || context.state !== 'running') {
-            console.warn(`MusicManager: Cannot start music because shared context is not running. State: ${context?.state}. Will wait for SoundManager to trigger start upon resume.`);
+        // Check if context is actually running
+        if (!context) {
+            console.warn("MusicManager: Cannot start music because shared context doesn't exist.");
             return;
         }
 
-        // 3. Remove the explicit resume call here - SoundManager handles triggering startMusic after resume
-        // SoundManager.instance?.resumeAudioContext().then(resumed => { ... });
+        // If context is suspended, try to resume it first
+        if (context.state === 'suspended') {
+            console.log("MusicManager: AudioContext is suspended, attempting to resume before starting music...");
 
-        // --- Context is running, proceed with setup and playback ---
-        console.log("MusicManager: Shared context is running. Proceeding with music setup.");
+            // Attempt to resume the context
+            context.resume().then(() => {
+                if (context.state === 'running') {
+                    console.log("MusicManager: AudioContext resumed successfully, now starting music");
+                    // Set up gain nodes and continue with music playback
+                    MusicManager.setupGainNodes();
+                    MusicManager._continueStartMusic();
+                } else {
+                    console.warn(`MusicManager: Failed to resume AudioContext. State: ${context.state}`);
+                }
+            }).catch(err => {
+                console.error("MusicManager: Error resuming AudioContext:", err);
+            });
 
-        // 4. Ensure gain nodes are set up (using the running shared context)
-        this.setupGainNodes(); // setupGainNodes uses this.audioContext which is now the shared one
-        if (!this.masterGain || !this.melodyGain) {
+            return; // Exit early, _continueStartMusic will be called after resume
+        }
+
+        if (context.state !== 'running') {
+            console.warn(`MusicManager: Cannot start music because shared context is not running. State: ${context.state}.`);
+            return;
+        }
+
+        // Set up gain nodes if needed
+        MusicManager.setupGainNodes();
+        if (!MusicManager.masterGain || !MusicManager.melodyGain) {
             console.error("MusicManager: Failed to setup gain nodes on shared context.");
             return;
         }
 
-        // 5. If already playing, don't restart
-        if (this.isPlaying) {
-            console.log("Music is already playing.");
-            return;
+        // Continue with music start process
+        MusicManager._continueStartMusic();
+    }
+
+    // Helper method to continue music startup after context is confirmed running
+    static _continueStartMusic() {
+        // Select a melody if needed
+        if (!MusicManager.currentMelodyId) {
+            console.log("No melody selected, selecting a new random melody");
+            MusicManager.selectRandomMelody();
         }
 
-        // 6. Select a melody if needed
-        if (!this.currentMelodyId) {
-            // If no melody ID is restored, then select a new random one
-            // This specifically handles the case after game over when MusicManager.currentMelodyId was cleared
-            if (!this.restoreMelodyId()) {
-                console.log("No saved melody found, selecting a new random melody");
-                this.selectRandomMelody();
-            }
-        }
-
-        // 7. Get melody data
-        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
+        // Get melody data
+        const musicData = window.MusicData?.getMelody(MusicManager.currentMelodyId);
         if (!musicData) {
-            console.error(`Melody data not found for ID: ${this.currentMelodyId}`);
+            console.error(`Melody data not found for ID: ${MusicManager.currentMelodyId}`);
             return;
         }
 
-        console.log(`Starting music playback on shared context: ${this.currentMelodyId}`);
-        // 8. Start actual playback
-        this.startMusicPlayback(musicData);
+        console.log(`Starting music playback on shared context: ${MusicManager.currentMelodyId}`);
+        // Start actual playback
+        MusicManager.startMusicPlayback(musicData);
     }
 
     // Start actual music playback
-    startMusicPlayback(musicData) {
-        // Use the shared context stored in this.audioContext
-        const context = this.audioContext;
+    static startMusicPlayback(musicData) {
+        // Use the shared context stored in audioContext
+        const context = MusicManager.audioContext;
         if (!context || context.state !== 'running') {
             console.error("Cannot start playback: Shared context not available or not running.");
             return;
         }
 
         // Bail if we're missing required components
-        if (!this.masterGain || !this.melodyGain) {
-            this.setupGainNodes();
+        if (!MusicManager.masterGain || !MusicManager.melodyGain) {
+            MusicManager.setupGainNodes();
             // Check again if setup failed
-            if (!this.masterGain || !this.melodyGain) {
+            if (!MusicManager.masterGain || !MusicManager.melodyGain) {
                 console.error("Failed to setup gain nodes. Cannot start music.");
                 return;
             }
         }
 
         // Make sure master gain is set to audible level
-        this.masterGain.gain.cancelScheduledValues(context.currentTime);
-        this.masterGain.gain.setValueAtTime(0.5, context.currentTime);
+        MusicManager.masterGain.gain.cancelScheduledValues(context.currentTime);
+        MusicManager.masterGain.gain.setValueAtTime(0.5, context.currentTime);
 
         // Reset playback state
-        this.isPlaying = true;
-        this.currentNoteIndex = 0;
-        this.nextNoteTime = context.currentTime;
+        MusicManager.isPlaying = true;
+        MusicManager.currentNoteIndex = 0;
+        MusicManager.nextNoteTime = context.currentTime;
+
+        // Mark that audio is working
+        SoundManager.hasPlayedAudio = true;
 
         // Start scheduler
-        this.scheduleNotes();
+        MusicManager.scheduleNotes();
     }
 
-    scheduleNotes() {
-        if (!this.isPlaying) return;
+    static scheduleNotes() {
+        if (!MusicManager.isPlaying) return;
 
-        const musicData = window.MusicData?.getMelody(this.currentMelodyId);
+        const musicData = window.MusicData?.getMelody(MusicManager.currentMelodyId);
         if (!musicData || !musicData.melody) return;
 
-        const melody = this.parseMelody(musicData.melody);
+        const melody = MusicManager.parseMelody(musicData.melody);
         const secondsPerBeat = 60.0 / musicData.tempo;
 
         // Schedule 4 notes at a time for smoother scheduling
-        const notesToSchedule = Math.min(4, melody.length - this.currentNoteIndex);
+        const notesToSchedule = Math.min(4, melody.length - MusicManager.currentNoteIndex);
         let schedulingTime = 0;
 
         for (let i = 0; i < notesToSchedule; i++) {
-            const noteIndex = (this.currentNoteIndex + i) % melody.length;
+            const noteIndex = (MusicManager.currentNoteIndex + i) % melody.length;
             const note = melody[noteIndex];
 
             const duration = note[0] * secondsPerBeat;
@@ -306,12 +263,12 @@ class MusicManager {
                     const isChord = true;
                     for (const chordNote of noteData) {
                         if (chordNote !== 'REST') {
-                            this.playNote(chordNote, this.nextNoteTime + schedulingTime, duration + overlapDuration, isChord);
+                            MusicManager.playNote(chordNote, MusicManager.nextNoteTime + schedulingTime, duration + overlapDuration, isChord);
                         }
                     }
                 } else {
                     // This is a single note
-                    this.playNote(noteData, this.nextNoteTime + schedulingTime, duration + overlapDuration, false);
+                    MusicManager.playNote(noteData, MusicManager.nextNoteTime + schedulingTime, duration + overlapDuration, false);
                 }
             }
 
@@ -319,19 +276,19 @@ class MusicManager {
         }
 
         // Update current index and next time
-        this.currentNoteIndex = (this.currentNoteIndex + notesToSchedule) % melody.length;
+        MusicManager.currentNoteIndex = (MusicManager.currentNoteIndex + notesToSchedule) % melody.length;
         const nextScheduleTime = schedulingTime * 1000 * 0.7; // Schedule next batch at 70% of current duration for smoother transitions
 
         // Schedule next batch of notes
-        this.melodyScheduler = setTimeout(() => {
-            if (this.isPlaying) {
-                this.nextNoteTime += schedulingTime;
-                this.scheduleNotes();
+        MusicManager.melodyScheduler = setTimeout(() => {
+            if (MusicManager.isPlaying) {
+                MusicManager.nextNoteTime += schedulingTime;
+                MusicManager.scheduleNotes();
             }
         }, Math.max(nextScheduleTime, 100));
     }
 
-    parseMelody(melodyData) {
+    static parseMelody(melodyData) {
         // If it's already an array, it's the old format so just return it
         if (Array.isArray(melodyData)) {
             return melodyData;
@@ -373,23 +330,23 @@ class MusicManager {
         return [];
     }
 
-    playNote(noteName, startTime, duration, isPartOfChord = false) {
-        if (!this.audioContext || !this.isPlaying) return;
+    static playNote(noteName, startTime, duration, isPartOfChord = false) {
+        if (!MusicManager.audioContext || !MusicManager.isPlaying) return;
 
         // Skip if the note is a rest
         if (noteName === 'REST') return;
 
         // Create oscillators for richer sound
-        const sineOsc = this.audioContext.createOscillator();
-        const squareOsc = this.audioContext.createOscillator();
-        const envelope = this.audioContext.createGain();
+        const sineOsc = MusicManager.audioContext.createOscillator();
+        const squareOsc = MusicManager.audioContext.createOscillator();
+        const envelope = MusicManager.audioContext.createGain();
 
         // Set waveforms for different timbres
         sineOsc.type = 'sine';
         squareOsc.type = 'square';
 
         // Set note frequency
-        const frequency = this.noteFrequencies[noteName];
+        const frequency = MusicManager.noteFrequencies[noteName];
         if (frequency) {
             sineOsc.frequency.value = frequency;
             squareOsc.frequency.value = frequency;
@@ -400,7 +357,7 @@ class MusicManager {
         }
 
         // Create a mixer for the oscillators
-        const mixer = this.audioContext.createGain();
+        const mixer = MusicManager.audioContext.createGain();
 
         // For chords, reduce the gain to avoid clipping
         const gainMultiplier = isPartOfChord ? 0.5 : 1.0;
@@ -418,11 +375,11 @@ class MusicManager {
         sineOsc.connect(mixer);
         squareOsc.connect(mixer);
         mixer.connect(envelope);
-        envelope.connect(this.melodyGain);
+        envelope.connect(MusicManager.melodyGain);
 
         // Track oscillators for cleanup
-        this.activeOscillators.add(sineOsc);
-        this.activeOscillators.add(squareOsc);
+        MusicManager.activeOscillators.add(sineOsc);
+        MusicManager.activeOscillators.add(squareOsc);
 
         // Play the notes
         sineOsc.start(startTime);
@@ -432,40 +389,40 @@ class MusicManager {
 
         // Remove from tracking when finished
         sineOsc.onended = () => {
-            this.activeOscillators.delete(sineOsc);
+            MusicManager.activeOscillators.delete(sineOsc);
         };
         squareOsc.onended = () => {
-            this.activeOscillators.delete(squareOsc);
+            MusicManager.activeOscillators.delete(squareOsc);
         };
     }
 
-    stopMusic(fullCleanup = false) {
+    static stopMusic(fullCleanup = false) {
         // Immediately set playing state to false to prevent scheduled callbacks
-        this.isPlaying = false;
+        MusicManager.isPlaying = false;
 
         // Clear all schedulers
-        if (this.melodyScheduler) {
-            clearTimeout(this.melodyScheduler);
-            this.melodyScheduler = null;
+        if (MusicManager.melodyScheduler) {
+            clearTimeout(MusicManager.melodyScheduler);
+            MusicManager.melodyScheduler = null;
         }
 
         // Only continue if we have the shared audio context
-        const context = this.audioContext; // Use shared context
+        const context = MusicManager.audioContext;
         if (!context) return;
 
         try {
             const currentTime = context.currentTime;
 
             // Fade out master gain over 100ms for smoother transition
-            if (this.masterGain) {
-                this.masterGain.gain.cancelScheduledValues(currentTime);
-                this.masterGain.gain.setValueAtTime(this.masterGain.gain.value || 0, currentTime);
-                this.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
+            if (MusicManager.masterGain) {
+                MusicManager.masterGain.gain.cancelScheduledValues(currentTime);
+                MusicManager.masterGain.gain.setValueAtTime(MusicManager.masterGain.gain.value || 0, currentTime);
+                MusicManager.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
             }
 
             // Stop all active oscillators
-            if (this.activeOscillators) {
-                this.activeOscillators.forEach(osc => {
+            if (MusicManager.activeOscillators) {
+                MusicManager.activeOscillators.forEach(osc => {
                     try {
                         // Check if stop method exists before calling
                         if (typeof osc.stop === 'function') {
@@ -477,25 +434,21 @@ class MusicManager {
                         // Ignore errors if oscillator already stopped or disconnected
                     }
                 });
-                this.activeOscillators.clear();
+                MusicManager.activeOscillators.clear();
             }
 
             // If full cleanup, disconnect nodes
             if (fullCleanup) {
                 console.log("MusicManager: Full cleanup. Disconnecting all nodes.");
-                if (this.melodyGain) this.melodyGain.disconnect();
-                if (this.masterGain) this.masterGain.disconnect();
-                this.melodyGain = null;
-                this.masterGain = null;
-
-                // We DO NOT close or nullify the AudioContext anymore
-                // Just null our reference to the shared context
-                // this.audioContext = null; // This was causing issues with restart
+                if (MusicManager.melodyGain) MusicManager.melodyGain.disconnect();
+                if (MusicManager.masterGain) MusicManager.masterGain.disconnect();
+                MusicManager.melodyGain = null;
+                MusicManager.masterGain = null;
             } else {
                 console.log("MusicManager: Partial cleanup. Preserving nodes and context.");
                 // Keep references to gain nodes, just set their gains to 0
-                if (this.masterGain) {
-                    this.masterGain.gain.value = 0;
+                if (MusicManager.masterGain) {
+                    MusicManager.masterGain.gain.value = 0;
                 }
             }
 
@@ -504,39 +457,39 @@ class MusicManager {
         }
     }
 
-    getCurrentMelody() {
-        if (!this.currentMelodyId) {
+    static getCurrentMelody() {
+        if (!MusicManager.currentMelodyId) {
             return null;
         }
 
-        const melody = window.MusicData?.getMelody(this.currentMelodyId);
+        const melody = window.MusicData?.getMelody(MusicManager.currentMelodyId);
         if (!melody) return null;
 
         return {
-            id: this.currentMelodyId,
+            id: MusicManager.currentMelodyId,
             name: melody.name
         };
     }
 
     // Change to a random melody and restart the music
-    changeToRandomMelody() {
+    static changeToRandomMelody() {
         // If music is playing, need to restart with new melody
-        const wasPlaying = this.isPlaying;
+        const wasPlaying = MusicManager.isPlaying;
 
         // Stop the current melody
         if (wasPlaying) {
-            this.stopMusic(false);
+            MusicManager.stopMusic(false);
         }
 
         // Select a new random melody
-        this.selectRandomMelody();
+        MusicManager.selectRandomMelody();
 
         // Restart the music if it was playing
         if (wasPlaying) {
-            this.startMusic();
+            MusicManager.startMusic();
         }
 
-        return this.getCurrentMelody();
+        return MusicManager.getCurrentMelody();
     }
 
     // Clean up audio resources completely
@@ -567,14 +520,13 @@ class MusicManager {
                 }
 
                 // Perform cleanup
-                if (gameInstance.musicManager && (currentGameState.isGameOver || currentGameState.isPaused)) {
-                    gameInstance.musicManager.stopMusic(true);
-                    gameInstance.musicManager = null;
-                }
+                if ((currentGameState.isGameOver || currentGameState.isPaused)) {
+                    MusicManager.stopMusic(true);
 
-                // Only clean up sound manager if game is over or paused
-                if (gameInstance.soundManager && (currentGameState.isGameOver || currentGameState.isPaused)) {
-                    gameInstance.soundManager.closeAudioContext();
+                    // Only clean up sound manager if game is over or paused
+                    if (gameInstance.soundManager) {
+                        gameInstance.soundManager.closeAudioContext();
+                    }
                 }
 
                 // Remove from tracking map once completed
@@ -585,22 +537,21 @@ class MusicManager {
             MusicManager.cleanupTimeouts.set(gameInstance, newTimeoutId);
         } else {
             // Perform immediate cleanup
-            if (gameInstance.musicManager && (gameState.isGameOver || gameState.isPaused)) {
-                gameInstance.musicManager.stopMusic(true);
-                gameInstance.musicManager = null;
-            }
+            if ((gameState.isGameOver || gameState.isPaused)) {
+                MusicManager.stopMusic(true);
 
-            // Only clean up sound manager if game is over or paused
-            if (gameInstance.soundManager && (gameState.isGameOver || gameState.isPaused)) {
-                gameInstance.soundManager.closeAudioContext();
+                // Only clean up sound manager if game is over or paused
+                if (gameInstance.soundManager) {
+                    gameInstance.soundManager.closeAudioContext();
+                }
             }
         }
     }
 
-    // Static method to clear the melody ID, used after game over
+    // Clear the melody ID, used after game over
     static clearCurrentMelody() {
         MusicManager.currentMelodyId = null;
-        console.log("MusicManager: Cleared static melody ID for next game");
+        console.log("MusicManager: Cleared melody ID for next game");
     }
 }
 

@@ -34,6 +34,10 @@ class StarfieldManager {
             const count = 100;
             console.log(`Generating ${count} stars`);
 
+            // Calculate base star size proportional to canvas size
+            // Using width as reference since you mentioned width and height are equal
+            const baseSizeMultiplier = width * 0.001; // 0.1% of width as base size unit
+
             // Generate stars with completely random positions across the canvas
             for (let i = 0; i < count; i++) {
                 // Generate random position with padding from edges (5%)
@@ -47,26 +51,29 @@ class StarfieldManager {
 
                 // Size distribution - with bigger stars
                 const sizeBase = Math.random();
-                let size;
+                let sizeMultiplier;
                 let starType = 'regular';
 
                 // Create variety in star sizes with some truly big ones
                 if (sizeBase > 0.97) {
                     // Legendary stars (3%)
-                    size = 2.0 + sizeBase * 0.5; // 2.0-2.5 range
+                    sizeMultiplier = 2.0 + sizeBase * 0.5; // 2.0-2.5 range
                     starType = 'legendary';
                 } else if (sizeBase > 0.9) {
                     // Large stars (7%)
-                    size = 1.8 + sizeBase * 0.2; // 1.8-2.0 range
+                    sizeMultiplier = 1.8 + sizeBase * 0.2; // 1.8-2.0 range
                     starType = 'large';
                 } else if (sizeBase > 0.7) {
                     // Medium stars (20%)
-                    size = 1.5 + sizeBase * 0.3; // 1.5-1.8 range
+                    sizeMultiplier = 1.5 + sizeBase * 0.3; // 1.5-1.8 range
                     starType = 'medium';
                 } else {
                     // Small stars (70%)
-                    size = 1.2 + sizeBase * 0.3; // 1.2-1.5 range
+                    sizeMultiplier = 1.2 + sizeBase * 0.3; // 1.2-1.5 range
                 }
+
+                // Calculate final size based on canvas dimensions
+                const size = baseSizeMultiplier * sizeMultiplier;
 
                 // Twinkle effect
                 const twinkleSpeed = 500 + Math.random() * 1500;

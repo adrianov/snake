@@ -10,7 +10,7 @@ class UIManager {
         this.resetButton = document.getElementById('resetHighScore');
         this.melodyElement = document.getElementById('currentMelody');
         this.musicInfoElement = document.querySelector('.music-info');
-        
+
         // Donation panel elements
         this.donateButton = document.getElementById('donateButton');
         this.donationPanel = document.getElementById('donationPanel');
@@ -58,39 +58,39 @@ class UIManager {
                 this.resetHighScore();
             });
         }
-        
+
         // Set up music change on melody display click and N label click
         this.initializeMusicChangeControls();
-        
+
         // Set up donation panel controls
         this.initializeDonationControls();
     }
-    
+
     initializeMusicChangeControls() {
         // Add click handler to the melody display for changing music
         if (this.melodyElement) {
             this.melodyElement.addEventListener('click', () => {
                 this.game.changeMusic();
             });
-            
+
             // Make it clear this is clickable
             this.melodyElement.style.cursor = 'pointer';
             this.melodyElement.title = "Click to change melody (same as N key)";
         }
-        
+
         // Find and add click handler to the N label that changes the music
         const nLabel = document.querySelector('.melody-display .control-label');
         if (nLabel) {
             nLabel.addEventListener('click', () => {
                 this.game.changeMusic();
             });
-            
+
             // Make it clear this is clickable
             nLabel.style.cursor = 'pointer';
             nLabel.title = "Click to change melody (N key)";
         }
     }
-    
+
     initializeDonationControls() {
         // Set up donate button with multiple event handlers for better responsiveness
         if (this.donateButton) {
@@ -100,25 +100,25 @@ class UIManager {
                 e.stopPropagation(); // Stop event from propagating to document click handler
                 this.toggleDonationPanel(true);
             };
-            
+
             // Add multiple event listeners for better responsiveness
             this.donateButton.addEventListener('click', showDonationPanel);
             this.donateButton.addEventListener('pointerdown', showDonationPanel);
-            
+
             // Add active state for visual feedback
             this.donateButton.addEventListener('pointerdown', () => {
                 this.donateButton.classList.add('button-active');
             });
-            
+
             this.donateButton.addEventListener('pointerup', () => {
                 this.donateButton.classList.remove('button-active');
             });
-            
+
             this.donateButton.addEventListener('pointerleave', () => {
                 this.donateButton.classList.remove('button-active');
             });
         }
-        
+
         // Set up close donation panel button
         if (this.closeDonationButton) {
             this.closeDonationButton.addEventListener('click', (e) => {
@@ -127,56 +127,56 @@ class UIManager {
                 this.toggleDonationPanel(false);
             });
         }
-        
+
         // Close donation panel when clicking outside
         document.addEventListener('click', (e) => {
             // If donation panel is open AND not just opened (to prevent immediate closing)
-            if (this.donationPanel && 
-                this.donationPanel.classList.contains('active') && 
+            if (this.donationPanel &&
+                this.donationPanel.classList.contains('active') &&
                 !this.donationPanelJustOpened) {
-                
+
                 // Check if click was outside the panel (and NOT on the donate button)
                 if (!this.donationPanel.contains(e.target) && e.target !== this.donateButton) {
                     this.toggleDonationPanel(false);
                 }
             }
         });
-        
+
         // Add escape key listener to close panel
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.donationPanel && this.donationPanel.classList.contains('active')) {
                 this.toggleDonationPanel(false);
             }
         });
-        
+
         // Set up copy buttons for cryptocurrency addresses
         this.initializeCopyButtons();
     }
-    
+
     initializeCopyButtons() {
         const copyButtons = document.querySelectorAll('.copy-btn');
-        
+
         copyButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const addressId = button.getAttribute('data-address');
                 const addressInput = document.getElementById(addressId);
-                
+
                 if (addressInput) {
                     // Select the text
                     addressInput.select();
                     addressInput.setSelectionRange(0, 99999); // For mobile devices
-                    
+
                     // Copy to clipboard
                     try {
                         navigator.clipboard.writeText(addressInput.value)
                             .then(() => {
                                 // Show success message
                                 this.showTemporaryMessage('Address copied to clipboard!', 1500);
-                                
+
                                 // Visual feedback on button
                                 const originalText = button.querySelector('.copy-icon').textContent;
                                 button.querySelector('.copy-icon').textContent = '✓';
-                                
+
                                 setTimeout(() => {
                                     button.querySelector('.copy-icon').textContent = originalText;
                                 }, 1500);
@@ -189,11 +189,11 @@ class UIManager {
                         // Fallback for older browsers
                         document.execCommand('copy');
                         this.showTemporaryMessage('Address copied to clipboard!', 1500);
-                        
+
                         // Visual feedback
                         const originalText = button.querySelector('.copy-icon').textContent;
                         button.querySelector('.copy-icon').textContent = '✓';
-                        
+
                         setTimeout(() => {
                             button.querySelector('.copy-icon').textContent = originalText;
                         }, 1500);
@@ -202,22 +202,22 @@ class UIManager {
             });
         });
     }
-    
+
     toggleDonationPanel(show) {
         if (!this.donationPanel) return;
-        
+
         if (show) {
             this.donationPanel.classList.add('active');
             // Set a flag to prevent immediate closing
             this.donationPanelJustOpened = true;
-            
+
             // Clear the flag after animation completes
             setTimeout(() => {
                 this.donationPanelJustOpened = false;
             }, 350); // Slightly longer than the CSS transition (300ms)
-            
+
             // Pause the game if it's running
-            if (this.game.gameStateManager.getGameState().isGameStarted && 
+            if (this.game.gameStateManager.getGameState().isGameStarted &&
                 !this.game.gameStateManager.getGameState().isPaused) {
                 this.game.pauseGame();
                 // Show message to user
@@ -225,7 +225,7 @@ class UIManager {
             }
         } else {
             this.donationPanel.classList.remove('active');
-            
+
             // Reset donate button state when panel is closed
             if (this.donateButton) {
                 this.donateButton.classList.remove('button-active');
@@ -314,7 +314,7 @@ class UIManager {
         if (!this.melodyElement || !this.musicInfoElement) return;
         const gameState = this.game.gameStateManager.getGameState();
 
-        if (!gameState.musicEnabled || !this.game.musicManager || !this.game.musicManager.getCurrentMelody()) {
+        if (!gameState.musicEnabled || !MusicManager.getCurrentMelody()) {
             // Clear the melody display when no melody is playing or music is disabled
             this.melodyElement.textContent = '';
 
@@ -328,7 +328,7 @@ class UIManager {
             return;
         }
 
-        const melodyInfo = this.game.musicManager.getCurrentMelody();
+        const melodyInfo = MusicManager.getCurrentMelody();
         if (!melodyInfo) {
             // This is a redundant check but ensures we always handle the case
             this.melodyElement.textContent = '';

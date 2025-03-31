@@ -46,7 +46,8 @@ class SnakeGame {
     setupManagers() {
         // Create managers
         this.soundManager = SoundManager.getInstance();
-        this.musicManager = new MusicManager();
+
+        // Create UI manager
         this.uiManager = new UIManager(this);
 
         // Create new managers for refactored functionality
@@ -223,11 +224,10 @@ class SnakeGame {
     pauseGame() {
         this.gameLoop.stopGameLoop();
 
-        if (this.musicManager) {
-            this.musicManager.saveMelodyId();
-            this.musicManager.stopMusic(true);
-        }
+        // Save the current melody ID and stop music
+        MusicManager.stopMusic(true);
 
+        // Cleanup audio resources on pause
         MusicManager.cleanupAudioResources(this, 200);
 
         // Show header and footer when game is paused on mobile
@@ -239,9 +239,6 @@ class SnakeGame {
     unpauseGame() {
         // Get the sound manager instance
         this.soundManager = SoundManager.getInstance();
-
-        // Create a fresh music manager
-        this.musicManager = new MusicManager();
 
         // Initialize music using the AudioManager, don't force a new melody when unpausing
         this.audioManager.initializeGameMusic(false);
@@ -599,12 +596,9 @@ class SnakeGame {
         // Get sound manager instance
         this.soundManager = SoundManager.getInstance();
 
-        // Always create a fresh MusicManager instance for the new game
-        this.musicManager = new MusicManager();
-
         // Ensure audio context is initialized if user interaction has occurred
         if (this.hasUserInteraction && SoundManager.getAudioContext()) {
-            this.musicManager.initAudioContextIfNeeded();
+            MusicManager.initAudioContextIfNeeded();
         }
 
         // Reinitialize snake and game elements for a clean slate

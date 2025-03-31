@@ -1,6 +1,8 @@
 class SoundManager {
     // Static flag to track if user interaction has occurred
     static hasUserInteraction = false;
+    // Static flag to track if we've successfully played audio
+    static hasPlayedAudio = false;
 
     // Singleton instance
     static instance = null;
@@ -14,7 +16,7 @@ class SoundManager {
     static getInstance(forceInit = false) {
         if (!SoundManager.instance) {
             SoundManager.instance = new SoundManager(forceInit);
-        } else if (forceInit && (!SoundManager.instance.audioContext || SoundManager.instance.audioContext.state === 'closed')) {
+        } else if (forceInit && (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed')) {
             // If we're forcing initialization and the context is closed, recreate it
             SoundManager.instance.initAudioContext(true);
         }
@@ -23,7 +25,6 @@ class SoundManager {
 
     // Static getter for the shared AudioContext
     static getAudioContext() {
-        // Optionally, we could auto-initialize here if needed, but Game.js handles it
         return SoundManager.audioContext;
     }
 
@@ -33,38 +34,36 @@ class SoundManager {
         }
         // Register this instance as the singleton
         SoundManager.instance = this;
-        
+
         // Initialize without creating AudioContext by default
         this.soundTemplates = {};
         this.silentNode = null;
-        
+
         // Only initialize immediately if explicitly forced (from a user gesture)
         if (forceInit) {
             this.initAudioContext(true);
         }
     }
-    
+
     // Initialize AudioContext - manages the *static* shared context
     initAudioContext(fromUserGesture = false) {
         const currentContext = SoundManager.audioContext;
-        
+
         // Prevent re-initialization if context exists and is not closed
         if (currentContext && currentContext.state !== 'closed') {
             // If called from user gesture and context is suspended, try resuming
             if (fromUserGesture && currentContext.state === 'suspended') {
                 console.log("SoundManager: Shared context exists but suspended, attempting resume...");
-                this.resumeAudioContext(); // Attempt resume
+                return this.resumeAudioContext(); // Attempt resume and return promise result
             }
-             else {
-                 console.log(`SoundManager: Shared context already exists. State: ${currentContext.state}`);
-             }
+            console.log(`SoundManager: Shared context already exists. State: ${currentContext.state}`);
             return currentContext != null;
         }
-        
+
         // Only proceed if we have user interaction OR if forced by gesture
         if (!SoundManager.hasUserInteraction && !fromUserGesture) {
-             console.log("AudioContext creation deferred until first user interaction.");
-             return false;
+            console.log("AudioContext creation deferred until first user interaction.");
+            return false;
         }
 
         console.log(`Initializing AudioContext (fromUserGesture: ${fromUserGesture}). Current state: ${currentContext?.state}`);
@@ -76,29 +75,26 @@ class SoundManager {
             };
             SoundManager.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
             console.log(`SoundManager: Shared AudioContext created. Initial state: ${SoundManager.audioContext.state}`);
-            
+
             // Create sound templates
             this.initSoundTemplates();
-            
+
             // If created from a user gesture, immediately try to resume and play silent sound
             if (fromUserGesture && SoundManager.audioContext.state === 'suspended') {
                 console.log("SoundManager: Shared context is suspended, attempting resume...");
                 this.resumeAudioContext().then(resumed => {
                     if (resumed && SoundManager.audioContext?.state === 'running') {
-                         console.log("SoundManager: Shared context resumed successfully after gesture.");
-                         this.playSilentSound(); // Play silent sound AFTER resuming
+                        console.log("SoundManager: Shared context resumed successfully after gesture.");
+                        this.playSilentSound(); // Play silent sound AFTER resuming
                     } else {
-                         console.warn("Failed to resume AudioContext immediately after gesture or state is not running.");
+                        console.warn("Failed to resume AudioContext immediately after gesture or state is not running.");
                     }
                 });
             } else if (SoundManager.audioContext.state === 'running') {
-                 console.log("SoundManager: Shared context started in running state.");
-                 this.playSilentSound(); // Play silent sound if already running
+                console.log("SoundManager: Shared context started in running state.");
+                this.playSilentSound(); // Play silent sound if already running
             }
-            
-            // Keep context alive (optional, can sometimes help)
-            // this.keepContextAlive();
-            
+
             return true;
         } catch (e) {
             console.error('Error creating shared AudioContext:', e);
@@ -106,92 +102,121 @@ class SoundManager {
             return false;
         }
     }
-    
-    // Helper to play a short, silent sound to unlock audio on some platforms (like iOS)
-    playSilentSound() {
-        const context = SoundManager.audioContext; // Use static context
-        if (!context || context.state !== 'running') {
-             console.warn("Cannot play silent sound: Shared AudioContext not available or not running.");
-             return;
-        }
-        try {
-            console.log("Playing silent sound to unlock shared audio...");
-            const unlockOsc = context.createOscillator();
-            const unlockGain = context.createGain();
-            unlockGain.gain.value = 0.0001;
-            unlockOsc.connect(unlockGain);
-            unlockGain.connect(context.destination);
-            unlockOsc.start(0);
-            unlockOsc.stop(context.currentTime + 0.01);
-            console.log("Silent sound played on shared context.");
-        } catch (e) {
-            console.warn('Error playing silent unlock sound on shared context:', e);
-        }
-    }
 
     // Helper method to resume audio context - returns a Promise
     resumeAudioContext() {
         const context = SoundManager.audioContext; // Use static context
         if (!context) {
-             console.warn("SoundManager cannot resume: Shared AudioContext does not exist.");
-             return Promise.resolve(false);
+            console.warn("SoundManager cannot resume: Shared AudioContext does not exist.");
+            return Promise.resolve(false);
         }
 
         if (context.state === 'running') {
-             // console.log("SoundManager: Shared context already running."); // Reduce noise
-             return Promise.resolve(true);
+            return Promise.resolve(true);
         }
-        
+
         if (context.state === 'closed') {
-             console.warn("SoundManager cannot resume: Shared AudioContext is closed.");
-             return Promise.resolve(false);
+            console.warn("SoundManager cannot resume: Shared AudioContext is closed.");
+            return Promise.resolve(false);
         }
+
+        // For iOS and Safari, we need to handle resume in a special way
+        // by playing a silent sound immediately after resume
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const needsSpecialHandling = isIOS || isSafari;
 
         // Attempt resume only if suspended
         if (context.state === 'suspended') {
-            console.log("SoundManager attempting to resume suspended shared AudioContext...");
+            console.log(`SoundManager attempting to resume suspended shared AudioContext... (iOS: ${isIOS}, Safari: ${isSafari})`);
+
             // Return the promise from resume()
             return context.resume().then(() => {
                 const isRunning = context?.state === 'running';
                 console.log(`SoundManager: Shared context resume attempt finished. State: ${context?.state}`);
-                
-                // *** If successfully resumed, check and potentially start music ***
-                if (isRunning) {
-                    // Access the global game instance
-                    const gameInstance = window.SnakeGame;
-                    if (gameInstance && gameInstance.gameStateManager && gameInstance.musicManager) {
-                        const gameState = gameInstance.gameStateManager.getGameState();
-                        // If music is enabled but not currently playing, try starting it now
-                        if (gameState.musicEnabled && !gameInstance.musicManager.isPlaying) {
-                            console.log("SoundManager: Context resumed, triggering music start.");
-                            // Use a minimal timeout to avoid potential immediate re-entry issues
-                            setTimeout(() => gameInstance.musicManager.startMusic(), 0);
-                        }
-                    } else {
-                        console.warn("SoundManager: Could not access game instance or managers to potentially start music after resume.");
+
+                // For iOS/Safari, force playing a silent sound immediately after resume
+                // but only if we haven't already played audio successfully
+                if (isRunning && needsSpecialHandling && !SoundManager.hasPlayedAudio) {
+                    this.playSilentSound();
+
+                    // Add a second silent sound after a short delay only if required
+                    // and we still haven't confirmed successful audio playback
+                    if (!SoundManager.hasPlayedAudio) {
+                        setTimeout(() => this.playSilentSound(), 500);
                     }
                 }
-                // *** End of music start trigger ***
-                
+
+                // Handle music resumption if context was successfully resumed
+                if (isRunning) {
+                    this._triggerMusicRestart();
+                }
+
                 return isRunning; // Return true if running, false otherwise
             }).catch(e => {
                 console.warn('SoundManager could not resume shared AudioContext:', e);
                 return false;
             });
         } else {
-             console.warn(`SoundManager cannot resume: Shared context in unexpected state: ${context.state}`);
-             return Promise.resolve(false);
+            console.warn(`SoundManager cannot resume: Shared context in unexpected state: ${context.state}`);
+            return Promise.resolve(false);
         }
     }
 
-    // Keep audio context alive with a silent node
-    keepContextAlive() {
-        if (!SoundManager.audioContext) return;
+    // Helper to play a short, silent sound to unlock audio on some platforms (like iOS)
+    playSilentSound() {
+        const context = SoundManager.audioContext; // Use static context
+        if (!context || context.state !== 'running') {
+            console.warn("Cannot play silent sound: Shared AudioContext not available or not running.");
+            return;
+        }
 
-        // Create a silent oscillator that runs continuously
-        this.silentNode = SoundManager.audioContext.createGain();
-        this.silentNode.gain.value = 0; // Completely silent
-        this.silentNode.connect(SoundManager.audioContext.destination);
+        // Skip if we've already successfully played audio
+        if (SoundManager.hasPlayedAudio) {
+            console.debug("Skipping silent sound - audio already unlocked");
+            return;
+        }
+
+        try {
+            console.log("Playing silent sound to unlock shared audio...");
+
+            // Create oscillator and gain node
+            const unlockOsc = context.createOscillator();
+            const unlockGain = context.createGain();
+
+            // Set extremely low gain to make it silent
+            unlockGain.gain.setValueAtTime(0.00001, context.currentTime);
+
+            // Connect nodes
+            unlockOsc.connect(unlockGain);
+            unlockGain.connect(context.destination);
+
+            // Play a short sound (iOS needs actual sound to unlock audio)
+            unlockOsc.start(0);
+            unlockOsc.stop(context.currentTime + 0.05);
+
+            console.log("Silent sound played on shared context.");
+        } catch (e) {
+            console.warn('Error playing silent unlock sound on shared context:', e);
+        }
+    }
+
+    // Extracted method to handle music restart logic
+    _triggerMusicRestart() {
+        // Access the global game instance
+        const gameInstance = window.SnakeGame;
+        if (gameInstance && gameInstance.gameStateManager && gameInstance.musicManager) {
+            const gameState = gameInstance.gameStateManager.getGameState();
+            // If music is enabled but not currently playing, try starting it now
+            if (gameState.musicEnabled && !gameInstance.musicManager.isPlaying) {
+                console.log("SoundManager: Context resumed, triggering music start.");
+                // Use a minimal timeout to avoid potential immediate re-entry issues
+                setTimeout(() => gameInstance.musicManager.startMusic(), 0);
+            }
+        } else {
+            console.warn("SoundManager: Could not access game instance or managers to potentially start music after resume.");
+        }
     }
 
     // Close the audio context to free up resources
@@ -214,16 +239,6 @@ class SoundManager {
             SoundManager.audioContext = null; // Clear static reference
         } catch (e) {
             console.error('Error closing shared audio context:', e);
-        }
-    }
-
-    // Reinitialize audio context if needed
-    reinitialize() {
-        if (SoundManager.audioContext && SoundManager.audioContext.state !== 'closed') return;
-        
-        // Only initialize if we've had user interaction
-        if (SoundManager.hasUserInteraction) {
-            this.initAudioContext();
         }
     }
 
@@ -299,19 +314,19 @@ class SoundManager {
     playSound(soundType, volume = 1) {
         // Check if sound is enabled globally
         if (!this.isSoundEnabled()) return;
-        
+
         // Cannot play sound without user interaction
         if (!SoundManager.hasUserInteraction) {
-             console.warn(`Cannot play sound '${soundType}': No user interaction detected yet.`);
-             return;
+            console.warn(`Cannot play sound '${soundType}': No user interaction detected yet.`);
+            return;
         }
 
         // Ensure context is initialized (create if needed)
         if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
             console.log(`SoundManager: Initializing shared context before playing sound '${soundType}'.`);
             if (!this.initAudioContext(true)) { // Try to initialize, forced by gesture
-                 console.warn(`Cannot play sound '${soundType}': Failed to initialize shared AudioContext.`);
-                 return; // Exit if initialization failed
+                console.warn(`Cannot play sound '${soundType}': Failed to initialize shared AudioContext.`);
+                return; // Exit if initialization failed
             }
         }
 
@@ -328,16 +343,16 @@ class SoundManager {
             if (context?.state === 'running') {
                 this._createAndPlaySound(soundType, volume);
             } else {
-                 console.warn(`Cannot play sound '${soundType}': Shared AudioContext state is '${context?.state}' after attempting resume.`);
+                console.warn(`Cannot play sound '${soundType}': Shared AudioContext state is '${context?.state}' after attempting resume.`);
             }
         });
     }
-    
+
     // Private method to create and play a sound (assumes context is running)
     _createAndPlaySound(soundType, volume) {
         const context = SoundManager.audioContext; // Use static context
         if (!context) return; // Should not happen if checks in playSound work
-        
+
         try {
             // Get template and create sound
             const template = this.soundTemplates[soundType];
@@ -368,6 +383,9 @@ class SoundManager {
             gainNode.connect(context.destination);
             oscillator.start(now);
             oscillator.stop(now + soundDuration + 0.05);
+
+            // Set flag that audio has been successfully played
+            SoundManager.hasPlayedAudio = true;
         } catch (e) {
             console.warn('Error playing sound:', e);
         }
@@ -379,17 +397,16 @@ class SoundManager {
         if (!SoundManager.hasUserInteraction || !this.isSoundEnabled()) {
             return;
         }
-        
+
         // Ensure audio context is initialized and resumed
         if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
-            this.reinitialize();
-            if (!SoundManager.audioContext) return;
+            if (!this.initAudioContext(true)) return;
         }
-        
+
         // Resume context and play the fanfare
         this.resumeAudioContext().then(success => {
             if (!success || SoundManager.audioContext.state !== 'running') return;
-            
+
             const now = SoundManager.audioContext.currentTime;
 
             // Define notes
@@ -437,15 +454,10 @@ class SoundManager {
         return localStorage.getItem('snakeSoundEnabled') !== 'false';
     }
 
-    // Set sound enabled state
-    setSoundEnabled(enabled) {
-        localStorage.setItem('snakeSoundEnabled', enabled.toString());
-    }
-
     // Toggle sound enabled state
     toggleSound() {
         const currentState = this.isSoundEnabled();
-        this.setSoundEnabled(!currentState);
+        localStorage.setItem('snakeSoundEnabled', (!currentState).toString());
         return !currentState;
     }
 }

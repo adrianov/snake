@@ -175,6 +175,9 @@ class InputManager {
             event.preventDefault();
         }
 
+        // Always try to initialize audio on any touch
+        this.ensureAudioInitialized();
+
         const gameState = this.game.gameStateManager.getGameState();
 
         // Store initial touch details
@@ -424,7 +427,11 @@ class InputManager {
         const leftButton = document.getElementById('leftArrow');
         const rightButton = document.getElementById('rightArrow');
 
-        if (!upButton || !downButton || !leftButton || !rightButton) return;
+        // Verify that all required buttons exist in the DOM
+        if (!upButton || !downButton || !leftButton || !rightButton) {
+            console.error('Mobile arrow buttons not found in the DOM');
+            return;
+        }
 
         // Function to trigger haptic feedback if available
         const triggerHapticFeedback = () => {
@@ -433,9 +440,23 @@ class InputManager {
             }
         };
 
+        /**
+         * Mobile arrow buttons behavior:
+         * These buttons act as proxies for keyboard arrow keys in touch environments.
+         * When pressed, they:
+         * 1. Trigger haptic feedback when available (short vibration)
+         * 2. Start the game if not already started
+         * 3. Change snake direction according to the pressed button (if valid)
+         * 4. Adjust game speed based on the direction change, simulating keyboard inputs
+         * 5. Initialize audio on first interaction to comply with browser autoplay policies
+         */
+
         // Helper function to handle button press
         const handleArrowButtonPress = (direction) => {
             const gameState = this.game.gameStateManager.getGameState();
+
+            // Always ensure audio is initialized on button press
+            this.ensureAudioInitialized();
 
             // Trigger haptic feedback
             triggerHapticFeedback();
@@ -459,7 +480,7 @@ class InputManager {
                 if (!isFirstInteraction) {
                     // Explicitly initialize audio contexts - redundant but ensures audio works
                     SoundManager.hasUserInteraction = true;
-                    this.game.audioManager.initializeAudio();
+                    this.game.audioManager.initializeAudio(true);
 
                     // Start game and loops
                     this.game.startGame();
@@ -491,12 +512,13 @@ class InputManager {
             }
         };
 
-        // Add event listeners for buttons
+        // Add event listeners for buttons with proper event handling
         const createArrowButtonHandler = (direction) => {
             return (e) => {
                 if (e.cancelable) {
                     e.preventDefault();
                 }
+                e.stopPropagation(); // Prevent event bubbling
 
                 // Ensure audio is initialized directly from touch event
                 if (!this.game.hasUserInteraction) {
@@ -509,17 +531,29 @@ class InputManager {
             };
         };
 
-        // Add touch event listeners with the common handler
-        upButton.addEventListener('touchstart', createArrowButtonHandler('up'));
-        downButton.addEventListener('touchstart', createArrowButtonHandler('down'));
-        leftButton.addEventListener('touchstart', createArrowButtonHandler('left'));
-        rightButton.addEventListener('touchstart', createArrowButtonHandler('right'));
+        // Add touch event listeners with the common handler and passive: false to ensure preventDefault works
+        upButton.addEventListener('touchstart', createArrowButtonHandler('up'), { passive: false });
+        downButton.addEventListener('touchstart', createArrowButtonHandler('down'), { passive: false });
+        leftButton.addEventListener('touchstart', createArrowButtonHandler('left'), { passive: false });
+        rightButton.addEventListener('touchstart', createArrowButtonHandler('right'), { passive: false });
 
         // Add mouse event listeners as fallback for hybrid devices
-        upButton.addEventListener('mousedown', () => handleArrowButtonPress('up'));
-        downButton.addEventListener('mousedown', () => handleArrowButtonPress('down'));
-        leftButton.addEventListener('mousedown', () => handleArrowButtonPress('left'));
-        rightButton.addEventListener('mousedown', () => handleArrowButtonPress('right'));
+        upButton.addEventListener('mousedown', createArrowButtonHandler('up'));
+        downButton.addEventListener('mousedown', createArrowButtonHandler('down'));
+        leftButton.addEventListener('mousedown', createArrowButtonHandler('left'));
+        rightButton.addEventListener('mousedown', createArrowButtonHandler('right'));
+
+        // Add active state styling for visual feedback
+        const buttons = [upButton, downButton, leftButton, rightButton];
+        buttons.forEach(button => {
+            ['touchstart', 'mousedown'].forEach(eventType => {
+                button.addEventListener(eventType, () => button.classList.add('active'));
+            });
+
+            ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(eventType => {
+                button.addEventListener(eventType, () => button.classList.remove('active'));
+            });
+        });
     }
 
     // Check if the device is a touch device
@@ -529,15 +563,65 @@ class InputManager {
             (navigator.msMaxTouchPoints > 0);
     }
 
+    // Add helper method to ensure audio is initialized on touch devices
+    ensureAudioInitialized() {
+        // Set both interaction flags
+        if (!this.game.hasUserInteraction) {
+            this.game.hasUserInteraction = true;
+            SoundManager.hasUserInteraction = true;
+
+            // Force context initialization directly from touch event
+            if (this.game.audioManager) {
+                console.log("InputManager: Ensuring audio is initialized from touch event");
+                this.game.audioManager.initializeAudio(true);
+
+                // Force a direct resume attempt - only if we haven't confirmed audio is working
+                if (SoundManager.audioContext &&
+                    SoundManager.audioContext.state === 'suspended' &&
+                    !SoundManager.hasPlayedAudio) {
+                    SoundManager.audioContext.resume().then(() => {
+                        console.log("InputManager: Resumed audio context from touch: ",
+                            SoundManager.audioContext.state);
+
+                        // Play silent sound after successful resume only if needed
+                        if (SoundManager.audioContext.state === 'running' &&
+                            this.game.soundManager &&
+                            !SoundManager.hasPlayedAudio) {
+                            this.game.soundManager.playSilentSound();
+                        }
+                    }).catch(err => {
+                        console.error("InputManager: Failed to resume context from touch:", err);
+                    });
+                }
+            }
+        }
+    }
+
     // Add this new method to handle common game starting logic
     startGameWithInitialDirection(direction = null) {
-        // Ensure user interaction flag is set
+        // Ensure user interaction flag is set and audio is initialized
         if (!this.game.hasUserInteraction) {
             this.game.handleFirstInteraction();
-        } else {
-            // Make sure SoundManager knows we have user interaction
-            SoundManager.hasUserInteraction = true;
-            this.game.audioManager.initializeAudio();
+        }
+
+        // Always ensure audio is properly initialized on game start
+        SoundManager.hasUserInteraction = true;
+        this.game.audioManager.initializeAudio(true);
+
+        // For mobile browsers, especially iOS, try to resume the context directly
+        // but only if we haven't confirmed audio is working yet
+        if (SoundManager.audioContext &&
+            SoundManager.audioContext.state === 'suspended' &&
+            !SoundManager.hasPlayedAudio) {
+            SoundManager.audioContext.resume().then(() => {
+                console.log("Context resumed on game start:", SoundManager.audioContext.state);
+                // Play silent sound to fully unlock audio on iOS only if needed
+                if (SoundManager.audioContext.state === 'running' &&
+                    this.game.soundManager &&
+                    !SoundManager.hasPlayedAudio) {
+                    this.game.soundManager.playSilentSound();
+                }
+            });
         }
 
         // Start the game
