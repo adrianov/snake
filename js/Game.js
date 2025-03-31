@@ -12,6 +12,13 @@ class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.tileCount = 20;
+        this.startRequested = false;
+        this.lastEatenTime = 0;
+        this.imagesLoaded = false;
+        this.hasUserInteraction = false;
+        this.isTransitionState = false;
+        this.frozen = false;
 
         // Initialize game layout reference - make sure we get it correctly
         this.gameLayout = document.querySelector('.game-layout');
@@ -22,10 +29,6 @@ class SnakeGame {
             // Try to create a fallback reference to the body as last resort
             this.gameLayout = document.body;
         }
-
-        this.imagesLoaded = false;
-        this.hasUserInteraction = false;
-        this.startRequested = false;
 
         this.initializeGameSettings();
         this.setupManagers();
@@ -336,7 +339,7 @@ class SnakeGame {
 
     update() {
         const gameState = this.gameStateManager.getGameState();
-        if (gameState.isPaused) {
+        if (gameState.isPaused || this.frozen) {
             return;
         }
 
@@ -579,12 +582,24 @@ class SnakeGame {
     }
 
     gameOver() {
-        const isNewHighScore = this.gameStateManager.gameOver();
-        if (isNewHighScore) {
-            this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
-        }
-
+        // Stop the game loop immediately
         this.gameLoop.stopGameLoop();
+
+        // Set a transition flag in our state
+        this.isTransitionState = true;
+
+        // Store current score for high score comparison
+        const currentScore = this.gameStateManager.getScore();
+        const isNewHighScore = currentScore > this.gameStateManager.getHighScore();
+
+        // Play crash sound immediately
+        this.audioManager.handleGameOverAudio(isNewHighScore);
+
+        // Don't mark the game as over in the state manager yet,
+        // but do freeze snake movement by setting internal state
+        this.frozen = true;
+
+        // Draw the current state with transition overlay
         this.draw();
 
         // Show header and footer when game is over on mobile
@@ -592,11 +607,26 @@ class SnakeGame {
             GameUtils.showHeaderFooterOnMobile(this.gameLayout);
         }
 
-        this.audioManager.handleGameOverAudio(isNewHighScore);
+        // Add a 1-second delay before showing the game over screen
+        setTimeout(() => {
+            // Now mark the game as over in the state manager
+            this.gameStateManager.gameOver();
+
+            if (isNewHighScore) {
+                this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
+            }
+
+            // After delay, clear transition state and update game state to game over
+            this.isTransitionState = false;
+            this.frozen = false;
+            this.draw();
+        }, 1000);
     }
 
     resetGame(forceNewMelody = false) {
         this.gameStateManager.resetGame();
+        this.isTransitionState = false;
+        this.frozen = false;
 
         // Generate a new color for the snake
         if (this.drawer) {
@@ -647,7 +677,7 @@ class SnakeGame {
         this.draw();
     }
 
-    draw() {
+    draw(skipGameOverScreen = false) {
         if (!this.imagesLoaded) return;
 
         // Clear the canvas
@@ -668,11 +698,12 @@ class SnakeGame {
             direction: this.direction,
             score: currentState.score,
             highScore: currentState.highScore,
-            isGameOver: currentState.isGameOver,
+            isGameOver: skipGameOverScreen ? false : currentState.isGameOver && !this.isTransitionState,
             isPaused: currentState.isPaused,
-            isGameStarted: currentState.isGameStarted,
+            isGameStarted: this.isTransitionState ? true : currentState.isGameStarted,
             lastEatenTime: this.lastEatenTime,
-            shakeEnabled: currentState.shakeEnabled
+            shakeEnabled: currentState.shakeEnabled,
+            isTransition: this.isTransitionState
         };
 
         this.drawer.draw(gameState);

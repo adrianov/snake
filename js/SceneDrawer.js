@@ -231,6 +231,15 @@ class SceneDrawer {
         this.uiOverlayManager.drawGameOver(this.ctx, visualWidth, visualHeight, score, highScore);
     }
 
+    // Draw transition overlay when snake dies but before game over screen appears
+    drawGameOverTransition() {
+        // Get the visual canvas size (accounting for device pixel ratio)
+        const visualWidth = this.canvas.width / this.pixelRatio;
+        const visualHeight = this.canvas.height / this.pixelRatio;
+
+        this.uiOverlayManager.drawGameOverTransition(this.ctx, visualWidth, visualHeight);
+    }
+
     // Draw pause message overlay
     drawPauseMessage() {
         // Get the visual canvas size (accounting for device pixel ratio)

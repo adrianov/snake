@@ -22,6 +22,18 @@ class UIOverlayManager {
         this.pixelRatio = pixelRatio; // Update pixel ratio
     }
 
+    // Draw a subtle overlay when the snake dies, but before showing the full game over screen
+    drawGameOverTransition(ctx, visualWidth, visualHeight) {
+        // Create a very subtle, almost transparent overlay
+        ctx.save();
+
+        // Use an extremely light bluish overlay, almost transparent
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.25)';  // Very light, barely visible blue tint
+        ctx.fillRect(0, 0, visualWidth, visualHeight);
+
+        ctx.restore();
+    }
+
     // Draw game over screen
     drawGameOver(ctx, visualWidth, visualHeight, score, highScore) {
         // Create a semi-transparent gradient overlay with a green-to-red tint

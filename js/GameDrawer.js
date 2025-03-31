@@ -71,10 +71,14 @@ class GameDrawer {
             gameState.shakeEnabled
         );
 
-        // Draw game state overlays
+        // Check for transition state - this is when we know the game is over internally
+        // but we're not showing the full game over screen yet
         if (gameState.isGameOver) {
             this.sceneDrawer.drawGameOver(gameState.score, gameState.highScore);
             return;
+        } else if (gameState.isTransition) {
+            // Show subtle overlay to indicate collision
+            this.sceneDrawer.drawGameOverTransition();
         }
 
         if (gameState.isPaused) {
