@@ -2,9 +2,22 @@ class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+
+        // Initialize game layout reference
+        this.gameLayout = document.querySelector('.game-layout');
+
+        this.imagesLoaded = false;
+        this.hasUserInteraction = false;
+        this.startRequested = false;
+
         this.initializeGameSettings();
         this.setupEventListeners();
         this.addInteractionListeners();
+
+        this.loadImages();
+
+        window.addEventListener('resize', this.resizeCanvas.bind(this));
+        this.resizeCanvas();
     }
 
     initializeGameSettings() {
@@ -424,6 +437,11 @@ class SnakeGame {
         }
 
         MusicManager.cleanupAudioResources(this, 200);
+
+        // Show header and footer when game is paused on mobile
+        if (this.isTouchDevice()) {
+            this.showHeaderFooterOnMobile();
+        }
     }
 
     unpauseGame() {
@@ -436,6 +454,11 @@ class SnakeGame {
         // Initialize music using centralized method, but don't force a new melody when unpausing
         // Just continue with the melody from before pause
         this.initializeGameMusic(false);
+
+        // Hide header and footer when game is unpaused on mobile
+        if (this.isTouchDevice()) {
+            this.hideHeaderFooterOnMobile();
+        }
 
         // Restart the game loop
         this.gameLoop.startGameLoop();
@@ -476,6 +499,11 @@ class SnakeGame {
 
         // Initialize music using the centralized method
         this.initializeGameMusic(true);
+
+        // Hide header and footer on mobile devices
+        if (this.isTouchDevice()) {
+            this.hideHeaderFooterOnMobile();
+        }
 
         this.draw(); // Initial draw after starting
         console.log("[startGame] Initial draw completed.");
@@ -785,6 +813,11 @@ class SnakeGame {
         this.gameLoop.stopGameLoop();
         this.draw();
 
+        // Show header and footer when game is over on mobile
+        if (this.isTouchDevice()) {
+            this.showHeaderFooterOnMobile();
+        }
+
         this.handleGameOverAudio(isNewHighScore);
     }
 
@@ -878,6 +911,11 @@ class SnakeGame {
 
         // Reset the start requested flag
         this.startRequested = false;
+
+        // Show header and footer when game is reset on mobile
+        if (this.isTouchDevice()) {
+            this.showHeaderFooterOnMobile();
+        }
 
         // Force a redraw to show the new state
         this.draw();
@@ -1430,6 +1468,19 @@ class SnakeGame {
         this.uiManager.updateMelodyDisplay(this.musicManager.getCurrentMelody());
 
         return true;
+    }
+
+    // Methods to control header and footer visibility on mobile
+    hideHeaderFooterOnMobile() {
+        if (this.gameLayout) {
+            this.gameLayout.classList.add('mobile-game-active');
+        }
+    }
+
+    showHeaderFooterOnMobile() {
+        if (this.gameLayout) {
+            this.gameLayout.classList.remove('mobile-game-active');
+        }
     }
 }
 

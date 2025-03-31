@@ -8,19 +8,19 @@
     --color-text: #f8fafc;
     --color-text-dim: #cbd5e1;
     --color-danger: #e74c3c;
-    
+
     /* Typography */
     --font-main: 'Poppins', system-ui, -apple-system, sans-serif;
-    
+
     /* Shadows & Effects */
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
     --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.15);
     --shadow-glow: 0 0 20px rgba(46, 204, 113, 0.2);
-    
+
     /* Transitions */
     --transition-normal: 0.2s ease-in-out;
-    
+
     /* Radiuses */
     --radius-sm: 6px;
     --radius-md: 12px;
@@ -54,7 +54,7 @@ body {
     margin: 0;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); /* Add safe area insets */
     grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas: 
+    grid-template-areas:
         "header"
         "main"
         "footer";
@@ -71,6 +71,7 @@ body {
     align-items: center;
     z-index: 10;
     width: 100%;
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out;
 }
 
 /* Main game container */
@@ -99,6 +100,7 @@ body {
     font-size: 0.75rem;
     color: var(--color-text-dim);
     opacity: 0.7;
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out;
 }
 
 /* =========== CANVAS & GAME ELEMENTS =========== */
@@ -686,13 +688,40 @@ body {
     .mobile-arrow-controls {
         display: block;
     }
-    
+
     .mobile-only-tip {
         display: flex;
     }
-    
+
     .desktop-only-tip {
         display: none;
+    }
+
+    /* Classes for hiding/showing header and footer during gameplay on mobile */
+    .game-layout.mobile-game-active .game-header,
+    .game-layout.mobile-game-active .game-footer {
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        pointer-events: none;
+        visibility: hidden;
+        position: absolute;
+    }
+
+    /* Make sure the game container can take advantage of the extra space */
+    .game-layout.mobile-game-active .game-container {
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    /* Adjust the main container to use the full height when header/footer are hidden */
+    .game-layout.mobile-game-active {
+        grid-template-rows: 0fr minmax(0, 1fr) 0fr;
+        transition: grid-template-rows 0.3s ease-in-out;
     }
 }
 
@@ -705,25 +734,25 @@ body {
             "header main"
             "header footer";
     }
-    
+
     .game-header {
         padding: 20px;
         flex-direction: column;
         align-items: flex-start;
         justify-content: flex-start;
     }
-    
+
     .header-buttons {
         flex-direction: column;
         margin-left: 0;
     }
-    
+
     .canvas-wrapper {
         max-width: min(80vh, 75vw);
         aspect-ratio: 1 / 1;
         flex-shrink: 0;
     }
-    
+
     .game-controls {
         max-width: min(80vh, 75vw);
     }
@@ -733,50 +762,50 @@ body {
 @media (orientation: portrait), (max-width: 768px) {
     .game-layout {
         grid-template-rows: auto minmax(0, 1fr) auto;
-        grid-template-areas: 
+        grid-template-areas:
             "header"
             "main"
             "footer";
     }
-    
+
     .game-header {
         justify-content: center;
         padding: 3px 0;
         width: 100%;
     }
-    
+
     .header-buttons {
         justify-content: center;
         margin-left: 0;
     }
-    
+
     .game-container {
         gap: 12px;
         width: 100%;
         overflow-y: auto;
     }
-    
+
     .game-controls {
         gap: 10px;
         max-width: min(90vh, 95vw);
         margin: 0 auto;
     }
-    
+
     .game-footer {
         text-align: center;
         padding: 3px;
     }
-    
+
     .mobile-arrow-controls {
         margin-bottom: 10px;
         max-width: min(90vh, 95vw);
         margin: 0 auto 10px;
     }
-    
+
     .mobile-only-tip {
         margin-bottom: 8px;
     }
-    
+
     .desktop-only-tip,
     .mobile-only-tip {
         width: 100%;
@@ -784,7 +813,7 @@ body {
         margin: 0 auto;
         padding: 0 5px 2px 5px;
     }
-    
+
     /* Square aspect ratio for mobile */
     .canvas-wrapper {
         max-width: min(90vh, 95vw);
@@ -792,7 +821,7 @@ body {
         margin: 0 auto;
         flex-shrink: 0;
     }
-    
+
     /* Reduced spacing for score container */
     .score-container {
         max-width: min(90vh, 95vw);
@@ -800,7 +829,7 @@ body {
         padding: 6px 10px;
         gap: 15px;
     }
-    
+
     /* Fix for arrow buttons */
     .arrow-button-row {
         width: 100%;
@@ -808,16 +837,16 @@ body {
         display: flex;
         margin: 0 auto 6px auto;
     }
-    
+
     .arrow-button-row:first-child {
         margin: 0 auto 6px auto;
     }
-    
+
     .spacer {
         flex: 1;
         max-width: 60px;
     }
-    
+
     /* For tip items */
     .tip-item {
         flex-shrink: 0;
@@ -834,62 +863,62 @@ body {
         aspect-ratio: 1 / 1;
         flex-shrink: 0;
     }
-    
+
     .game-controls {
         max-width: 95vw;
         gap: 5px;
         padding: 0;
     }
-    
+
     .score-container {
         padding: 5px 8px;
         gap: 8px;
     }
-    
+
     .arrow-button, .spacer {
         width: 50px;
         height: 50px;
     }
-    
+
     .game-footer {
         display: none;
     }
-    
+
     .tip-item {
         padding: 2px 4px;
         font-size: 0.65rem;
         margin: 0 1px;
     }
-    
+
     .mobile-only-tip,
     .desktop-only-tip {
         padding: 0 3px 2px 3px;
         gap: 4px;
     }
-    
+
     .game-container {
         gap: 8px;
         overflow-y: auto;
     }
-    
+
     .music-info {
         padding: 3px 6px;
         gap: 4px;
     }
-    
+
     .control-toggle {
         padding: 3px 4px;
     }
-    
+
     .arrow-button-row {
         gap: 5px;
         margin-bottom: 5px;
     }
-    
+
     .arrow-button-row:first-child {
         margin: 0 auto 5px auto;
     }
-    
+
     .mobile-arrow-controls {
         margin-bottom: 5px;
     }
@@ -902,50 +931,50 @@ body {
         aspect-ratio: 1 / 1;
         flex-shrink: 0;
     }
-    
+
     .game-controls {
         max-width: 95vw;
         gap: 6px;
         padding: 0;
     }
-    
+
     .score-container {
         padding: 6px 10px;
         gap: 10px;
     }
-    
+
     .mobile-arrow-controls {
         margin-bottom: 8px;
         max-width: 95vw;
     }
-    
+
     .mobile-only-tip,
     .desktop-only-tip {
         padding: 0 5px 2px 5px;
         gap: 6px;
         max-width: 95vw;
     }
-    
+
     .game-container {
         gap: 10px;
         width: 100%;
         overflow-y: auto;
     }
-    
+
     .arrow-button-row {
         gap: 6px;
         margin-bottom: 6px;
     }
-    
+
     .tip-item {
         padding: 3px 5px;
     }
-    
+
     .game-header {
         padding: 2px 0;
         width: 100%;
     }
-    
+
     .header-buttons {
         margin-left: 0;
         justify-content: center;
@@ -959,21 +988,21 @@ body {
         aspect-ratio: 1 / 1;
         flex-shrink: 0;
     }
-    
+
     .game-controls {
         max-width: min(85vh, 95vw);
     }
-    
+
     .game-header {
         padding: 5px 0;
     }
-    
+
     .game-container {
         gap: 10px;
         width: 100%;
         overflow-y: auto;
     }
-    
+
     .score-container {
         max-width: min(85vh, 95vw);
         margin: 0 auto;
