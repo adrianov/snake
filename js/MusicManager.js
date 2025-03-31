@@ -514,12 +514,16 @@ class MusicManager {
             const newTimeoutId = setTimeout(() => {
                 // Double-check game state before cleanup in case it changed during the delay
                 const currentGameState = gameInstance.gameStateManager.getGameState();
+
+                // Critical fix: Don't perform cleanup if game is now active again
+                // This prevents the cleanup from stopping music after a quick restart
                 if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
+                    console.log("MusicManager: Cancelling scheduled cleanup because game is now active");
                     MusicManager.cleanupTimeouts.delete(gameInstance);
                     return;
                 }
 
-                // Perform cleanup
+                // Perform cleanup only if game is still over or paused
                 if ((currentGameState.isGameOver || currentGameState.isPaused)) {
                     MusicManager.stopMusic(true);
 

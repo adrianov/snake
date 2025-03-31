@@ -596,6 +596,15 @@ class SnakeGame {
         // Get sound manager instance
         this.soundManager = SoundManager.getInstance();
 
+        // Cancel any pending audio cleanups to prevent music stoppage after restart
+        // This is important when quickly restarting after game over
+        const timeoutId = MusicManager.cleanupTimeouts.get(this);
+        if (timeoutId) {
+            console.log("Cancelling pending audio cleanup from previous game over");
+            clearTimeout(timeoutId);
+            MusicManager.cleanupTimeouts.delete(this);
+        }
+
         // Ensure audio context is initialized if user interaction has occurred
         if (this.hasUserInteraction && SoundManager.getAudioContext()) {
             MusicManager.initAudioContextIfNeeded();

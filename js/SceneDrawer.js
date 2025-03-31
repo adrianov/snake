@@ -10,7 +10,7 @@ class SceneDrawer {
         this.starfieldManager = new StarfieldManager(this.pixelRatio);
         this.moonDrawer = new MoonDrawer(this.pixelRatio);
         this.uiOverlayManager = new UIOverlayManager(gridSize, this.pixelRatio);
-        
+
         // Moon animation properties
         this.moonStartTime = Date.now();
         this.moonCycleDuration = 120000; // 2 minutes for a full moon cycle across the sky
@@ -34,10 +34,10 @@ class SceneDrawer {
     // Reset darkness level when starting a new game
     resetDarknessLevel() {
         this.backgroundManager.resetDarknessLevel();
-        
+
         // Reset moon animation cycle
         this.moonStartTime = Date.now();
-        
+
         // Reset the current tip
         this.uiOverlayManager.resetTip();
     }
@@ -56,35 +56,35 @@ class SceneDrawer {
         if (this.backgroundManager.darknessLevel > 30) {
             // Get the current timestamp for animation calculations
             const currentTime = Date.now();
-            
+
             // Only recalculate moon position if needed for star occlusion
             let moonPositionData = null;
-            
+
             // If moon is visible (and we need it for star occlusion)
             if (this.backgroundManager.darknessLevel > 25) {
                 // Calculate normal cycle progress
                 const elapsedTime = currentTime - this.moonStartTime;
                 let cycleProgress = (elapsedTime % this.moonCycleDuration) / this.moonCycleDuration;
-                
+
                 // Handle moon reset animation
                 if (!this.isMoonResetting && cycleProgress > 0.99) {
                     // Start the reset animation
                     this.isMoonResetting = true;
                     this.moonResetStartTime = currentTime;
                 }
-                
+
                 // Create animation state object for MoonDrawer
                 let moonAnimation = {
                     cycleProgress: cycleProgress,
                     isResetting: this.isMoonResetting,
                     progress: 0
                 };
-                
+
                 // Update reset animation progress if active
                 if (this.isMoonResetting) {
                     const resetElapsedTime = currentTime - this.moonResetStartTime;
                     moonAnimation.progress = Math.min(1, resetElapsedTime / this.moonResetDuration);
-                    
+
                     // If reset animation is complete, go back to normal cycle
                     if (resetElapsedTime >= this.moonResetDuration) {
                         this.isMoonResetting = false;
@@ -95,15 +95,15 @@ class SceneDrawer {
                         };
                     }
                 }
-                
+
                 // Calculate moon size
                 const visualWidth = this.canvas.width / this.pixelRatio;
                 const visualHeight = this.canvas.height / this.pixelRatio;
                 const moonSize = Math.min(this.gridSize * 2.5, visualWidth * 0.08);
-                
+
                 // Calculate moon position for star occlusion
                 const moonPosition = this.moonDrawer.calculatePosition(this.canvas, moonAnimation);
-                
+
                 // Set moon position data for star field manager
                 moonPositionData = {
                     x: moonPosition.x,
@@ -112,12 +112,12 @@ class SceneDrawer {
                     progress: cycleProgress
                 };
             }
-            
+
             // Draw stars with moon position for occlusion
             this.starfieldManager.drawStars(
-                this.ctx, 
-                this.canvas, 
-                this.backgroundManager.darknessLevel, 
+                this.ctx,
+                this.canvas,
+                this.backgroundManager.darknessLevel,
                 moonPositionData
             );
         }
@@ -216,7 +216,7 @@ class SceneDrawer {
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = this.canvas.width / this.pixelRatio;
         const visualHeight = this.canvas.height / this.pixelRatio;
-        
+
         this.uiOverlayManager.drawGameOver(this.ctx, visualWidth, visualHeight, score, highScore);
     }
 
@@ -225,7 +225,7 @@ class SceneDrawer {
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = this.canvas.width / this.pixelRatio;
         const visualHeight = this.canvas.height / this.pixelRatio;
-        
+
         this.uiOverlayManager.drawPauseMessage(this.ctx, visualWidth, visualHeight);
     }
 
@@ -234,14 +234,14 @@ class SceneDrawer {
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = canvas.width / this.pixelRatio;
         const visualHeight = canvas.height / this.pixelRatio;
-        
+
         // Create a semi-transparent gradient overlay
         const gradient = ctx.createLinearGradient(0, 0, 0, visualHeight);
         gradient.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
         gradient.addColorStop(1, 'rgba(30, 41, 59, 0.9)');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, visualWidth, visualHeight);
-        
+
         // Pass the call to UIOverlayManager with correct dimensions
         this.uiOverlayManager.drawStartMessage(ctx, visualWidth, visualHeight);
     }

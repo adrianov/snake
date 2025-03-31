@@ -248,10 +248,10 @@ class AudioManager {
         const highScoreFanfareDelay = 800;
         const fanfareDuration = 1300;
 
-        // Calculate total cleanup delay
+        // Calculate total cleanup delay - increase delay to give more time for quick restarts
         const cleanupDelay = isNewHighScore
-            ? highScoreFanfareDelay + fanfareDuration + 200  // After fanfare completes + buffer
-            : 1000;                                          // Basic delay for crash sound
+            ? highScoreFanfareDelay + fanfareDuration + 300  // After fanfare completes + buffer
+            : 1500;                                          // Increased delay for crash sound
 
         // 1. Stop music but don't fully clean up
         MusicManager.stopMusic(false);
@@ -269,14 +269,18 @@ class AudioManager {
             }, highScoreFanfareDelay);
         }
 
+        // Cancel any existing cleanup for this game instance
+        const existingTimeoutId = MusicManager.cleanupTimeouts.get(this.game);
+        if (existingTimeoutId) {
+            clearTimeout(existingTimeoutId);
+        }
+
         // 4. Schedule final cleanup after all sounds have played
         console.log(`Game Over: Scheduling audio resources cleanup in ${cleanupDelay}ms`);
-        setTimeout(() => {
-            console.log("Game Over: Performing final audio cleanup");
-            // Clear the current melody ID to ensure a new one is selected for the next game
-            MusicManager.clearCurrentMelody();
-            // Use the static method to clean up all audio resources
-            MusicManager.cleanupAudioResources(this.game, 0);
-        }, cleanupDelay);
+
+        // Use MusicManager's own cleanup mechanism with delay
+        // This lets the cleanup be properly cancelled if the game is restarted
+        MusicManager.clearCurrentMelody();
+        MusicManager.cleanupAudioResources(this.game, cleanupDelay);
     }
 }
