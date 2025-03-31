@@ -56,30 +56,30 @@ class GameUtils {
         return isTouch || isIOS;
     }
 
-    // Show header and footer on mobile
-    static showHeaderFooterOnMobile(gameLayout) {
+    // Show header and footer
+    static showHeaderFooter(gameLayout) {
         if (!gameLayout) {
             // Try to get the layout if it wasn't provided
             gameLayout = document.querySelector('.game-layout');
         }
 
         if (gameLayout) {
-            gameLayout.classList.remove('mobile-game-active');
+            gameLayout.classList.remove('game-active');
 
             // Force repaint to ensure changes take effect, especially on iOS
             void gameLayout.offsetHeight;
         }
     }
 
-    // Hide header and footer on mobile
-    static hideHeaderFooterOnMobile(gameLayout) {
+    // Hide header and footer
+    static hideHeaderFooter(gameLayout) {
         if (!gameLayout) {
             // Try to get the layout if it wasn't provided
             gameLayout = document.querySelector('.game-layout');
         }
 
         if (gameLayout) {
-            gameLayout.classList.add('mobile-game-active');
+            gameLayout.classList.add('game-active');
 
             // Force repaint to ensure changes take effect, especially on iOS
             void gameLayout.offsetHeight;

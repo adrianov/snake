@@ -704,36 +704,52 @@ body {
     .desktop-only-tip {
         display: none;
     }
+}
 
-    /* Classes for hiding/showing header and footer during gameplay on mobile */
+/* Simpler header/footer hiding during gameplay - applies to all devices */
+.game-layout.game-active .game-header,
+.game-layout.game-active .game-footer {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    position: absolute;
+    visibility: hidden;
+    z-index: -1;
+}
+
+/* Game layout in active mode - maintain basic layout */
+.game-layout.game-active {
+    /* Just override to ensure header/footer don't take space */
+    overflow: hidden;
+    background: var(--color-bg); /* Use the defined background color */
+}
+
+/* Ensure game container takes appropriate space in game mode */
+.game-layout.game-active .game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 0;
+    width: 100%;
+}
+
+/* Mobile-specific gameplay enhancements */
+@media (hover: none) and (pointer: coarse) {
+    /* Legacy class support */
     .game-layout.mobile-game-active .game-header,
     .game-layout.mobile-game-active .game-footer {
         opacity: 0;
         height: 0;
-        max-height: 0;
         overflow: hidden;
-        padding: 0;
-        margin: 0;
-        pointer-events: none;
-        visibility: hidden;
         position: absolute;
+        visibility: hidden;
         z-index: -1;
-        clip: rect(0 0 0 0);
     }
-
-    /* Make sure the game container can take advantage of the extra space */
-    .game-layout.mobile-game-active .game-container {
-        margin-top: 0;
-        margin-bottom: 0;
-        padding-top: 5px;
-        padding-bottom: 5px;
-        height: 100%; /* Ensure it takes full height */
-    }
-
-    /* Adjust the main container to use the full height when header/footer are hidden */
-    .game-layout.mobile-game-active {
-        grid-template-rows: 0fr 1fr 0fr;
-        transition: grid-template-rows 0.3s ease-in-out;
+    
+    /* For mobile devices, maximize canvas during gameplay */
+    .game-layout.game-active .canvas-wrapper {
+        max-width: min(95vh, 95vw);
     }
 }
 
@@ -745,6 +761,13 @@ body {
         grid-template-areas:
             "header main"
             "header footer";
+    }
+
+    /* Override landscape layout when in game mode */
+    .game-layout.game-active {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr !important;
+        grid-template-areas: "main" !important;
     }
 
     .game-header {
@@ -947,90 +970,3 @@ body {
     .game-controls {
         max-width: 95vw;
         gap: 6px;
-        padding: 0;
-    }
-
-    .score-container {
-        padding: 6px 10px;
-        gap: 10px;
-    }
-
-    .mobile-arrow-controls {
-        margin-bottom: 8px;
-        max-width: 95vw;
-    }
-
-    .mobile-only-tip,
-    .desktop-only-tip {
-        padding: 0 5px 2px 5px;
-        gap: 6px;
-        max-width: 95vw;
-    }
-
-    .game-container {
-        gap: 10px;
-        width: 100%;
-        overflow-y: auto;
-    }
-
-    .arrow-button-row {
-        gap: 6px;
-        margin-bottom: 6px;
-    }
-
-    .tip-item {
-        padding: 3px 5px;
-    }
-
-    .game-header {
-        padding: 2px 0;
-        width: 100%;
-    }
-
-    .header-buttons {
-        margin-left: 0;
-        justify-content: center;
-    }
-}
-
-/* Tablet-specific styles */
-@media (min-width: 600px) and (max-width: 1024px) {
-    .canvas-wrapper {
-        max-width: min(85vh, 95vw);
-        aspect-ratio: 1 / 1;
-        flex-shrink: 0;
-    }
-
-    .game-controls {
-        max-width: min(85vh, 95vw);
-    }
-
-    .game-header {
-        padding: 5px 0;
-    }
-
-    .game-container {
-        gap: 10px;
-        width: 100%;
-        overflow-y: auto;
-    }
-
-    .score-container {
-        max-width: min(85vh, 95vw);
-        margin: 0 auto;
-    }
-}
-
-/* Specific container for arrow controls to help with centering */
-.arrow-controls-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 240px; /* Limiting width to force center alignment */
-    margin: 0 auto;
-}
-
-
-

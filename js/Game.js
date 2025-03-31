@@ -243,10 +243,8 @@ class SnakeGame {
         // Cleanup audio resources on pause
         MusicManager.cleanupAudioResources(this, 200);
 
-        // Show header and footer when game is paused on mobile
-        if (GameUtils.isTouchDevice()) {
-            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
-        }
+        // Show header and footer when game is paused
+        GameUtils.showHeaderFooter(this.gameLayout);
     }
 
     unpauseGame() {
@@ -256,10 +254,8 @@ class SnakeGame {
         // Initialize music using the AudioManager, don't force a new melody when unpausing
         this.audioManager.initializeGameMusic(false);
 
-        // Hide header and footer when game is unpaused on mobile
-        if (GameUtils.isTouchDevice()) {
-            GameUtils.hideHeaderFooterOnMobile(this.gameLayout);
-        }
+        // Hide header and footer when game is unpaused
+        GameUtils.hideHeaderFooter(this.gameLayout);
 
         // Restart the game loop
         this.gameLoop.startGameLoop();
@@ -299,10 +295,8 @@ class SnakeGame {
         // Force new melody ONLY on the first game start, not on restart after game over
         this.audioManager.initializeGameMusic(isFirstStart);
 
-        // Hide header and footer on mobile devices
-        if (GameUtils.isTouchDevice()) {
-            GameUtils.hideHeaderFooterOnMobile(this.gameLayout);
-        }
+        // Hide header and footer during gameplay
+        GameUtils.hideHeaderFooter(this.gameLayout);
 
         this.draw(); // Initial draw after starting
     }
@@ -602,10 +596,8 @@ class SnakeGame {
         // Draw the current state with transition overlay
         this.draw();
 
-        // Show header and footer when game is over on mobile
-        if (GameUtils.isTouchDevice()) {
-            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
-        }
+        // Show header and footer when game is over
+        GameUtils.showHeaderFooter(this.gameLayout);
 
         // Add a 1-second delay before showing the game over screen
         setTimeout(() => {
