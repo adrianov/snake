@@ -349,21 +349,19 @@ class InputManager {
             '.canvas-wrapper',
 
             // Active controls - these should work normally during gameplay
-            '.arrow-button', // Arrow buttons for controls
-            '.spacer', // Spacers in the arrow controls grid
+            '#mobileArrowControls', // Contains all mobile arrow controls
+            '.arrow-button', // For any individually placed arrow buttons
+            '.spacer', // For any individual spacers
             '#soundToggle', // Sound on/off button
             '#musicToggle', // Music on/off button
             '.control-toggle', // Any toggle buttons
             '.melody-display', // Current melody display
-            '#currentMelody', // Text inside melody display
             '.reset-button', // Reset high score button
 
             // Donation panel elements - should not pause when interacted with
-            '.donation-panel',
-            '.close-button',
-            '.copy-btn',
-            '.qr-code-link',
-            '.crypto-address'
+            '.donation-panel', // Contains all donation panel elements
+            '.copy-btn', // For any standalone copy buttons
+            '.qr-code-link' // For any standalone QR links
         ];
 
         // Pause logic: Click outside when running & not paused
