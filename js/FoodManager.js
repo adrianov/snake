@@ -1,3 +1,13 @@
+/**
+ * Manages the food system including spawning, lifecycle, and collision detection.
+ * - Implements a time-based food spawning system with randomized intervals
+ * - Ensures food spawns in valid positions not occupied by the snake
+ * - Maintains a collection of active food items with their properties
+ * - Implements food expiration with configurable lifetimes for each item
+ * - Handles collision detection between snake head and food items
+ * - Supports dynamic food spawning in the snake's direction as a power-up feature
+ * - Provides food removal functionality when eaten or expired
+ */
 class FoodManager {
     constructor(tileCount) {
         this.tileCount = tileCount;
@@ -27,7 +37,7 @@ class FoodManager {
                 lifetime: Math.random() * 15000 // Random lifetime between 0-15 seconds
             };
         } while (snake.isOccupyingPosition(newFood.x, newFood.y) ||
-                this.food.some(f => f.x === newFood.x && f.y === newFood.y));
+            this.food.some(f => f.x === newFood.x && f.y === newFood.y));
 
         this.food.push(newFood);
     }

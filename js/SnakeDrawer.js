@@ -1,3 +1,14 @@
+/**
+ * Provides specialized snake rendering with visual effects.
+ * - Implements gradient-based rendering for a visually distinct snake body
+ * - Renders snake segments with proper connections between adjacent parts
+ * - Applies vibration effects when that feature is enabled
+ * - Manages different visual states (normal, glowing, damaged)
+ * - Implements direction-aware head rendering to show the snake's facing
+ * - Optimizes drawing by handling segments as connected paths rather than individual cells
+ * - Provides visual interpolation between movements for smoother animation
+ * - Implements special effects for game events (eating, collision)
+ */
 class SnakeDrawer {
     constructor(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize;

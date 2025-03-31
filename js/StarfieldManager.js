@@ -1,3 +1,14 @@
+/**
+ * Generates and animates the night sky star field.
+ * - Implements procedural star generation with natural distribution patterns
+ * - Manages star animation including twinkling and subtle movement effects
+ * - Applies progressive star visibility based on the current darkness level
+ * - Handles star occlusion by other celestial objects like the moon
+ * - Optimizes rendering through layered star maps and selective updates
+ * - Implements star properties including varied sizes, brightness, and colors
+ * - Provides responsive rendering with proper scaling for different viewport sizes
+ * - Uses pseudo-random generation with fixed seeds for consistent star patterns
+ */
 class StarfieldManager {
     constructor(pixelRatio = 1) {
         this.starFieldCache = null;

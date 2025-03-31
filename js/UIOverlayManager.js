@@ -1,3 +1,14 @@
+/**
+ * Handles layered UI overlays on top of the game canvas.
+ * - Implements a specialized layer for rendering non-gameplay UI elements
+ * - Manages overlay transparency to maintain gameplay visibility
+ * - Renders informational and instructional UI elements
+ * - Controls tooltip and hint systems with proper positioning and timing
+ * - Implements responsive positioning based on screen size and orientation
+ * - Manages overlay transitions with smooth animations
+ * - Optimizes overlay rendering to minimize performance impact
+ * - Provides visually distinct UI elements that don't interfere with gameplay
+ */
 class UIOverlayManager {
     constructor(gridSize, pixelRatio = 1) {
         this.gridSize = gridSize || 20;
@@ -328,4 +339,4 @@ class UIOverlayManager {
 }
 
 // Export the class
-window.UIOverlayManager = UIOverlayManager; 
+window.UIOverlayManager = UIOverlayManager;

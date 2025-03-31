@@ -1,3 +1,14 @@
+/**
+ * Generates and manages procedural background music.
+ * - Implements real-time procedural music generation based on game state
+ * - Schedules musical notes with precise timing using Web Audio API
+ * - Manages seamless transitions between different music sections and intensities
+ * - Adapts musical parameters (tempo, volume, notes) based on gameplay events
+ * - Provides memory-efficient music generation without pre-recorded assets
+ * - Controls audio node lifecycle to prevent memory leaks during long gameplay sessions
+ * - Synchronizes music state with game events (pause, resume, game over)
+ * - Implements dynamic instrument and timbre selection for musical variety
+ */
 class MusicManager {
     // Static properties
     static currentMelodyId = null;

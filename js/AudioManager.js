@@ -1,3 +1,13 @@
+/**
+ * Coordinates sound and music systems with browser audio constraints.
+ * - Implements safe audio initialization respecting browser autoplay policies
+ * - Orchestrates communication between sound effects and music subsystems
+ * - Manages global audio state (enabled/disabled, volume levels)
+ * - Handles audio context resumption after user interaction
+ * - Implements browser-specific workarounds for audio limitations
+ * - Provides a unified interface for triggering game audio events
+ * - Maintains synchronization between audio state and user preferences
+ */
 class AudioManager {
     constructor(game) {
         this.game = game;

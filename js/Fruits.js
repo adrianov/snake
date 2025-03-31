@@ -1,3 +1,14 @@
+/**
+ * Defines the fruit system configuration with visual and gameplay properties.
+ * - Implements SVG-based fruit definitions for memory-efficient rendering
+ * - Configures probability distribution for each fruit type's appearance
+ * - Sets scoring values for each fruit type to create varied rewards
+ * - Defines visual properties including colors for UI feedback
+ * - Provides a complete self-contained asset system without external dependencies
+ * - Organizes fruits in a structured format for easy extension and modification
+ * - Uses weighted probabilities to balance gameplay difficulty and rewards
+ */
+
 // Make FRUIT_CONFIG a global variable
 window.FRUIT_CONFIG = {
     apple: {

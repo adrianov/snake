@@ -1,3 +1,13 @@
+/**
+ * Core game controller that orchestrates all game systems and manages the game lifecycle.
+ * - Initializes subsystems including rendering, sound, input, and state management
+ * - Coordinates the update cycle by processing input, updating state, and triggering rendering
+ * - Manages responsive scaling to ensure proper display across device sizes
+ * - Handles dynamic loading of assets and ensures they're ready before game starts
+ * - Controls state transitions between menu, gameplay, pause, and game over states
+ * - Orchestrates collision detection and resolution with walls, snake body, and food
+ * - Implements the game score system and difficulty progression as score increases
+ */
 class SnakeGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');

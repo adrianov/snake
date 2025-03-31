@@ -1,3 +1,13 @@
+/**
+ * Handles core game element rendering with optimized asset usage.
+ * - Implements an adapter between game state and visual representation
+ * - Manages sprite-based rendering for game entities with proper scaling
+ * - Coordinates responsive rendering across different device pixel ratios
+ * - Optimizes rendering by using pre-loaded assets and caching where appropriate
+ * - Implements proper layering of game elements (background, grid, snake, food, UI)
+ * - Provides visual feedback for game events through rendering variations
+ * - Delegates specialized rendering to component-specific drawers
+ */
 class GameDrawer {
     constructor(canvas, gridSize, fruitImages) {
         this.canvas = canvas;

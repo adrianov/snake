@@ -1,3 +1,13 @@
+/**
+ * Manages persistent game state and feature toggles.
+ * - Implements a state machine for tracking game states (menu, playing, paused, game over)
+ * - Maintains and updates the scoring system with persistent high score tracking
+ * - Handles local storage operations for preserving game settings and scores
+ * - Manages feature toggles like luck mode (collision avoidance) and snake vibration
+ * - Provides a uniform interface for state queries by other game components
+ * - Controls state transitions with appropriate validation rules
+ * - Implements reset functionality to return to initial state
+ */
 class GameStateManager {
     constructor() {
         this.isGameStarted = false;

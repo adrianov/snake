@@ -1,3 +1,14 @@
+/**
+ * Provides shared utility functions across game components.
+ * - Implements direction validation and opposite direction lookups
+ * - Provides mathematical utilities for game calculations
+ * - Supports color manipulation and transformation functions
+ * - Implements common game algorithms like collision detection helpers
+ * - Provides string formatting and transformation utilities
+ * - Implements browser compatibility detection and handling
+ * - Offers reusable helper functions to reduce code duplication
+ * - Supports cross-component functionality with stateless design
+ */
 class GameUtils {
     // Check if a direction change is valid (can't go directly opposite to current direction)
     static isValidDirectionChange(newDirection, currentDirection) {

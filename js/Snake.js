@@ -1,3 +1,12 @@
+/**
+ * Manages the snake entity's state and behavior.
+ * - Maintains an ordered collection of body segments with the head at index 0
+ * - Implements movement by adding a new head and optionally removing the tail
+ * - Controls growth by suppressing tail removal for one movement cycle
+ * - Provides collision detection by checking if a position overlaps with body segments
+ * - Implements safety mechanisms to find valid movement directions to avoid collisions
+ * - Supports damage mechanics through the tail cutting functionality
+ */
 class Snake {
     constructor(startX, startY) {
         // Initialize snake with 3 segments

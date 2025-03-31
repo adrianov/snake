@@ -1,3 +1,14 @@
+/**
+ * Coordinates rendering of all background environmental elements.
+ * - Orchestrates multiple rendering subsystems in the correct visual order
+ * - Manages the day-to-night transition effects as game progresses
+ * - Implements time-based animations for background elements like moon movement
+ * - Coordinates visual changes based on game state and score
+ * - Handles responsive rendering across different screen sizes and pixel ratios
+ * - Optimizes rendering through selective updates and redraw optimization
+ * - Manages transitions between visual states with proper timing and interpolation
+ * - Delegates specialized rendering to component-specific managers
+ */
 class SceneDrawer {
     constructor(canvas, gridSize, pixelRatio = 1) {
         this.canvas = canvas;

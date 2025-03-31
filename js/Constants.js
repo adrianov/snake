@@ -1,3 +1,15 @@
+/**
+ * Centralizes game configuration parameters for consistent behavior.
+ * - Provides a single source of truth for game tuning parameters
+ * - Implements nested organization for related constants
+ * - Controls snake movement mechanics including speed and acceleration
+ * - Configures special feature adjustments (luck mode effects)
+ * - Defines timing constants for game loops and animations
+ * - Implements difficulty scaling through configurable multipliers
+ * - Ensures consistent behavior across game components through shared constants
+ * - Supports easy tuning through centralized configuration
+ */
+
 // Game Constants - Centralized configuration
 
 // Speed constants
@@ -9,16 +21,16 @@ const GAME_CONSTANTS = {
         SPEED_INCREASE_LUCK: 1.3,        // Speed factor after luck effect (1.3 = 30% slower)
         MIN_SPEED_FACTOR: 0.25,          // Minimum speed as factor of base speed
         MAX_SPEED_FACTOR: 3,             // Maximum speed as factor of base speed
-        
+
         // Direction change speed modifiers
         SPEED_MULTIPLIER: 0.8,           // Speed multiplier when continuing same direction
         SLOW_MULTIPLIER: 1.2,            // Speed multiplier when moving in opposite direction
-        
+
         // Touch controls - more gradual
         TOUCH_SPEED_MULTIPLIER: 0.9,     // Touch movement speed multiplier
         TOUCH_SLOW_MULTIPLIER: 1.15      // Touch opposite direction multiplier
     },
-    
+
     // Fruit loop refresh interval
     FRUIT_REFRESH_INTERVAL: 100          // Interval for fruit management loop
 };
@@ -26,4 +38,4 @@ const GAME_CONSTANTS = {
 // Make constants available globally
 if (typeof window !== 'undefined') {
     window.GAME_CONSTANTS = GAME_CONSTANTS;
-} 
+}

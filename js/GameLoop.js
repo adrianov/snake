@@ -1,3 +1,13 @@
+/**
+ * Controls game timing and update cycles with adaptive speed management.
+ * - Implements frame-based animation using requestAnimationFrame for smooth rendering
+ * - Manages update intervals to control game speed independent of frame rate
+ * - Dynamically adjusts game speed based on player actions and game events
+ * - Implements direction-based speed modifiers for more engaging gameplay
+ * - Provides separate fruit management timing loop for consistent food mechanics
+ * - Enforces minimum and maximum speed boundaries to maintain playability
+ * - Supports specialized speed adjustments for different input methods (keyboard vs. touch)
+ */
 class GameLoop {
     constructor(updateCallback) {
         this.updateCallback = updateCallback;

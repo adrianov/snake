@@ -1,3 +1,14 @@
+/**
+ * Renders the moon with realistic lighting and animation.
+ * - Implements realistic lunar rendering with proper shadow casting and phases
+ * - Manages moon animation along a celestial arc path with smooth transitions
+ * - Provides position calculation services to other visual systems for occlusion
+ * - Implements cycle reset animation when the moon completes its path
+ * - Renders moon with appropriate size scaling based on viewport dimensions
+ * - Optimizes rendering through selective redraw and property caching
+ * - Handles high-DPI rendering with proper pixel ratio adjustments
+ * - Implements subtle visual effects for enhanced realism (glow, crater details)
+ */
 class MoonDrawer {
     constructor(pixelRatio = 1) {
         // Known new moon reference date (January 6, 2000 at 18:14 UTC)
@@ -43,7 +54,7 @@ class MoonDrawer {
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = canvas.width / this.pixelRatio;
         const visualHeight = canvas.height / this.pixelRatio;
-        
+
         // Default values
         let x, y;
 
@@ -82,7 +93,7 @@ class MoonDrawer {
             // Y coordinate follows a simple sine wave arc (higher in middle)
             y = visualHeight * (0.25 - (0.15 * Math.sin(cycleProgress * Math.PI)));
         }
-        
+
         // Ensure moon stays within visible boundaries
         x = Math.max(visualWidth * 0.05, Math.min(x, visualWidth * 0.95));
         y = Math.max(visualHeight * 0.05, Math.min(y, visualHeight * 0.5));
@@ -364,17 +375,17 @@ class MoonDrawer {
 
         // Draw the shadow arc along the edge of the moon
         ctx.arc(x, y, radius,
-              direction > 0 ? -Math.PI/2 : Math.PI/2,
-              direction > 0 ? Math.PI/2 : -Math.PI/2,
-              false);
+            direction > 0 ? -Math.PI / 2 : Math.PI / 2,
+            direction > 0 ? Math.PI / 2 : -Math.PI / 2,
+            false);
 
         // Draw the curved terminator line
         ctx.arc(
             x + shadowOffset,
             y,
             shadowCurveRadius,
-            direction > 0 ? Math.PI/2 : -Math.PI/2,
-            direction > 0 ? -Math.PI/2 : Math.PI/2,
+            direction > 0 ? Math.PI / 2 : -Math.PI / 2,
+            direction > 0 ? -Math.PI / 2 : Math.PI / 2,
             false
         );
 
@@ -406,12 +417,12 @@ class MoonDrawer {
             { x: 0.12, y: 0.25, r: 0.15, d: 0.03 }, // Mare Serenitatis
             { x: 0.3, y: -0.15, r: 0.12, d: 0.01 }, // Oceanus Procellarum
             { x: -0.32, y: -0.3, r: 0.1, d: 0.03 }, // Mare Nubium
-            
+
             // Medium craters
-            { x: -0.05, y: -0.26, r: 0.07, d: 0.01 }, 
+            { x: -0.05, y: -0.26, r: 0.07, d: 0.01 },
             { x: 0.26, y: 0.32, r: 0.06, d: 0.02 },
             { x: -0.27, y: 0.27, r: 0.08, d: 0.03 },
-            
+
             // Small craters
             { x: 0.1, y: 0.05, r: 0.03, d: 0.005 },
             { x: -0.15, y: -0.1, r: 0.04, d: 0.005 },
@@ -431,7 +442,7 @@ class MoonDrawer {
             // Skip craters that aren't visible based on phase
             if (visibleSide === 'right' && crater.x < 0) return;
             if (visibleSide === 'left' && crater.x > 0) return;
-            
+
             // If there's a terminator line (day/night divider), check if crater is visible
             if (terminatorX !== null) {
                 // For waxing moon (terminator moves right to left)
@@ -452,43 +463,43 @@ class MoonDrawer {
             // Draw crater
             ctx.beginPath();
             ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
-            
+
             // Set crater color as a slightly darker shade than the moon
             // Calculate a pseudo-random variation for each crater
             const variation = pseudoRandom(i, 0.5) * 0.2 - 0.1; // -0.1 to 0.1 variation
-            
+
             // Base crater color with a slight variation to avoid uniformity
             const colorValue = Math.max(150, Math.min(215, 180 + variation * 35));
             ctx.fillStyle = `rgba(${colorValue}, ${colorValue + 3}, ${colorValue + 10}, ${craterAlpha})`;
-            
+
             // Add subtle shadow for depth
             ctx.shadowColor = `rgba(0, 0, 0, ${0.25 * alpha})`;
             ctx.shadowBlur = shadowBlur; // Use pixel ratio scaled shadow
             ctx.shadowOffsetX = craterRadius * craterDepth * 12;
             ctx.shadowOffsetY = craterRadius * craterDepth * 12;
-            
+
             ctx.fill();
-            
+
             // Add highlight on opposite side for 3D effect
             ctx.beginPath();
             ctx.arc(
-                craterX - craterRadius * craterDepth * 18, 
-                craterY - craterRadius * craterDepth * 18, 
-                craterRadius * 0.8, 
+                craterX - craterRadius * craterDepth * 18,
+                craterY - craterRadius * craterDepth * 18,
+                craterRadius * 0.8,
                 0, Math.PI * 2
             );
-            
+
             // Clear shadow for highlight
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
-            
+
             // Semi-transparent white for highlight
             ctx.fillStyle = `rgba(255, 255, 255, ${0.08 * alpha})`;
             ctx.fill();
         });
-        
+
         ctx.restore();
     }
 }

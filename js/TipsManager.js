@@ -1,3 +1,14 @@
+/**
+ * Provides contextual gameplay tips and hints to players.
+ * - Implements a randomized tip selection system with proper weighting
+ * - Manages tip display timing based on game state and player actions
+ * - Controls the tip rotation system to avoid repetition
+ * - Provides context-sensitive tips based on player performance and game state
+ * - Implements tip formatting with consistent styling and presentation
+ * - Handles tip visibility states (show/hide) with proper timing
+ * - Organizes tips by categories for appropriate contextual display
+ * - Provides new player guidance while avoiding disruption for experienced players
+ */
 class TipsManager {
     constructor() {
         // Current tip and its displayed lines
@@ -65,7 +76,7 @@ class TipsManager {
             }
         }
         this.tipLines.push(currentLine);
-        
+
         return this.tipLines;
     }
 
@@ -73,17 +84,17 @@ class TipsManager {
     drawTip(ctx, canvasWidth, canvasHeight, gridSize, pixelRatio = 1) {
         // Ensure we have a tip
         this.ensureCurrentTip();
-        
+
         // Set the font for text measurement
         this.tipFontSize = gridSize * 0.6;
         ctx.font = `${this.tipFontSize}px 'Poppins', sans-serif`;
-        
+
         // Calculate maximum width to maintain whitespace on sides
         const maxWidth = canvasWidth * 0.8; // 80% of canvas width
-        
+
         // Make sure lines are calculated with current dimensions
         this.recalculateTipLines(ctx, maxWidth);
-        
+
         // Draw the tip text with nice styling but no background
         ctx.save();
         ctx.font = `${this.tipFontSize}px 'Poppins', sans-serif`;
@@ -100,10 +111,10 @@ class TipsManager {
         for (let i = 0; i < this.tipLines.length; i++) {
             ctx.fillText(this.tipLines[i], canvasWidth / 2, startY + (i * lineHeight));
         }
-        
+
         ctx.restore();
     }
 }
 
 // Export the class
-window.TipsManager = TipsManager; 
+window.TipsManager = TipsManager;

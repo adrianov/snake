@@ -1,3 +1,13 @@
+/**
+ * Controls the background gradient transition system.
+ * - Implements a progressive visual transition from day to night as score increases
+ * - Manages darkness level calculations with proper normalization
+ * - Generates smooth color gradients with configurable interpolation
+ * - Synchronizes visual darkness with game progress for consistent feedback
+ * - Handles the day-to-night cycle with gradual, non-linear transitions
+ * - Provides specialized color calculations for other visual subsystems
+ * - Implements gradient caching for rendering optimization
+ */
 class BackgroundManager {
     constructor() {
         // Track background darkness level (0-100)
@@ -139,4 +149,4 @@ class BackgroundManager {
 }
 
 // Export the class
-window.BackgroundManager = BackgroundManager; 
+window.BackgroundManager = BackgroundManager;

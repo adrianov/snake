@@ -1,3 +1,14 @@
+/**
+ * Handles sound effect processing, caching, and playback.
+ * - Implements a singleton pattern to ensure consistent sound management across the game
+ * - Lazily initializes audio components to respect browser autoplay policies
+ * - Manages a sound buffer cache to optimize memory usage and performance
+ * - Supports dynamic volume control for individual sound effects
+ * - Implements sound effect polyphony for overlapping instances of the same sound
+ * - Provides asynchronous loading of sound resources with error handling
+ * - Uses Web Audio API for precise timing and audio processing
+ * - Implements cross-browser compatibility for audio playback
+ */
 class SoundManager {
     // Static flag to track if user interaction has occurred
     static hasUserInteraction = false;

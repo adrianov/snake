@@ -1,3 +1,14 @@
+/**
+ * Manages game user interface elements and game state communication.
+ * - Implements score and high score display with proper formatting and animation
+ * - Manages transient UI notifications with configurable timing and styling
+ * - Renders game state messages (pause, game over, instructions)
+ * - Controls UI element visibility based on current game state
+ * - Implements feature toggle indicators (sound, music, vibration)
+ * - Provides responsive UI positioning across different viewport sizes
+ * - Manages UI animations for better visual feedback
+ * - Implements fade-in/fade-out transitions for smoother UI experiences
+ */
 class UIManager {
     constructor(game) {
         this.game = game;

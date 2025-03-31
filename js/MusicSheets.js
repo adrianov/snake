@@ -1,3 +1,14 @@
+/**
+ * Provides musical data structures for procedural music generation.
+ * - Defines musical patterns organized as scale degrees for key-independent playback
+ * - Implements a structured note system with configurable duration, articulation, and dynamics
+ * - Supports multiple musical moods through different melodic and harmonic patterns
+ * - Organizes musical content in a hierarchical structure (songs > sections > patterns)
+ * - Provides base patterns that can be transformed by the MusicManager for variety
+ * - Uses a compact representation format to minimize memory footprint
+ * - Supports modular composition by combining independent musical segments
+ */
+
 // Initialize global MusicData object if it doesn't exist
 window.MusicData = window.MusicData || {};
 

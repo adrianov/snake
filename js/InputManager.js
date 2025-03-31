@@ -1,3 +1,14 @@
+/**
+ * Processes and translates user input into game actions.
+ * - Captures keyboard, touch, and click events from multiple device types
+ * - Implements swipe detection with configurable thresholds and sensitivity
+ * - Provides adaptive control schemes optimized for different input methods
+ * - Translates raw input events into game commands based on current game state
+ * - Manages feature toggle controls (sound, music, vibration, luck mode)
+ * - Implements mobile-specific controls including virtual buttons and touch gestures
+ * - Prevents default browser behaviors that would interfere with gameplay
+ * - Ensures first-interaction detection for proper audio initialization
+ */
 class InputManager {
     constructor(game) {
         this.game = game;
