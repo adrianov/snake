@@ -129,24 +129,22 @@ class InputManager {
         if (event.keyCode === 32) { // Spacebar
             event.preventDefault(); // Prevent space scrolling
             if (gameState.isGameOver) {
-                this.game.resetGame();
-                this.game.startRequested = true;
-                this.game.handleFirstInteraction();
-
-                this.game.gameLoop.startGameLoop();
-                this.game.gameLoop.startFruitLoop(this.game.manageFruits.bind(this.game));
+                // Start game with no specific direction
+                this.startGameWithInitialDirection();
             } else if (gameState.isGameStarted) {
                 this.game.togglePause();
             } else {
+                // This is a fresh start with spacebar
                 this.game.startRequested = true;
                 this.game.handleFirstInteraction();
             }
             return true;
         }
 
-        // Start game with arrow keys if not started
+        // Start game with arrow keys if not started yet
         if (!gameState.isGameStarted && !gameState.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
             event.preventDefault();
+            // This is a fresh start with arrow keys
             this.game.startRequested = true;
             this.game.handleFirstInteraction();
             return true;
@@ -206,19 +204,25 @@ class InputManager {
         if (gameState.isGameOver) {
             event.preventDefault();
 
-            this.game.resetGame();
-            this.game.gameLoop.startGameLoop();
-            this.game.gameLoop.startFruitLoop(this.game.manageFruits.bind(this.game));
+            // Calculate swipe direction from initial touch coordinates for the new game
+            const centerX = this.game.canvas.width / 2;
+            const centerY = this.game.canvas.height / 2;
+            const touchX = this.touchStartX;
+            const touchY = this.touchStartY;
 
-            if (!this.game.hasUserInteraction) {
-                this.game.handleFirstInteraction();
+            // Determine main direction from touch position relative to center
+            const deltaX = touchX - centerX;
+            const deltaY = touchY - centerY;
+
+            let initialDirection;
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                initialDirection = deltaX > 0 ? 'right' : 'left';
             } else {
-                // Make sure SoundManager knows we have user interaction
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-                this.game.audioManager.initializeGameMusic(true);
+                initialDirection = deltaY > 0 ? 'down' : 'up';
             }
 
+            // Use extracted method to start game with calculated direction
+            this.startGameWithInitialDirection(initialDirection);
             return;
         }
 
@@ -230,10 +234,8 @@ class InputManager {
                 this.game.startRequested = true;
                 this.game.handleFirstInteraction();
             } else {
-                // Make sure SoundManager knows we have user interaction
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-                this.game.startGame();
+                // This is a fresh game start, let the startGame method handle melody selection
+                this.startGameWithInitialDirection();
             }
             return;
         }
@@ -337,25 +339,28 @@ class InputManager {
         const gameState = this.game.gameStateManager.getGameState();
 
         // Get all elements that should NOT pause the game when clicked
+        // Only active functionality elements should be here, not containers
         const nonPausingElements = [
-            '.canvas-wrapper',
+            // Game canvas - clicking should not pause
             '#gameCanvas',
-            '.controls',
+            '.canvas-wrapper',
+
+            // Active controls - these should work normally during gameplay
+            '.arrow-button', // Arrow buttons for controls
+            '.spacer', // Spacers in the arrow controls grid
+            '#soundToggle', // Sound on/off button
+            '#musicToggle', // Music on/off button
+            '.control-toggle', // Any toggle buttons
+            '.melody-display', // Current melody display
+            '#currentMelody', // Text inside melody display
+            '.reset-button', // Reset high score button
+
+            // Donation panel elements - should not pause when interacted with
             '.donation-panel',
-            '.music-info',
-            '#soundToggle',
-            '#musicToggle',
-            '.mobile-arrow-controls',
-            '.arrow-button',
-            '.game-controls',
-            '.mobile-only-tip',
-            '.desktop-only-tip',
-            '.tip-item',
-            '.score-container',
-            '.score-item',
-            '.reset-button',
-            '.control-toggle',
-            '.melody-display'
+            '.close-button',
+            '.copy-btn',
+            '.qr-code-link',
+            '.crypto-address'
         ];
 
         // Pause logic: Click outside when running & not paused
@@ -376,7 +381,33 @@ class InputManager {
         if (!gameState.isGameStarted && !gameState.isGameOver) {
             if (this.game.canvas.contains(event.target)) {
                 this.game.startRequested = true;
-                this.game.startGame();
+                this.startGameWithInitialDirection();
+                return;
+            }
+        }
+
+        // Allow canvas clicks to restart game after game over
+        if (gameState.isGameOver) {
+            if (this.game.canvas.contains(event.target)) {
+                // Get click position relative to canvas center for direction
+                const rect = this.game.canvas.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const clickX = event.clientX - rect.left;
+                const clickY = event.clientY - rect.top;
+
+                // Determine initial direction from click position
+                const deltaX = clickX - centerX;
+                const deltaY = clickY - centerY;
+
+                let initialDirection;
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    initialDirection = deltaX > 0 ? 'right' : 'left';
+                } else {
+                    initialDirection = deltaY > 0 ? 'down' : 'up';
+                }
+
+                this.startGameWithInitialDirection(initialDirection);
                 return;
             }
         }
@@ -461,65 +492,28 @@ class InputManager {
         };
 
         // Add event listeners for buttons
-        upButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
+        const createArrowButtonHandler = (direction) => {
+            return (e) => {
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
 
-            // Ensure audio is initialized directly from touch event
-            if (!this.game.hasUserInteraction) {
-                this.game.hasUserInteraction = true;
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-            }
+                // Ensure audio is initialized directly from touch event
+                if (!this.game.hasUserInteraction) {
+                    this.game.hasUserInteraction = true;
+                    SoundManager.hasUserInteraction = true;
+                    this.game.audioManager.initializeAudio();
+                }
 
-            handleArrowButtonPress('up');
-        });
+                handleArrowButtonPress(direction);
+            };
+        };
 
-        downButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.game.hasUserInteraction) {
-                this.game.hasUserInteraction = true;
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-            }
-
-            handleArrowButtonPress('down');
-        });
-
-        leftButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.game.hasUserInteraction) {
-                this.game.hasUserInteraction = true;
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-            }
-
-            handleArrowButtonPress('left');
-        });
-
-        rightButton.addEventListener('touchstart', (e) => {
-            if (e.cancelable) {
-                e.preventDefault();
-            }
-
-            // Ensure audio is initialized directly from touch event
-            if (!this.game.hasUserInteraction) {
-                this.game.hasUserInteraction = true;
-                SoundManager.hasUserInteraction = true;
-                this.game.audioManager.initializeAudio();
-            }
-
-            handleArrowButtonPress('right');
-        });
+        // Add touch event listeners with the common handler
+        upButton.addEventListener('touchstart', createArrowButtonHandler('up'));
+        downButton.addEventListener('touchstart', createArrowButtonHandler('down'));
+        leftButton.addEventListener('touchstart', createArrowButtonHandler('left'));
+        rightButton.addEventListener('touchstart', createArrowButtonHandler('right'));
 
         // Add mouse event listeners as fallback for hybrid devices
         upButton.addEventListener('mousedown', () => handleArrowButtonPress('up'));
@@ -533,5 +527,28 @@ class InputManager {
         return ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0);
+    }
+
+    // Add this new method to handle common game starting logic
+    startGameWithInitialDirection(direction = null) {
+        // Ensure user interaction flag is set
+        if (!this.game.hasUserInteraction) {
+            this.game.handleFirstInteraction();
+        } else {
+            // Make sure SoundManager knows we have user interaction
+            SoundManager.hasUserInteraction = true;
+            this.game.audioManager.initializeAudio();
+        }
+
+        // Start the game
+        this.game.startGame();
+
+        // Set initial direction if specified
+        if (direction && this.game.isValidDirectionChange(direction)) {
+            setTimeout(() => {
+                this.game.direction = direction;
+                this.game.nextDirection = direction;
+            }, 50);
+        }
     }
 }

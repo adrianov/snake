@@ -3,8 +3,15 @@ class SnakeGame {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
 
-        // Initialize game layout reference
+        // Initialize game layout reference - make sure we get it correctly
         this.gameLayout = document.querySelector('.game-layout');
+
+        // Ensure we have a valid gameLayout reference
+        if (!this.gameLayout) {
+            console.error('Game layout element not found! Some mobile features may not work correctly.');
+            // Try to create a fallback reference to the body as last resort
+            this.gameLayout = document.body;
+        }
 
         this.imagesLoaded = false;
         this.hasUserInteraction = false;
@@ -260,12 +267,16 @@ class SnakeGame {
         }
 
         // Check if the game is over
-        if (this.gameStateManager.getGameState().isGameOver) {
-            this.resetGame();
-        }
+        const isGameOver = this.gameStateManager.getGameState().isGameOver;
+        const isFirstStart = !this.gameStateManager.getGameState().isGameStarted && !isGameOver;
 
-        // Reset game elements FIRST
-        this.resetGameState();
+        if (isGameOver) {
+            // Don't force a new melody when restarting after game over
+            this.resetGame(false);
+        } else {
+            // Reset game elements only if we didn't already reset via resetGame
+            this.resetGameState();
+        }
 
         // THEN set the game state to started
         this.gameStateManager.startGame();
@@ -275,7 +286,8 @@ class SnakeGame {
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
 
         // Initialize music
-        this.audioManager.initializeGameMusic(true);
+        // Force new melody ONLY on the first game start, not on restart after game over
+        this.audioManager.initializeGameMusic(isFirstStart);
 
         // Hide header and footer on mobile devices
         if (GameUtils.isTouchDevice()) {
@@ -373,6 +385,7 @@ class SnakeGame {
 
     cutTail(collisionPos) {
         const segments = this.snake.getSegments();
+        const gameState = this.gameStateManager.getGameState();
 
         // Find which segment we collided with
         const collisionIndex = segments.findIndex(segment =>
@@ -575,7 +588,7 @@ class SnakeGame {
         this.audioManager.handleGameOverAudio(isNewHighScore);
     }
 
-    resetGame() {
+    resetGame(forceNewMelody = false) {
         this.gameStateManager.resetGame();
 
         // Generate a new color for the snake
@@ -609,9 +622,12 @@ class SnakeGame {
         // Reset the start requested flag
         this.startRequested = false;
 
-        // Show header and footer when game is reset on mobile
-        if (GameUtils.isTouchDevice()) {
-            GameUtils.showHeaderFooterOnMobile(this.gameLayout);
+        // We don't need to show header and footer here as we're resetting for a new game
+        // which will be followed by startGame() that will hide them
+
+        // Initialize music - this ensures music plays after game reset
+        if (this.hasUserInteraction) {
+            this.audioManager.initializeGameMusic(forceNewMelody);
         }
 
         // Force a redraw to show the new state
@@ -642,7 +658,8 @@ class SnakeGame {
             isGameOver: currentState.isGameOver,
             isPaused: currentState.isPaused,
             isGameStarted: currentState.isGameStarted,
-            lastEatenTime: this.lastEatenTime
+            lastEatenTime: this.lastEatenTime,
+            shakeEnabled: currentState.shakeEnabled
         };
 
         this.drawer.draw(gameState);

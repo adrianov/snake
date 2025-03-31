@@ -32,22 +32,46 @@ class GameUtils {
 
     // Check if the device is a touch device
     static isTouchDevice() {
-        return ('ontouchstart' in window) ||
+        // Enhanced detection especially for iOS devices
+        const isTouch = ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0);
+            (navigator.msMaxTouchPoints > 0) ||
+            (window.matchMedia("(pointer: coarse)").matches);
+
+        // Additional detection for iOS specifically
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        return isTouch || isIOS;
     }
 
     // Show header and footer on mobile
     static showHeaderFooterOnMobile(gameLayout) {
+        if (!gameLayout) {
+            // Try to get the layout if it wasn't provided
+            gameLayout = document.querySelector('.game-layout');
+        }
+
         if (gameLayout) {
             gameLayout.classList.remove('mobile-game-active');
+
+            // Force repaint to ensure changes take effect, especially on iOS
+            void gameLayout.offsetHeight;
         }
     }
 
     // Hide header and footer on mobile
     static hideHeaderFooterOnMobile(gameLayout) {
+        if (!gameLayout) {
+            // Try to get the layout if it wasn't provided
+            gameLayout = document.querySelector('.game-layout');
+        }
+
         if (gameLayout) {
             gameLayout.classList.add('mobile-game-active');
+
+            // Force repaint to ensure changes take effect, especially on iOS
+            void gameLayout.offsetHeight;
         }
     }
 }

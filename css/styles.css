@@ -702,12 +702,15 @@ body {
     .game-layout.mobile-game-active .game-footer {
         opacity: 0;
         height: 0;
+        max-height: 0;
         overflow: hidden;
         padding: 0;
         margin: 0;
         pointer-events: none;
         visibility: hidden;
         position: absolute;
+        z-index: -1;
+        clip: rect(0 0 0 0);
     }
 
     /* Make sure the game container can take advantage of the extra space */
@@ -716,11 +719,12 @@ body {
         margin-bottom: 0;
         padding-top: 5px;
         padding-bottom: 5px;
+        height: 100%; /* Ensure it takes full height */
     }
 
     /* Adjust the main container to use the full height when header/footer are hidden */
     .game-layout.mobile-game-active {
-        grid-template-rows: 0fr minmax(0, 1fr) 0fr;
+        grid-template-rows: 0fr 1fr 0fr;
         transition: grid-template-rows 0.3s ease-in-out;
     }
 }

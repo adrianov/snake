@@ -57,7 +57,8 @@ class GameDrawer {
             gameState.direction,
             gameState.lastEatenTime,
             this.glowDuration,
-            gameState.isGameOver
+            gameState.isGameOver,
+            gameState.shakeEnabled
         );
 
         // Draw game state overlays

@@ -129,10 +129,10 @@ class SnakeDrawer {
     }
 
     // Draw snake on the canvas
-    drawSnake(ctx, snake, direction, lastEatenTime, glowDuration, isGameOver) {
+    drawSnake(ctx, snake, direction, lastEatenTime, glowDuration, isGameOver, shakeEnabled) {
         // Apply high DPI scaling
         ctx.save();
-        
+
         // Calculate glow effect with pulsing
         const timeSinceEaten = Date.now() - lastEatenTime;
         const glowIntensity = Math.max(0, 1 - (timeSinceEaten / glowDuration));
@@ -172,10 +172,10 @@ class SnakeDrawer {
         snake.forEach((segment, index) => {
             // Calculate shake offset
             // Make shake more intense for middle segments, less for head and tail
-            // No shake if game is over, regardless of shake setting
-            const shakeScale = isGameOver ? 0 :
-                              (index === 0 ? 0.1 : // less shake for head
-                              (index === snake.length - 1 ? 0.1 : this.shakeIntensity)); // less shake for tail
+            // No shake if game is over or shake is disabled
+            const shakeScale = isGameOver || !shakeEnabled ? 0 :
+                (index === 0 ? 0.1 : // less shake for head
+                    (index === snake.length - 1 ? 0.1 : this.shakeIntensity)); // less shake for tail
 
             // Apply shake - multiply by gridSize to scale it proportionally
             const shakeOffset = {
@@ -255,7 +255,7 @@ class SnakeDrawer {
 
             ctx.restore();
         });
-        
+
         ctx.restore();
     }
 
@@ -324,7 +324,7 @@ class SnakeDrawer {
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        
+
         // Round corner radius proportional to grid size
         const cornerRadius = Math.max(2, this.gridSize * 0.1);
         ctx.roundRect(1, 1, this.gridSize - 2, this.gridSize - 2, cornerRadius);
@@ -387,7 +387,7 @@ class SnakeDrawer {
 
         // Calculate proportional corner radius
         const cornerRadius = Math.max(2, this.gridSize * 0.1);
-        
+
         // Draw body segment
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -423,7 +423,7 @@ class SnakeDrawer {
         // Calculate proportional sizes
         const taperWidth = Math.max(6, this.gridSize * 0.15); // Proportional taper width
         const cornerRadius = Math.max(1, this.gridSize * 0.05); // Smaller corner radius for tail
-        
+
         // Draw tail segment with tapered shape
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -438,7 +438,7 @@ class SnakeDrawer {
         // Add pattern that fades out (subtle highlight)
         const highlightAlpha = Math.max(0.05, 0.15 * (1 - this.darknessLevel / 100));
         const highlightWidth = Math.max(8, this.gridSize * 0.2); // Proportional highlight width
-        
+
         ctx.fillStyle = `rgba(255, 255, 255, ${highlightAlpha})`;
         ctx.beginPath();
         ctx.roundRect(4, 4, this.gridSize - highlightWidth, this.gridSize - 8, cornerRadius);

@@ -93,10 +93,23 @@ class AudioManager {
         // Make sure the audio context is initialized
         this.game.musicManager.initAudioContextIfNeeded();
 
-        // Select a new random melody if requested
+        // Check if music is already playing
+        const musicIsPlaying = this.game.musicManager.isPlaying;
+
+        // Select a new random melody if requested and:
+        // 1. Music isn't playing yet, OR
+        // 2. We're explicitly forcing a new melody regardless of playback state
         if (forceNewMelody) {
             console.log("[initializeGameMusic] Selecting new random melody");
             this.game.musicManager.selectRandomMelody();
+        } else {
+            // If we're not forcing a new melody, make sure MusicManager can still pick
+            // a random melody if needed (e.g., after game over when static ID was cleared)
+            if (!this.game.musicManager.currentMelodyId &&
+                !MusicManager.currentMelodyId) {
+                console.log("[initializeGameMusic] No melody ID set, selecting a new one");
+                this.game.musicManager.selectRandomMelody();
+            }
         }
 
         // Start the music
@@ -251,6 +264,8 @@ class AudioManager {
         console.log(`Game Over: Scheduling audio resources cleanup in ${cleanupDelay}ms`);
         setTimeout(() => {
             console.log("Game Over: Performing final audio cleanup");
+            // Clear the current melody ID to ensure a new one is selected for the next game
+            MusicManager.clearCurrentMelody();
             // Use the static method to clean up all audio resources
             MusicManager.cleanupAudioResources(this.game, 0); // Use 0 for immediate cleanup
         }, cleanupDelay);
