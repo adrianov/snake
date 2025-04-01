@@ -40,12 +40,14 @@
     width: min(100%, 600px);
     max-width: 100%;
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height */
     background: var(--color-bg-light);
     z-index: 1000;
     transform: translateX(100%);
     transition: transform var(--transition-panel);
     display: flex;
     flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .about-panel.active {
@@ -95,6 +97,7 @@
 /* Panel Content Area */
 .panel-content-area {
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 20px));
     overflow-y: auto;
     flex-grow: 1;
     color: var(--color-text);
@@ -292,10 +295,13 @@
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+    margin-bottom: env(safe-area-inset-bottom, 20px);
+    width: 100%;
 }
 
 .cta-button {
-    padding: 10px 20px;
+    flex: 1 1 30%;
+    padding: 0.75em 0.5em;
     border-radius: var(--radius-sm);
     font-weight: 600;
     font-size: 0.9rem;
@@ -306,7 +312,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 150px;
+    min-width: 0;
     box-shadow: var(--shadow-sm);
     border: 1px solid transparent;
     background: rgba(46, 204, 113, 0.2);

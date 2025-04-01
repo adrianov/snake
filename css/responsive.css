@@ -16,6 +16,16 @@
     .game-layout.game-active .canvas-wrapper {
         max-width: min(95vh, 95vw);
     }
+
+    /* Ensure panel content has enough padding for mobile browser UI */
+    .panel-content-area {
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 80px));
+    }
+
+    /* Ensure CTA buttons remain visible */
+    .panel-content-area footer {
+        margin-bottom: env(safe-area-inset-bottom, 80px);
+    }
 }
 
 /* Desktop layout - landscape */
@@ -143,9 +153,12 @@
     }
 
     .cta-button {
-        min-width: 100px;
-        padding: 8px 15px;
+        padding: 0.6em 0.4em;
         font-size: 0.8rem;
+    }
+
+    .cta-buttons {
+        width: 100%;
     }
 }
 
@@ -189,6 +202,16 @@
     .music-icon {
         font-size: 0.8rem;
         margin-right: 0.2rem;
+    }
+
+    /* Button sizing for small screens */
+    .cta-buttons {
+        gap: 6px;
+    }
+
+    .cta-button {
+        padding: 0.5em 0.3em;
+        font-size: 0.75rem;
     }
 }
 
