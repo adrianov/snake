@@ -237,7 +237,11 @@ class AudioManager {
 
         // Start or stop music based on new state
         if (musicEnabled) {
-            this.initializeGameMusic(false);
+            // Only start music if game is actually in playing state
+            const gameState = this.game.gameStateManager.getGameState();
+            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+                this.initializeGameMusic(false);
+            }
         } else {
             // Only stop if actually playing to avoid unnecessary cleanup
             if (MusicManager.isPlaying) {
@@ -271,24 +275,38 @@ class AudioManager {
         // Initialize audio subsystems
         this.initializeAudio();
 
-        // Handle based on whether music is enabled
-        if (this.game.gameStateManager.getGameState().musicEnabled) {
-            // Change to a new melody
+        // Get current game state
+        const gameState = this.game.gameStateManager.getGameState();
+        const isPlaying = gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver;
+
+        // Handle based on whether music is enabled and game is in playing state
+        if (gameState.musicEnabled && isPlaying) {
+            // Change to a new melody (only if game is playing)
             MusicManager.changeToRandomMelody();
             this.game.uiManager.updateMelodyDisplay();
 
             // Play feedback sound
-            if (this.game.gameStateManager.getGameState().soundEnabled) {
+            if (gameState.soundEnabled) {
                 this.game.soundManager?.playSound('click', 0.5);
             }
             return true;
-        } else {
-            // Just select a new melody but don't play it
+        } else if (gameState.musicEnabled) {
+            // Just select a new melody but don't play it if game is not in playing state
             MusicManager.selectRandomMelody();
             this.game.uiManager.updateMelodyDisplay();
 
             // Play feedback sound
-            if (this.game.gameStateManager.getGameState().soundEnabled && this.isAudioReady()) {
+            if (gameState.soundEnabled && this.isAudioReady()) {
+                this.game.soundManager?.playSound('click', 0.5);
+            }
+            return true;
+        } else {
+            // Just select a new melody but don't play it (music is disabled)
+            MusicManager.selectRandomMelody();
+            this.game.uiManager.updateMelodyDisplay();
+
+            // Play feedback sound
+            if (gameState.soundEnabled && this.isAudioReady()) {
                 this.game.soundManager?.playSound('click', 0.5);
             }
             return true;

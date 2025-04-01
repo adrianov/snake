@@ -39,10 +39,15 @@
 - Unpause game, music should resume
 - Game over, music should stop
 - Start new game, music should begin again
+- Toggle music ON when in menu screen should not start playing music (only preference is changed)
+- Toggle music OFF and ON during gameplay should stop and restart music
+- Game should respect music preference during gameplay (ON = music plays, OFF = no music)
 
 ### Music Controls
-- Toggle music button should stop/start music
-- Change music button should switch to different melody
+- Toggle music button should stop/start music only during gameplay
+- Toggle music button in menu or game over screen should only change the setting but not play music
+- Change music button should switch to different melody only during gameplay
+- Change music button in menu or game over screen should only change the selected melody but not play it
 - Music volume should persist between sessions
 - Music should respect browser autoplay policies
 
