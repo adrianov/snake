@@ -38,12 +38,26 @@ class InputManager {
         canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
         canvas.addEventListener('touchend', touchEndHandler, { passive: true });
 
-        // Prevent page scrolling when touching the canvas
+        // Prevent page scrolling when touching the canvas and text selection
         canvas.style.overscrollBehavior = 'none';
         canvas.style.touchAction = 'none';
 
+        // Prevent text selection on the game canvas
+        canvas.style.webkitUserSelect = 'none';
+        canvas.style.userSelect = 'none';
+
         // Document click handler
         document.addEventListener('click', this.handleDocumentClick.bind(this));
+
+        // Prevent default on touch events that might trigger selection
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('arrow-button') ||
+                e.target.closest('.arrow-button') ||
+                e.target.classList.contains('mobile-arrow-controls') ||
+                e.target.closest('.mobile-arrow-controls')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     }
 
     handleKeyDown(event) {
@@ -515,9 +529,8 @@ class InputManager {
         // Add event listeners for buttons with proper event handling
         const createArrowButtonHandler = (direction) => {
             return (e) => {
-                if (e.cancelable) {
-                    e.preventDefault();
-                }
+                // Always prevent default behavior for all types of events
+                e.preventDefault();
                 e.stopPropagation(); // Prevent event bubbling
 
                 // Ensure audio is initialized directly from touch event

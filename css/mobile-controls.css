@@ -4,6 +4,13 @@
     width: 100%;
     max-width: min(80vh, 80vw);
     margin: 0 auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: manipulation;
+    -webkit-touch-callout: none; /* Prevents callout menu on touch & hold */
+    -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
 }
 
 .arrow-button-row {
@@ -34,6 +41,12 @@
     border-right: 1px solid rgba(0, 0, 0, 0.2);
     border-bottom: 3px solid rgba(0, 0, 0, 0.4);
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* Arrow Button Backgrounds */

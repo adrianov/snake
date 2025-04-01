@@ -1,0 +1,28 @@
+{
+    "name": "Snake Game",
+    "short_name": "Snake",
+    "description": "Classic Snake game with a mesmerizing soundtrack, day-night cycles, and modern gameplay",
+    "start_url": "/",
+    "display": "fullscreen",
+    "orientation": "any",
+    "background_color": "#0a0a0a",
+    "theme_color": "#4CAF50",
+    "icons": [
+        {
+            "src": "img/favicon-196x196.png",
+            "sizes": "196x196",
+            "type": "image/png"
+        },
+        {
+            "src": "img/favicon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png"
+        },
+        {
+            "src": "img/favicon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
-    <!-- Fullscreen web app capability for mobile devices -->
+
+    <!-- Modern PWA capabilities -->
+    <meta name="theme-color" content="#4CAF50">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- iOS-specific (legacy but still needed) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+
     <title>Snake Game - Classic Arcade with Modern Features</title>
 
     <!-- Primary Meta Tags -->
@@ -16,7 +26,6 @@
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
     <meta name="canonical" href="https://snake-game.app/">
-    <meta name="theme-color" content="#4CAF50">
 
     <!-- Open Graph / Facebook Meta Tags -->
     <meta property="og:type" content="website">
