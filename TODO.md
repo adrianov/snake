@@ -1,1 +1,0 @@
-The stars behind moon shadow are visible - they should not.

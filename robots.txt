@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /img/usdt-trc20-qr.png
+Disallow: /img/sber-qr.png
+
+# Sitemap location
+Sitemap: https://snake-game.app/sitemap.xml
