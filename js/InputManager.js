@@ -47,8 +47,23 @@ class InputManager {
     }
 
     handleKeyDown(event) {
-        // Feature toggles
-        if (this.handleFeatureToggleKeys(event)) {
+        const gameState = this.game.gameStateManager.getGameState();
+
+        // Special arrow key handling to start the game
+        // Always check this first, regardless of other key handling
+        if (!gameState.isGameStarted && !gameState.isGameOver &&
+            [37, 38, 39, 40].includes(event.keyCode)) {
+            event.preventDefault();
+
+            // Set direction based on which arrow key was pressed
+            let initialDirection = null;
+            if (event.keyCode === 37) initialDirection = 'left';
+            else if (event.keyCode === 38) initialDirection = 'up';
+            else if (event.keyCode === 39) initialDirection = 'right';
+            else if (event.keyCode === 40) initialDirection = 'down';
+
+            // Start the game with the appropriate direction
+            this.startGameWithInitialDirection(initialDirection);
             return;
         }
 
@@ -57,13 +72,17 @@ class InputManager {
             event.preventDefault();
         }
 
+        // Feature toggles
+        if (this.handleFeatureToggleKeys(event)) {
+            return;
+        }
+
         // Game state controls
         if (this.handleGameStateKeys(event)) {
             return;
         }
 
         // Direction controls (only if game is running)
-        const gameState = this.game.gameStateManager.getGameState();
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             this.handleDirectionKeys(event);
         }
@@ -145,19 +164,9 @@ class InputManager {
             } else if (gameState.isGameStarted) {
                 this.game.togglePause();
             } else {
-                // This is a fresh start with spacebar
-                this.game.startRequested = true;
-                this.game.handleFirstInteraction();
+                // Start the game with spacebar
+                this.startGameWithInitialDirection();
             }
-            return true;
-        }
-
-        // Start game with arrow keys if not started yet
-        if (!gameState.isGameStarted && !gameState.isGameOver && [37, 38, 39, 40].includes(event.keyCode)) {
-            event.preventDefault();
-            // This is a fresh start with arrow keys
-            this.game.startRequested = true;
-            this.game.handleFirstInteraction();
             return true;
         }
 
@@ -559,7 +568,7 @@ class InputManager {
         // Set interaction flag
         if (!this.game.hasUserInteraction) {
             this.game.hasUserInteraction = true;
-            
+
             // Use the centralized audio manager method to initialize audio context
             if (this.game.audioManager) {
                 console.log("InputManager: Ensuring audio is initialized from touch event");
