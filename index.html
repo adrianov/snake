@@ -122,58 +122,61 @@
 
         <!-- Main content container -->
         <main class="main-container">
-            <!-- Game container -->
+            <!-- Game container - Now acts as a centering wrapper -->
             <div class="game-container">
-                <!-- Game canvas wrapper -->
-                <div class="canvas-wrapper">
-                    <canvas id="gameCanvas"></canvas>
-                </div>
-
-                <!-- Game controls and info -->
-                <div class="game-controls">
-                    <!-- Control tips for desktop -->
-                    <div class="desktop-only-tip">
-                        <span class="tip-item">← → ↑ ↓ to move</span>
-                        <span class="tip-item">Opposite direction to slow down</span>
-                        <span class="tip-item">Space to pause</span>
+                <!-- New column wrapper for game elements -->
+                <div class="game-content-column">
+                    <!-- Game canvas wrapper -->
+                    <div class="canvas-wrapper">
+                        <canvas id="gameCanvas"></canvas>
                     </div>
 
-                    <!-- Mobile Arrow Controls - Only visible on touch devices -->
-                    <div id="mobileArrowControls" class="mobile-arrow-controls">
-                        <div class="arrow-controls-container">
-                            <div class="arrow-button-row">
-                                <div class="spacer"></div>
-                                <button id="upArrow" class="arrow-button" aria-label="Up">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                        <path d="M12 4l-8 8h5v8h6v-8h5z" fill="currentColor"/>
-                                    </svg>
-                                </button>
-                                <div class="spacer"></div>
-                            </div>
-                            <div class="arrow-button-row">
-                                <button id="leftArrow" class="arrow-button" aria-label="Left">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                        <path d="M4 12l8-8v5h8v6h-8v5z" fill="currentColor"/>
-                                    </svg>
-                                </button>
-                                <button id="downArrow" class="arrow-button" aria-label="Down">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                        <path d="M12 20l8-8h-5V4h-6v8H4z" fill="currentColor"/>
-                                    </svg>
-                                </button>
-                                <button id="rightArrow" class="arrow-button" aria-label="Right">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                        <path d="M20 12l-8-8v5H4v6h8v5z" fill="currentColor"/>
-                                    </svg>
-                                </button>
+                    <!-- Game controls and info (Arrows, Tips) -->
+                    <div class="game-controls">
+                        <!-- Control tips for desktop -->
+                        <div class="desktop-only-tip">
+                            <span class="tip-item">← → ↑ ↓ to move</span>
+                            <span class="tip-item">Opposite direction to slow down</span>
+                            <span class="tip-item">Space to pause</span>
+                        </div>
+
+                        <!-- Mobile Arrow Controls - Only visible on touch devices -->
+                        <div id="mobileArrowControls" class="mobile-arrow-controls">
+                            <div class="arrow-controls-container">
+                                <div class="arrow-button-row">
+                                    <div class="spacer"></div>
+                                    <button id="upArrow" class="arrow-button" aria-label="Up">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                            <path d="M12 4l-8 8h5v8h6v-8h5z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                    <div class="spacer"></div>
+                                </div>
+                                <div class="arrow-button-row">
+                                    <button id="leftArrow" class="arrow-button" aria-label="Left">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                            <path d="M4 12l8-8v5h8v6h-8v5z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                    <button id="downArrow" class="arrow-button" aria-label="Down">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                            <path d="M12 20l8-8h-5V4h-6v8H4z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                    <button id="rightArrow" class="arrow-button" aria-label="Right">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                            <path d="M20 12l-8-8v5H4v6h8v5z" fill="currentColor"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Mobile-only tip -->
-                    <div class="mobile-only-tip">
-                        <span class="tip-item">Opposite direction to slow down</span>
-                        <span class="tip-item">Swipe gestures also available</span>
+                        <!-- Mobile-only tip -->
+                        <div class="mobile-only-tip">
+                            <span class="tip-item">Opposite direction to slow down</span>
+                            <span class="tip-item">Swipe gestures also available</span>
+                        </div>
                     </div>
 
                     <!-- Game score section -->
@@ -206,7 +209,7 @@
                             <button id="resetHighScore" class="reset-button" title="Reset High Score">↺</button>
                         </div>
                     </div>
-                </div>
+                </div> <!-- End of game-content-column -->
             </div>
         </main>
 

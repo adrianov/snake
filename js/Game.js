@@ -30,16 +30,20 @@ class SnakeGame {
             this.gameLayout = document.body;
         }
 
+        // Initialize game settings FIRST
         this.initializeGameSettings();
+        // Setup managers AFTER settings are initialized
         this.setupManagers();
+        // Load images LAST
         this.loadImages();
 
+        // Restore original resize listener and immediate call
         window.addEventListener('resize', this.resizeCanvas.bind(this));
-        this.resizeCanvas();
+        this.resizeCanvas(); // Restore this call
     }
 
     initializeGameSettings() {
-        // Canvas and grid settings
+        // Restore resizeCanvas call
         this.resizeCanvas();
         this.hasUserInteraction = false;
         this.startRequested = false;
@@ -98,29 +102,48 @@ class SnakeGame {
         this.fruitImages = {};
         this.loadFruitImages().then(() => {
             this.imagesLoaded = true;
+            // No need to schedule resize here anymore
+            // Initialize drawer AFTER images are loaded
             this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
-            this.init();
+            this.init(); // init calls draw()
         });
     }
 
     resizeCanvas() {
         const container = this.canvas.parentElement;
+        if (!container) return; // Exit if container not found
 
         // Get the container's current dimensions
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
+
+        // Restore original simple check
+        if (containerWidth <= 0 || containerHeight <= 0) {
+            console.warn('resizeCanvas: Container dimensions are zero or negative, skipping update.');
+            return;
+        }
 
         // Calculate square size based on the smallest dimension
         const size = Math.min(containerWidth, containerHeight);
 
         // Calculate grid size based on container
         this.gridSize = Math.min(40, Math.floor(size / 20));
+        // Add minimum gridSize check
+        if (this.gridSize <= 0) this.gridSize = 10; // Ensure minimum grid size
 
         // Ensure tileCount is an integer
         this.tileCount = Math.floor(size / this.gridSize);
+        // Add minimum tileCount check
+        if (this.tileCount <= 0) this.tileCount = 10; // Ensure minimum tile count
 
         // Adjust canvas size to be exactly a multiple of gridSize
         const adjustedSize = this.tileCount * this.gridSize;
+
+        // Add check after calculation
+        if (adjustedSize <= 0) {
+            console.warn('resizeCanvas: Calculated adjustedSize is zero or negative, skipping canvas update.');
+            return;
+        }
 
         // Get the device pixel ratio
         const dpr = window.devicePixelRatio || 1;
@@ -128,12 +151,13 @@ class SnakeGame {
         // Set canvas dimensions for Retina display (internal resolution)
         this.canvas.width = adjustedSize * dpr;
         this.canvas.height = adjustedSize * dpr;
+        // console.log(`Canvas attributes set to: ${this.canvas.width}x${this.canvas.height}`);
 
-        // Set CSS dimensions to maintain the square aspect ratio
+        // Set CSS dimensions to maintain the square aspect ratio via CSS
         this.canvas.style.width = '100%';
         this.canvas.style.height = '100%';
 
-        // Let CSS handle container dimensions through aspect-ratio property
+        // Reset container styles previously manipulated by JS (let CSS handle it)
         container.style.width = '';
         container.style.height = '';
         container.style.paddingBottom = '';
@@ -143,14 +167,17 @@ class SnakeGame {
         // Ensure the canvas container maintains its border-radius
         container.style.borderRadius = 'var(--radius-md)';
 
+        // Update managers
         if (this.foodManager) {
             this.foodManager.tileCount = this.tileCount;
         }
 
+        // Update drawer
         if (this.drawer) {
             this.drawer.updateGridSize(this.gridSize);
         }
 
+        // Trigger a redraw
         if (this.imagesLoaded) {
             this.draw();
         }

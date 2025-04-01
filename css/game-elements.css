@@ -2,15 +2,16 @@
 .canvas-wrapper {
     position: relative;
     width: 100%;
-    max-width: min(80vh, 90vw);
+    /* max-width is now handled in layout.css */
     aspect-ratio: 1 / 1;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg), var(--shadow-glow);
     overflow: hidden;
-    margin: 0 auto;
+    margin: 0 auto; /* Still useful for centering if width is less than 100% */
     font-size: 0;
     line-height: 0;
     flex-shrink: 0;
+    transition: transform 0.3s ease-in-out;
 }
 
 #gameCanvas {
@@ -24,11 +25,16 @@
     border-radius: var(--radius-md);
 }
 
-.game-controls {
-    width: 100%;
-    max-width: min(80vh, 90vw);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin: 0 auto;
-}
+/* Remove general .game-controls styles as they are handled in layout.css */
+/* .game-controls { ... } */
+
+/* Remove game-active specific canvas/controls styles from here */
+/* .game-layout.game-active .canvas-wrapper { ... } */
+/* .game-layout.game-active .desktop-only-tip, ... */
+/* .game-layout.game-active .game-controls { ... } */
+/* .game-layout.game-active .mobile-arrow-controls { ... } */
+/* .game-layout.game-active .score-container { ... } */
+
+/* Remove media queries as they are handled in layout.css */
+/* @media (max-height: 450px) { ... } */
+/* @media (orientation: landscape) and (max-height: 600px) { ... } */

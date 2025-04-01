@@ -1,8 +1,7 @@
 /* =========== MOBILE ARROW CONTROLS =========== */
 .mobile-arrow-controls {
-    display: none;
+    display: none; /* Default to hidden */
     width: 100%;
-    max-width: min(80vh, 80vw);
     margin: 0 auto;
     user-select: none;
     -webkit-user-select: none;
@@ -13,6 +12,35 @@
     pointer-events: auto;
     -webkit-touch-callout: none; /* Prevents callout menu on touch & hold */
     -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Remove the old rule that showed controls based only on game-active */
+/*
+.game-layout.game-active .mobile-arrow-controls {
+    display: block;
+    transform-origin: center;
+    width: 100%;
+    overflow: visible;
+    height: auto;
+    flex: 0 0 auto;
+    margin: 0 auto;
+}
+*/
+
+/* Inside the controls middle section */
+.game-layout.game-active .controls-middle-section .mobile-arrow-controls {
+    margin-bottom: 0; /* Remove margin since we use gap in the parent */
+}
+
+/* Arrow buttons container should shrink as needed */
+.game-layout.game-active .arrow-controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    width: 100%;
 }
 
 .arrow-button-row {
@@ -21,6 +49,11 @@
     gap: 8px;
     margin-bottom: 8px;
     width: 100%;
+}
+
+/* Last row shouldn't have bottom margin */
+.arrow-button-row:last-child {
+    margin-bottom: 0;
 }
 
 .arrow-button {
@@ -86,4 +119,79 @@
     width: 70px;
     height: 70px;
     flex-shrink: 0;
+}
+
+/* Initial sizing for buttons/spacers - Apply always based on viewport */
+.arrow-button,
+.spacer {
+    width: 50px; /* Smaller default size */
+    height: 50px;
+    padding: 9px;
+}
+
+/* Adjust size of arrow controls based on screen size */
+@media (max-height: 700px) {
+    .arrow-button,
+    .spacer {
+        width: 50px;
+        height: 50px;
+        padding: 8px;
+    }
+
+    .arrow-button-row {
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+}
+
+@media (max-height: 600px) {
+    .arrow-button,
+    .spacer {
+        width: 45px;
+        height: 45px;
+        padding: 8px;
+    }
+}
+
+@media (max-height: 500px) {
+    .arrow-button,
+    .spacer {
+        width: 40px;
+        height: 40px;
+        padding: 6px;
+    }
+
+    .arrow-button-row {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+}
+
+/* Special landscape layout for controls */
+@media (orientation: landscape) and (max-height: 450px) {
+    .arrow-button,
+    .spacer {
+        width: 35px;
+        height: 35px;
+        padding: 5px;
+    }
+
+    .arrow-button-row {
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+}
+
+/* Re-add media query to show controls ONLY on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-arrow-controls {
+        display: block; /* Show on touch devices */
+        /* Keep other styles previously within this block if needed */
+        transform-origin: center;
+        width: 100%;
+        overflow: visible;
+        height: auto;
+        flex: 0 0 auto;
+        margin: 0 auto;
+    }
 }

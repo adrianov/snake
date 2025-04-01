@@ -1,103 +1,131 @@
 /* =========== LAYOUT STRUCTURE =========== */
 .game-layout {
-    display: grid;
-    min-height: 100vh; /* Use min-height instead of height to allow scrolling */
+    display: flex; /* Use flexbox for overall structure */
+    flex-direction: column; /* Stack header, main, footer */
+    min-height: 100vh;
     width: 100vw;
     max-width: 100vw;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-        "header"
-        "main"
-        "footer";
-    overflow-x: hidden; /* Only prevent horizontal scrolling */
-    overflow-y: auto; /* Allow vertical scrolling when not in gameplay */
-    /* Always prevent pinch-zoom regardless of gameplay state */
-    touch-action: pan-y;
+    overflow: hidden; /* Prevent scrolling */
+    touch-action: pan-y; /* Allow vertical scrolling for content outside game */
 }
 
-/* Header, Main & Footer */
+/* Header, Main & Footer - Flex properties */
 .game-header {
-    grid-area: header;
+    flex: 0 0 auto; /* Header doesn't grow/shrink */
     padding: 5px 0;
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
     z-index: 10;
     width: 100%;
-    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out;
 }
 
 .main-container {
-    grid-area: main;
+    flex: 1 1 auto; /* Main content takes remaining space */
     position: relative;
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    overflow-x: hidden; /* Only prevent horizontal scrolling */
-    overflow-y: auto; /* Allow vertical scrolling */
-}
-
-.game-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 15px 0 0 0;
-    width: 100%;
-    max-width: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    min-height: 0;
-    scrollbar-width: thin; /* For Firefox */
-    scrollbar-color: var(--color-primary) var(--color-bg-light); /* For Firefox */
-}
-
-/* Add scrollbar styling for WebKit browsers */
-.game-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.game-container::-webkit-scrollbar-track {
-    background: var(--color-bg-light);
-    border-radius: 10px;
-}
-
-.game-container::-webkit-scrollbar-thumb {
-    background-color: var(--color-primary);
-    border-radius: 10px;
-    border: 2px solid var(--color-bg-light);
+    align-items: center; /* Center children horizontally */
+    justify-content: center; /* Center children vertically */
+    overflow: hidden; /* Prevent overflow */
 }
 
 .game-footer {
-    grid-area: footer;
+    flex: 0 0 auto; /* Footer doesn't grow/shrink */
     padding: 5px 15px;
-    text-align: center;
+    text-align: center; /* Ensures copyright is centered */
     font-size: 0.75rem;
     color: var(--color-text-dim);
     opacity: 0.7;
-    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out;
+    transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
+    z-index: 10;
+    width: 100%;
 }
 
-/* Game Active State */
-.game-layout.game-active {
-    grid-template-rows: 1fr !important;
-    grid-template-columns: 1fr !important;
-    grid-template-areas: "main" !important;
-    background: var(--color-bg);
-    /* Prevent all scrolling while game is active */
+/* Unified Game Container Layout - Acts as a centering wrapper */
+.game-container {
+    display: flex;
+    /* flex-direction: column; /* Removed */
+    justify-content: center; /* Center column vertically */
+    align-items: center; /* Center column horizontally */
+    /* flex: 1 1 auto; /* Removed - Parent handles filling space */
     overflow: hidden;
-    position: fixed;
+    box-sizing: border-box;
+}
+
+/* New container for the actual game content column */
+.game-content-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content block vertically */
+    align-items: center; /* Center items horizontally */
+    width: min(95vw, 78vh); /* Increased vw constraint slightly */
+    /* height: 100%; /* Removed - let content define height */
+    gap: 1.5vh; /* Add uniform gap between items */
+    box-sizing: border-box;
+}
+
+/* --- BASE STYLES FOR CHILDREN (Now inside game-content-column) --- */
+.canvas-wrapper {
+    flex: 0 0 auto;
+    aspect-ratio: 1 / 1;
+    width: 100%; /* Fill the new column parent */
+    /* width: min(90vw, 80vh); /* Constraint moved to parent */
+    margin: 0;
+    min-width: 1px;
+    min-height: 1px;
+    box-sizing: border-box;
+}
+
+.game-controls {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%; /* Fill the new column parent */
+    /* max-width: min(90vw, 80vh); /* Constraint moved to parent */
+    gap: 8px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.score-container {
+    flex: 0 0 auto;
+    width: 100%; /* Fill the new column parent */
+    /* max-width: min(90vw, 80vh); /* Constraint moved to parent */
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* Order within game-controls */
+.game-controls .mobile-arrow-controls {
+    order: 0;
     width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    /* Disable all touch actions during gameplay */
+    /* Remove specific max-width, rely on parent container's width */
+    /* max-width: min(65vh, 65vw); */
+    flex: 0 0 auto;
+}
+.game-controls .desktop-only-tip,
+.game-controls .mobile-only-tip {
+    order: 1;
+    width: 100%;
+    /* Remove specific max-width, rely on parent container's width */
+    /* max-width: min(70vh, 80vw); */
+    flex: 0 0 auto;
+}
+
+/* --- Game Active State Specific Styles --- */
+.game-layout.game-active {
     touch-action: none;
 }
 
+/* Remove container max-width override for active state */
+/* .game-layout.game-active .game-container { max-width: 100%; } */
+
+/* Hide header/footer in active state */
 .game-layout.game-active .game-header,
 .game-layout.game-active .game-footer {
     opacity: 0;
@@ -106,15 +134,59 @@
     position: absolute;
     visibility: hidden;
     z-index: -1;
+    padding: 0;
+    margin: 0;
 }
 
-.game-layout.game-active .game-container {
-    padding: 10px 0;
-    /* Prevent container scrolling during gameplay */
-    overflow: hidden;
+/* Scaling adjustments (Apply only when game is active) */
+@media (max-height: 650px) {
+    /* Remove padding/margins adjustments */
+    /* .game-container {
+        padding: 2vh 0;
+    }
+    .canvas-wrapper,
+    .game-controls {
+        margin-bottom: 2vh;
+    } */
+    /* Keep scaling rules - only for score container now */
+    .game-layout.game-active .score-container {
+        transform: scale(0.95);
+    }
 }
 
-.game-layout.game-active .main-container {
-    /* Prevent main container scrolling during gameplay */
-    overflow: hidden;
+@media (max-height: 550px) {
+    /* Remove padding/margins adjustments */
+    /* .game-container {
+        padding: 1.5vh 0;
+    }
+    .canvas-wrapper,
+    .game-controls {
+        margin-bottom: 1.5vh;
+    } */
+    /* Keep scaling rules - only for score container now */
+    .game-layout.game-active .score-container {
+        transform: scale(0.9);
+    }
 }
+
+@media (max-height: 480px) {
+    /* Remove padding/margins adjustments */
+    /* .game-container {
+        padding: 1vh 0;
+    }
+    .canvas-wrapper,
+    .game-controls {
+        margin-bottom: 1vh;
+    } */
+    /* Keep scaling rules - only for score container now */
+    .game-layout.game-active .score-container {
+        transform: scale(0.85);
+    }
+}
+
+/* Ensure the gap adjustment remains */
+@media (max-height: 480px) {
+    .game-layout.game-active .game-controls { gap: 3px; }
+}
+
+/* ... Responsive adjustments ... */

@@ -2,11 +2,25 @@
 .tip-container, .desktop-only-tip, .mobile-only-tip {
     display: flex;
     justify-content: center;
+    /* flex-wrap: wrap; */ /* Removed */
     gap: 6px;
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 0 2vw;
+    transition: all 0.3s ease-in-out;
+    /* overflow-x: auto; */ /* Removed - we want text to shrink, not scroll */
+    overflow-y: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    white-space: nowrap; /* Reinstated/Ensured */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.tip-container::-webkit-scrollbar,
+.desktop-only-tip::-webkit-scrollbar,
+.mobile-only-tip::-webkit-scrollbar {
+    display: none;
 }
 
 .mobile-only-tip {
@@ -19,36 +33,70 @@
     background: rgba(46, 204, 113, 0.15);
     color: var(--color-text);
     border-radius: var(--radius-sm);
-    font-size: 0.7rem;
+    /* font-size: 0.7rem; */ /* Replaced with clamp() */
+    font-size: clamp(0.55rem, 2.0vw, 0.75rem); /* Slightly larger responsive font size */
     border: 1px solid rgba(46, 204, 113, 0.25);
-    flex-shrink: 0;
+    flex-shrink: 0; /* Keep this so items don't shrink if font is small enough */
+    transition: all 0.2s ease-in-out;
 }
+
+/* Game active state tips */
+.game-layout.game-active .desktop-only-tip {
+    display: flex;
+    flex-wrap: nowrap; /* Force single line (already present) */
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    margin: 0 auto;
+    /* overflow-x: auto; */ /* Removed */
+    height: auto;
+}
+
+/* On touch devices, hide desktop tips and show mobile tips */
+@media (hover: none) and (pointer: coarse) {
+    .game-layout.game-active .desktop-only-tip {
+        display: none;
+    }
+
+    .game-layout.game-active .mobile-only-tip {
+        display: flex;
+        flex-wrap: nowrap; /* Force single line (already present) */
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        margin: 0 auto;
+        /* overflow-x: auto; */ /* Removed */
+        height: auto;
+    }
+}
+
+/* The base .tip-item rule defined above will now apply consistently */
 
 /* =========== SCORE CONTAINER =========== */
 .score-container {
     display: flex;
-    justify-content: space-between;
+    /* justify-content: center; */ /* Changed */
+    justify-content: space-between; /* Changed */
     align-items: center;
     padding: 8px 16px;
     background: rgba(30, 41, 59, 0.8);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: var(--radius-md);
-    width: 100%;
-    max-width: 100%;
     gap: 8px;
 }
 
 .score-item:first-child,
 .score-item:last-child {
-    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
     min-width: 70px;
-    max-width: 25%;
+    flex: 1 1 0; /* Added: Allow grow/shrink, basis 0 */
 }
 
 .score-label {
@@ -113,10 +161,10 @@
     padding: 6px 12px;
     background: rgba(46, 204, 113, 0.1);
     border-radius: var(--radius-sm);
-    flex: 2 1 auto;
-    min-width: 8rem;
-    max-width: 50%;
-    margin: 0 8px;
+    /* flex: 0 0 auto; */ /* Changed */
+    flex: 0 0 60%;    /* Changed: Set basis to 60%, no grow/shrink */
+    /* min-width: 8rem; */ /* Removed */
+    /* margin: 0 8px; */ /* Removed */
     text-align: center;
     border: 1px solid rgba(46, 204, 113, 0.3);
     overflow: hidden;

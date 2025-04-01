@@ -3,20 +3,14 @@
 @media (hover: none) and (pointer: coarse) {
     .mobile-arrow-controls {
         display: block;
-        margin-bottom: 3px;
     }
 
     .mobile-only-tip {
         display: flex;
-        margin-bottom: 3px;
     }
 
     .desktop-only-tip {
         display: none;
-    }
-
-    .game-layout.game-active .canvas-wrapper {
-        max-width: min(95vh, 95vw);
     }
 
     /* Ensure panel content has enough padding for mobile browser UI */
@@ -29,43 +23,136 @@
         margin-bottom: env(safe-area-inset-bottom, 80px);
     }
 
-    /* Reduce padding in main game container for mobile */
-    .game-container {
-        padding-bottom: 0;
-    }
-
-    /* Adjust padding for active game state */
-    .game-layout.game-active .game-container {
-        padding: 10px 0 0 0;
+    /* Mobile orientation landscape */
+    @media (orientation: landscape) {
+        /* Keep landscape canvas size override if needed, maybe handled by parent max-width */
+        /* .game-layout.game-active .canvas-wrapper { max-width: min(55vh, 55vw); } */
     }
 }
 
-/* Desktop layout - landscape */
+/* ===== Desktop Layout - Landscape (Centered Column Grid) ===== */
 @media (orientation: landscape) and (min-width: 769px) {
-    .game-layout:not(.game-active) {
-        grid-template-columns: auto 1fr;
-        grid-template-rows: 1fr auto;
-        grid-template-areas:
-            "header main"
-            "header footer";
+
+    /* --- Overall Layout --- */
+    .game-layout {
+        display: grid;
+        /* Header | Left Gap | Main Content | Right Gap */
+        grid-template-columns: 180px 1fr minmax(0, 800px) 1fr;
+        grid-template-rows: 100vh; /* Full height */
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        box-sizing: border-box;
     }
 
-    .game-layout:not(.game-active) .game-header {
-        padding: 20px;
+    /* --- Header (Left Column) --- */
+    .game-layout .game-header {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+        height: 100%;
+        overflow-y: auto;
+        padding: 20px 15px;
+        border-right: 1px solid var(--color-border);
+        box-sizing: border-box;
+        /* Keep internal flex setup */
+        display: flex;
         flex-direction: column;
         align-items: flex-start;
         justify-content: flex-start;
     }
 
-    .game-layout:not(.game-active) .header-buttons {
+    .game-layout .header-buttons {
+        display: flex;
         flex-direction: column;
-        margin-left: 0;
+        align-items: stretch;
+        gap: 12px;
+        width: 100%;
     }
 
-    .canvas-wrapper,
-    .game-controls {
-        max-width: min(80vh, 75vw);
+    .game-layout .header-buttons .btn {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+        padding: 0.7em 0.9em;
+        box-sizing: border-box;
     }
+
+    /* --- Main Container (Center Column) --- */
+    .game-layout .main-container {
+        grid-column: 3 / 4; /* Place in 3rd column */
+        grid-row: 1 / 2;
+        height: 100%;
+        overflow-y: auto; /* <<< This column scrolls */
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 0; /* Remove direct padding */
+    }
+
+    /* --- Game Container (Inside Scrolling Main) --- */
+    .game-layout .game-container {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 20px;
+        padding: 25px 0; /* Padding inside scroll area */
+        min-width: 0;
+        box-sizing: border-box;
+        flex-shrink: 1; /* Allow shrinking */
+    }
+
+    /* --- Canvas Wrapper --- */
+    .game-layout .canvas-wrapper {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        flex-shrink: 1; /* Allow shrinking */
+        box-sizing: border-box;
+    }
+
+    /* --- Game Controls & Score Container --- */
+    .game-layout .game-controls,
+    .game-layout .score-container {
+        width: 100%;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        margin: 0;
+    }
+
+    /* --- Footer --- */
+    .game-layout .game-footer {
+        display: none;
+    }
+
+    /* --- Controls Visibility --- */
+    .mobile-only-tip {
+        display: none !important;
+    }
+    .desktop-only-tip {
+        display: flex !important;
+        justify-content: center;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* --- Active Game State --- */
+    .game-layout.game-active {
+        /* Remove header column, keep gaps and main content column */
+        grid-template-columns: 1fr minmax(0, 800px) 1fr;
+    }
+    .game-layout.game-active .game-header {
+        display: none;
+    }
+    .game-layout.game-active .main-container {
+        grid-column: 2 / 3; /* Shift main to 2nd column */
+    }
+    /* Inner content sizing remains the same */
 }
 
 /* Mobile layout */
@@ -80,19 +167,22 @@
         margin-left: 0;
     }
 
-    .game-container {
-        gap: 8px;
-        padding-bottom: 0;
-        margin-bottom: 0;
+    .game-container:not(.game-layout.game-active .game-container) {
+        /* These styles should not be needed */
+        /* padding: 3vh 0; */ /* Remove if present */
     }
 
     .main-container {
         padding-bottom: 0;
     }
 
-    .game-controls {
-        gap: 6px;
-        margin-bottom: 3px;
+    .game-controls:not(.game-layout.game-active .game-controls) {
+        /* gap: 6px; */
+        /* margin-bottom: 3px; */
+    }
+
+    .score-container:not(.game-layout.game-active .score-container) {
+        /* padding: 6px 10px; */
     }
 
     .canvas-wrapper,
@@ -102,10 +192,6 @@
         max-width: min(90vh, 95vw);
         margin-left: auto;
         margin-right: auto;
-    }
-
-    .score-container {
-        padding: 6px 10px;
     }
 
     .score-item {
@@ -136,7 +222,14 @@
     }
 
     .mobile-only-tip {
-        margin-bottom: 5px;
+        flex-wrap: nowrap;
+        justify-content: center;
+        max-width: 100%;
+        overflow-x: auto;
+        min-height: 18px;
+    }
+    .game-layout.game-active .mobile-only-tip {
+        /* No specific style needed */
     }
 
     .tip-container {
@@ -179,41 +272,6 @@
     .cta-buttons {
         width: 100%;
     }
-}
-
-/* Small screens */
-@media (max-height: 600px) and (orientation: portrait), (max-width: 350px) {
-    .canvas-wrapper,
-    .game-controls,
-    .score-container,
-    .tip-container,
-    .mobile-arrow-controls {
-        max-width: 95vw;
-    }
-
-    /* Compact layout */
-    .game-controls {
-        gap: 3px;
-        margin-bottom: 2px;
-    }
-    .score-container { padding: 5px 8px; }
-    .score-item { min-width: 55px; }
-    .score-label { font-size: 0.7rem; letter-spacing: 1px; }
-    .score-value { font-size: 1.3rem; }
-    .arrow-button, .spacer { width: 50px; height: 50px; }
-    .game-footer { display: none; }
-    .tip-item { padding: 2px 4px; font-size: 0.65rem; margin: 0 1px; }
-    .tip-container { padding: 0 3px 2px 3px; gap: 4px; }
-    .game-container {
-        gap: 5px;
-        padding-bottom: 0;
-        margin-bottom: 0;
-    }
-
-    /* Ensure no extra padding in active game state on small screens */
-    .game-layout.game-active .game-container {
-        padding: 5px 0 0 0;
-    }
 
     /* Music controls */
     .music-info {
@@ -246,18 +304,144 @@
     }
 }
 
+/* Small screens */
+@media (max-height: 600px) and (orientation: portrait), (max-width: 350px) {
+    /* Ensure no conflicting padding/justify */
+    /* .game-container { ... } */
+}
+
 /* Extra small screens */
 @media (max-width: 320px) {
-    .score-container { padding: 4px 6px; }
-    .score-item { min-width: 50px; }
-    .music-info { margin: 0 4px; }
-    .control-toggle { min-width: 22px; padding: 2px 3px; }
-    .score-label { font-size: 0.65rem; letter-spacing: 0.5px; }
-    .score-value { font-size: 1.2rem; }
+    /* Ensure no conflicting padding/justify */
+    /* .game-container { ... } */
+}
 
-    #currentMelody, .melody-text { font-size: 0.65rem; }
+/* Special case for very tall narrow screens (like iPhone X in portrait) */
+@media (min-height: 800px) and (max-width: 500px) {
+    /* Ensure no conflicting padding/justify */
+    /* .game-container { ... } */
+}
+
+/* Very small height screens during gameplay */
+@media (max-height: 450px) {
+    /* Ensure no conflicting padding/justify */
+    /* .game-container { ... } */
+
+    /* Keep tip styles */
+    .game-layout.game-active .desktop-only-tip,
+    .game-layout.game-active .mobile-only-tip {
+        min-height: 14px;
+        max-height: 14px;
+    }
+}
+
+/* ==========================================================================
+   Adjustments for smaller screens (e.g., phones in portrait)
+   ========================================================================== */
+@media (max-width: 480px) {
+    :root {
+        --radius-base: 8px;
+        --radius-md: 6px;
+        --radius-sm: 4px;
+    }
+
+    body {
+        font-size: 14px; /* Slightly smaller base font */
+    }
+
+    .game-container {
+        padding: 8px; /* Reduced padding */
+    }
+
+    .score-container {
+        padding: 6px 10px; /* Reduced padding */
+        gap: 4px;         /* Reduced gap */
+    }
+
+    .score-item:first-child,
+    .score-item:last-child {
+        min-width: 55px; /* Reduced min-width */
+        gap: 4px;        /* Reduced internal gap */
+    }
+
+    .score-label {
+        font-size: 0.65rem; /* Slightly smaller label */
+        letter-spacing: 1px;
+    }
+
+    .score-value {
+        font-size: 1.2rem; /* Slightly smaller value */
+    }
+
+    .music-info {
+        flex-basis: 50%; /* Reduced basis */
+        padding: 4px 8px; /* Reduced padding */
+        gap: 4px;        /* Reduced gap */
+        font-size: 0.7rem; /* Slightly smaller font */
+    }
+
+    #currentMelody {
+        min-height: 1.2rem;
+    }
+
     .music-icon {
-        font-size: 0.75rem;
-        margin-right: 0.15rem;
+        font-size: 1rem;
+        margin-right: 0.2rem;
+    }
+
+    .control-toggle {
+        padding: 3px 5px;
+        min-width: 28px;
+    }
+
+    .control-icon {
+        font-size: 14px;
+    }
+
+    .control-label {
+        font-size: 8px;
+    }
+
+
+    /* Adjust tip font size more aggressively on small screens */
+    .tip-item {
+       font-size: clamp(0.5rem, 2.5vw, 0.65rem);
+    }
+
+    .game-title {
+        font-size: 1.6rem; /* Smaller title */
+    }
+
+    .btn {
+        padding: 8px 14px;
+        font-size: 0.85rem;
+    }
+
+    .panel {
+        padding: 15px;
+    }
+
+    .panel-title {
+        font-size: 1.3rem;
+    }
+
+    /* Further adjustments for mobile controls if needed */
+    .mobile-controls {
+        gap: 8px;
+    }
+
+    .dpad-button {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+    }
+
+    .action-button {
+         width: 55px;
+         height: 55px;
+         font-size: 1rem;
+    }
+    .action-button .icon {
+         font-size: 1.4rem;
     }
 }
