@@ -34,27 +34,24 @@ class InputManager {
         const touchMoveHandler = (e) => this.handleTouchMove(e);
         const touchEndHandler = (e) => this.handleTouchEnd(e);
 
+        // We need non-passive listeners to prevent scrolling during gameplay
         canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
         canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
         canvas.addEventListener('touchend', touchEndHandler, { passive: true });
 
-        // Prevent page scrolling when touching the canvas and text selection
-        canvas.style.overscrollBehavior = 'none';
-        canvas.style.touchAction = 'none';
-
-        // Prevent text selection on the game canvas
+        // Allow scrolling by default but disable certain behaviors on the canvas
+        // Don't apply overscrollBehavior or touchAction to body/document to allow normal scrolling
         canvas.style.webkitUserSelect = 'none';
         canvas.style.userSelect = 'none';
 
         // Document click handler
         document.addEventListener('click', this.handleDocumentClick.bind(this));
 
-        // Prevent default on touch events that might trigger selection
+        // Only prevent default on touch events for arrow buttons, not the whole document
         document.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('arrow-button') ||
                 e.target.closest('.arrow-button') ||
-                e.target.classList.contains('mobile-arrow-controls') ||
-                e.target.closest('.mobile-arrow-controls')) {
+                e.target.closest('svg')) {
                 e.preventDefault();
             }
         }, { passive: false });
@@ -210,6 +207,11 @@ class InputManager {
 
         const gameState = this.game.gameStateManager.getGameState();
 
+        // Only prevent default if the game is active to allow scrolling otherwise
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            event.preventDefault();
+        }
+
         // Store initial touch details
         this.touchStartX = event.touches[0].clientX;
         this.touchStartY = event.touches[0].clientY;
@@ -276,8 +278,13 @@ class InputManager {
 
     handleTouchMove(event) {
         const gameState = this.game.gameStateManager.getGameState();
+
+        // Only prevent default scrolling when game is active
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             event.preventDefault();
+        } else {
+            // Allow normal scrolling when game is not active
+            return;
         }
 
         if (event.touches.length !== 1) return;

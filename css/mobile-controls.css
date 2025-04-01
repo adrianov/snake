@@ -8,7 +8,8 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    touch-action: manipulation;
+    /* Allow all scrolling on the container */
+    touch-action: auto;
     -webkit-touch-callout: none; /* Prevents callout menu on touch & hold */
     -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
 }
@@ -29,7 +30,8 @@
     border-radius: var(--radius-sm);
     color: rgba(240, 240, 245, 0.85);
     cursor: pointer;
-    touch-action: manipulation;
+    /* Disable all browser handling on the actual buttons */
+    touch-action: none;
     position: relative;
     transition: all 0.15s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
