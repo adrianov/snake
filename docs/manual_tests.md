@@ -19,7 +19,7 @@
 
 ### Speed Dynamics
 - Snake should speed up gradually as it eats more food
-- Pressing opposite direction key should temporarily slow down snake
+- Pressing opposite direction key should slow down snake
 - Speed should increase by current direction and slow in opposite direction
 - Speed adjustments should be more gradual on touch devices
 - Snake should return to base speed on game restart
