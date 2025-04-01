@@ -34,24 +34,39 @@ class InputManager {
         const touchMoveHandler = (e) => this.handleTouchMove(e);
         const touchEndHandler = (e) => this.handleTouchEnd(e);
 
-        // We need non-passive listeners to allow preventDefault in specific cases
+        // We must use non-passive listeners to allow preventDefault for active gameplay
         canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
         canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
         canvas.addEventListener('touchend', touchEndHandler, { passive: true });
 
-        // Canvas-specific styles - prevent text selection but allow other interactions
+        // Canvas-specific styles - prevent text selection during gameplay
         canvas.style.webkitUserSelect = 'none';
         canvas.style.userSelect = 'none';
+
+        // Add touchmove handler to window to prevent scrolling game container
+        // during gameplay
+        window.addEventListener('touchmove', (e) => {
+            const gameState = this.game.gameStateManager.getGameState();
+            // Only prevent default when actively playing and the touch is on or started on canvas
+            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver &&
+                (e.target.id === 'gameCanvas' || e.target.closest('.canvas-wrapper'))) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         // Document click handler
         document.addEventListener('click', this.handleDocumentClick.bind(this));
 
-        // Be very specific about when to prevent default - only for arrow buttons
+        // Be very specific about when to prevent default - only for arrow buttons and game controls
         document.addEventListener('touchstart', (e) => {
-            // Only prevent default for arrow buttons, not for entire document
-            if (e.target.classList.contains('arrow-button') ||
+            const gameState = this.game.gameStateManager.getGameState();
+
+            // Prevent default for game controls during gameplay
+            if ((e.target.classList.contains('arrow-button') ||
                 e.target.closest('.arrow-button') ||
-                (e.target.closest('svg') && e.target.closest('.arrow-button'))) {
+                (e.target.closest('svg') && e.target.closest('.arrow-button'))) ||
+                (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver &&
+                    e.target.id === 'gameCanvas')) {
                 e.preventDefault();
             }
         }, { passive: false });
@@ -197,15 +212,17 @@ class InputManager {
     }
 
     handleTouchStart(event) {
-        // Prevent default ONLY for multi-touch to avoid zooming
-        if (event.touches.length > 1) {
+        const gameState = this.game.gameStateManager.getGameState();
+
+        // Prevent default for all touch interactions during active gameplay
+        // This prevents pinch zooming and scrolling when the game is running
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver &&
+            event.target.id === 'gameCanvas') {
             event.preventDefault();
         }
 
         // Always try to initialize audio on any touch
         this.ensureAudioInitialized();
-
-        const gameState = this.game.gameStateManager.getGameState();
 
         // Get touch coordinates and store them
         this.touchStartX = event.touches[0].clientX;
@@ -283,14 +300,13 @@ class InputManager {
     handleTouchMove(event) {
         const gameState = this.game.gameStateManager.getGameState();
 
-        // Early exit if game is not running - allow normal scrolling
-        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) {
-            return;
-        }
-
-        // Only prevent default for game canvas interactions during active gameplay
+        // Prevent default for ALL touch move events on canvas during active gameplay
+        // This completely prevents pinch-zooming and scrolling during play
         if (event.target.id === 'gameCanvas' && gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             event.preventDefault();
+        } else {
+            // Allow scrolling when not in active gameplay
+            return;
         }
 
         if (event.touches.length !== 1) return;

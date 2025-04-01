@@ -11,7 +11,9 @@
         "main"
         "footer";
     overflow-x: hidden; /* Only prevent horizontal scrolling */
-    overflow-y: auto; /* Allow vertical scrolling */
+    overflow-y: auto; /* Allow vertical scrolling when not in gameplay */
+    /* Always prevent pinch-zoom regardless of gameplay state */
+    touch-action: pan-y;
 }
 
 /* Header, Main & Footer */
@@ -85,6 +87,15 @@
     grid-template-columns: 1fr !important;
     grid-template-areas: "main" !important;
     background: var(--color-bg);
+    /* Prevent all scrolling while game is active */
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    /* Disable all touch actions during gameplay */
+    touch-action: none;
 }
 
 .game-layout.game-active .game-header,
@@ -99,4 +110,11 @@
 
 .game-layout.game-active .game-container {
     padding: 10px 0;
+    /* Prevent container scrolling during gameplay */
+    overflow: hidden;
+}
+
+.game-layout.game-active .main-container {
+    /* Prevent main container scrolling during gameplay */
+    overflow: hidden;
 }

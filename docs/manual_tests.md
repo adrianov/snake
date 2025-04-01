@@ -65,3 +65,30 @@
 - Multiple rapid music changes should work smoothly
 - Music should handle browser tab switching
 - Music should clean up properly on page close
+
+## Touch Controls & Mobile Experience
+
+### Touch Interaction
+- Swipe gestures should correctly change snake direction
+- Tapping should slow down the snake
+- Direction controls should work during active gameplay
+- Screen should not scroll during active gameplay
+- Pinch zoom should be disabled always
+- Normal scrolling should work when not in active gameplay (menus, game over screen)
+- Touch controls should respond quickly with no noticeable delay
+- On-screen arrow buttons should function correctly
+- The play area should be centered with proper margins on small screens
+
+### Mobile-Specific Features
+- Page should not bounce or scroll during gameplay on iOS/Safari
+- Mobile controls should appear only on touch devices
+- Game should handle device rotation gracefully
+- Interface should be fully usable on small mobile screens
+- Game should handle mobile browser tab switching correctly
+- Header and footer should properly hide during gameplay and show after
+
+## Browser Compatibility
+// ... existing code ...
+
+## Edge Cases
+// ... existing code ...
