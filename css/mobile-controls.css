@@ -124,17 +124,40 @@
 /* Initial sizing for buttons/spacers - Apply always based on viewport */
 .arrow-button,
 .spacer {
-    width: 50px; /* Smaller default size */
-    height: 50px;
-    padding: 9px;
+    width: 70px; /* Restored to original larger size */
+    height: 70px;
+    padding: 12px;
 }
 
 /* Adjust size of arrow controls based on screen size */
 @media (max-height: 700px) {
     .arrow-button,
     .spacer {
-        width: 50px;
-        height: 50px;
+        width: 65px;
+        height: 65px;
+        padding: 10px;
+    }
+
+    .arrow-button-row {
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+}
+
+@media (max-height: 600px) {
+    .arrow-button,
+    .spacer {
+        width: 60px;
+        height: 60px;
+        padding: 10px;
+    }
+}
+
+@media (max-height: 500px) {
+    .arrow-button,
+    .spacer {
+        width: 55px;
+        height: 55px;
         padding: 8px;
     }
 
@@ -144,41 +167,18 @@
     }
 }
 
-@media (max-height: 600px) {
+/* Special landscape layout for controls */
+@media (orientation: landscape) and (max-height: 450px) {
     .arrow-button,
     .spacer {
-        width: 45px;
-        height: 45px;
-        padding: 8px;
-    }
-}
-
-@media (max-height: 500px) {
-    .arrow-button,
-    .spacer {
-        width: 40px;
-        height: 40px;
-        padding: 6px;
+        width: 50px;
+        height: 50px;
+        padding: 7px;
     }
 
     .arrow-button-row {
         gap: 5px;
         margin-bottom: 5px;
-    }
-}
-
-/* Special landscape layout for controls */
-@media (orientation: landscape) and (max-height: 450px) {
-    .arrow-button,
-    .spacer {
-        width: 35px;
-        height: 35px;
-        padding: 5px;
-    }
-
-    .arrow-button-row {
-        gap: 4px;
-        margin-bottom: 4px;
     }
 }
 
