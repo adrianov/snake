@@ -235,11 +235,14 @@ class AudioManager {
         const musicEnabled = this.game.gameStateManager.toggleMusic();
         this.game.uiManager.updateMusicToggleUI();
 
+        // Get current game state for decision making
+        const gameState = this.game.gameStateManager.getGameState();
+        const isPlaying = gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver;
+
         // Start or stop music based on new state
         if (musicEnabled) {
             // Only start music if game is actually in playing state
-            const gameState = this.game.gameStateManager.getGameState();
-            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            if (isPlaying) {
                 this.initializeGameMusic(false);
             }
         } else {
@@ -254,7 +257,7 @@ class AudioManager {
         localStorage.setItem('snakeMusicEnabled', musicEnabled);
 
         // Play click sound for feedback
-        if (this.game.gameStateManager.getGameState().soundEnabled && this.isAudioReady()) {
+        if (gameState.soundEnabled && this.isAudioReady()) {
             this.game.soundManager.playSound('click', 0.5);
         }
 
@@ -290,18 +293,9 @@ class AudioManager {
                 this.game.soundManager?.playSound('click', 0.5);
             }
             return true;
-        } else if (gameState.musicEnabled) {
-            // Just select a new melody but don't play it if game is not in playing state
-            MusicManager.selectRandomMelody();
-            this.game.uiManager.updateMelodyDisplay();
-
-            // Play feedback sound
-            if (gameState.soundEnabled && this.isAudioReady()) {
-                this.game.soundManager?.playSound('click', 0.5);
-            }
-            return true;
         } else {
-            // Just select a new melody but don't play it (music is disabled)
+            // Just select a new melody but don't play it if game is not in playing state
+            // or if music is disabled
             MusicManager.selectRandomMelody();
             this.game.uiManager.updateMelodyDisplay();
 

@@ -40,6 +40,7 @@
 - Game over, music should stop
 - Start new game, music should begin again
 - Toggle music ON when in menu screen should not start playing music (only preference is changed)
+- Toggle music ON when on game over screen should not start playing music (only preference is changed)
 - Toggle music OFF and ON during gameplay should stop and restart music
 - Game should respect music preference during gameplay (ON = music plays, OFF = no music)
 
