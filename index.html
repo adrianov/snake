@@ -89,9 +89,14 @@
 </head>
 <body>
     <div class="game-layout">
-        <!-- Header with donation and GitHub buttons -->
+        <!-- Header with buttons -->
         <header class="game-header">
             <div class="header-buttons">
+                <button id="aboutButton" class="btn control-button" title="About the Game">
+                    <span class="btn-icon button-icon">ℹ</span>
+                    <span class="btn-text button-text">About</span>
+                </button>
+
                 <button id="donateButton" class="btn control-button" title="Support this project">
                     <span class="btn-icon button-icon">❤</span>
                     <span class="btn-text button-text">Donate</span>
@@ -106,89 +111,92 @@
             </div>
         </header>
 
-        <!-- Main game container -->
-        <main class="game-container">
-            <!-- Game canvas wrapper -->
-            <div class="canvas-wrapper">
-                <canvas id="gameCanvas"></canvas>
-            </div>
-
-            <!-- Game controls and info -->
-            <div class="game-controls">
-                <!-- Control tips for desktop -->
-                <div class="desktop-only-tip">
-                    <span class="tip-item">← → ↑ ↓ to move</span>
-                    <span class="tip-item">Opposite direction to slow down</span>
-                    <span class="tip-item">Space to pause</span>
+        <!-- Main content container -->
+        <main class="main-container">
+            <!-- Game container -->
+            <div class="game-container">
+                <!-- Game canvas wrapper -->
+                <div class="canvas-wrapper">
+                    <canvas id="gameCanvas"></canvas>
                 </div>
 
-                <!-- Mobile Arrow Controls - Only visible on touch devices -->
-                <div id="mobileArrowControls" class="mobile-arrow-controls">
-                    <div class="arrow-controls-container">
-                        <div class="arrow-button-row">
-                            <div class="spacer"></div>
-                            <button id="upArrow" class="arrow-button" aria-label="Up">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                    <path d="M12 4l-8 8h5v8h6v-8h5z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                            <div class="spacer"></div>
-                        </div>
-                        <div class="arrow-button-row">
-                            <button id="leftArrow" class="arrow-button" aria-label="Left">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                    <path d="M4 12l8-8v5h8v6h-8v5z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                            <button id="downArrow" class="arrow-button" aria-label="Down">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                    <path d="M12 20l8-8h-5V4h-6v8H4z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                            <button id="rightArrow" class="arrow-button" aria-label="Right">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
-                                    <path d="M20 12l-8-8v5H4v6h8v5z" fill="currentColor"/>
-                                </svg>
-                            </button>
-                        </div>
+                <!-- Game controls and info -->
+                <div class="game-controls">
+                    <!-- Control tips for desktop -->
+                    <div class="desktop-only-tip">
+                        <span class="tip-item">← → ↑ ↓ to move</span>
+                        <span class="tip-item">Opposite direction to slow down</span>
+                        <span class="tip-item">Space to pause</span>
                     </div>
-                </div>
 
-                <!-- Mobile-only tip -->
-                <div class="mobile-only-tip">
-                    <span class="tip-item">Opposite direction to slow down</span>
-                    <span class="tip-item">Swipe gestures also available</span>
-                </div>
-
-                <!-- Game score section -->
-                <div class="score-container">
-                    <div class="score-item">
-                        <span class="score-label">Score</span>
-                        <span class="score-value" id="score">0</span>
-                    </div>
-                    <div class="music-info">
-                        <div id="soundToggle" class="control-toggle" title="Toggle Sound (S key)">
-                            <span class="control-icon sound-on">🔊</span>
-                            <span class="control-icon sound-off hidden">🔇</span>
-                            <span class="control-label">S</span>
-                        </div>
-                        <div class="melody-display">
-                            <div class="melody-content">
-                                <span class="music-icon">♫</span>
-                                <span id="currentMelody"></span>
+                    <!-- Mobile Arrow Controls - Only visible on touch devices -->
+                    <div id="mobileArrowControls" class="mobile-arrow-controls">
+                        <div class="arrow-controls-container">
+                            <div class="arrow-button-row">
+                                <div class="spacer"></div>
+                                <button id="upArrow" class="arrow-button" aria-label="Up">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                        <path d="M12 4l-8 8h5v8h6v-8h5z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                                <div class="spacer"></div>
                             </div>
-                            <span class="control-label">N</span>
-                        </div>
-                        <div id="musicToggle" class="control-toggle" title="Toggle Music (M key)">
-                            <span class="control-icon music-on">♫</span>
-                            <span class="control-icon music-off hidden">♪</span>
-                            <span class="control-label">M</span>
+                            <div class="arrow-button-row">
+                                <button id="leftArrow" class="arrow-button" aria-label="Left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                        <path d="M4 12l8-8v5h8v6h-8v5z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                                <button id="downArrow" class="arrow-button" aria-label="Down">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                        <path d="M12 20l8-8h-5V4h-6v8H4z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                                <button id="rightArrow" class="arrow-button" aria-label="Right">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+                                        <path d="M20 12l-8-8v5H4v6h8v5z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div class="score-item high-score-container">
-                        <span class="score-label">High Score</span>
-                        <span class="score-value" id="highScore">0</span>
-                        <button id="resetHighScore" class="reset-button" title="Reset High Score">↺</button>
+
+                    <!-- Mobile-only tip -->
+                    <div class="mobile-only-tip">
+                        <span class="tip-item">Opposite direction to slow down</span>
+                        <span class="tip-item">Swipe gestures also available</span>
+                    </div>
+
+                    <!-- Game score section -->
+                    <div class="score-container">
+                        <div class="score-item">
+                            <span class="score-label">Score</span>
+                            <span class="score-value" id="score">0</span>
+                        </div>
+                        <div class="music-info">
+                            <div id="soundToggle" class="control-toggle" title="Toggle Sound (S key)">
+                                <span class="control-icon sound-on">🔊</span>
+                                <span class="control-icon sound-off hidden">🔇</span>
+                                <span class="control-label">S</span>
+                            </div>
+                            <div class="melody-display">
+                                <div class="melody-content">
+                                    <span class="music-icon">♫</span>
+                                    <span id="currentMelody"></span>
+                                </div>
+                                <span class="control-label">N</span>
+                            </div>
+                            <div id="musicToggle" class="control-toggle" title="Toggle Music (M key)">
+                                <span class="control-icon music-on">♫</span>
+                                <span class="control-icon music-off hidden">♪</span>
+                                <span class="control-label">M</span>
+                            </div>
+                        </div>
+                        <div class="score-item high-score-container">
+                            <span class="score-label">High Score</span>
+                            <span class="score-value" id="highScore">0</span>
+                            <button id="resetHighScore" class="reset-button" title="Reset High Score">↺</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -202,9 +210,9 @@
 
     <!-- Donation Panel -->
     <div id="donationPanel" class="donation-panel">
-        <div class="donation-header">
+        <div class="donation-header panel-header">
             <h3>Support Snake Game</h3>
-            <button id="closeDonationPanel" class="close-button">×</button>
+            <button id="closeDonationPanel" class="close-button panel-close-button">×</button>
         </div>
         <div class="donation-content">
             <div class="donation-method">
@@ -237,6 +245,84 @@
             </div>
         </div>
     </div>
+
+    <!-- About Panel (formerly Help Panel) -->
+    <article id="aboutPanel" class="panel about-panel">
+        <header class="about-header panel-header">
+            <h1>About Snake Game</h1>
+            <button id="closeAboutPanel" class="close-button panel-close-button" aria-label="Close about panel">×</button>
+        </header>
+        <div class="panel-content-area">
+            <h2>Classic Snake Game with Modern Features</h2>
+            <p>Experience the nostalgic Snake game reimagined with beautiful visuals and innovative gameplay mechanics. Control a hungry snake as it navigates through a grid, eating fruits and growing longer with each bite while avoiding collisions.</p>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>Day-Night Cycle:</strong> The background gradually transitions from day to night as your snake grows longer.</li>
+                <li><strong>Dynamic Soundtrack:</strong> Enjoy a procedurally generated soundtrack that evolves as you play.</li>
+                <li><strong>Diverse Fruits:</strong> Collect different types of fruits (apples, bananas, oranges, strawberries) with varying point values.</li>
+                <li><strong>Adaptive Difficulty:</strong> The game becomes progressively challenging as your score increases.</li>
+                <li><strong>Unique Gameplay Mechanics:</strong> Slow down by pressing the opposite direction, with luck-based collision evasion and tail-cutting features.</li>
+            </ul>
+
+            <h3>How to Play</h3>
+            <p>Use the arrow keys (desktop) or swipe gestures (mobile) to control the snake's direction. Collect fruits to grow longer and increase your score. Press the opposite direction key to slow down. Avoid hitting walls and your own tail!</p>
+
+            <div class="controls-info">
+                <div class="desktop-controls">
+                    <h4>Desktop Controls:</h4>
+                    <ul>
+                        <li>Arrow Keys (←→↑↓): Change direction</li>
+                        <li>Space: Pause/Resume game</li>
+                        <li>M: Toggle music</li>
+                        <li>S: Toggle sound effects</li>
+                    </ul>
+                </div>
+                <div class="mobile-controls">
+                    <h4>Mobile Controls:</h4>
+                    <ul>
+                        <li>Swipe: Change direction</li>
+                        <li>On-screen arrows: Control snake</li>
+                        <li>Tap music/sound icons: Toggle audio</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>The Evolution of Snake</h3>
+            <p>Snake has a rich history dating back to the 1970s arcade game Blockade. It gained mainstream popularity in the late 1990s when it was pre-installed on Nokia mobile phones. This version modernizes the classic gameplay with contemporary features while preserving the addictive simplicity that made the original so beloved.</p>
+
+            <footer>
+                <div class="cta-buttons">
+                    <button id="playNowButton" class="cta-button play-button">Play Now</button>
+                    <button id="aboutDonateButton" class="cta-button donate-button">Support Project</button>
+                    <a href="https://github.com/adrianov/snake" class="cta-button github-button" target="_blank">Explore Code</a>
+                </div>
+            </footer>
+        </div>
+
+        <!-- Schema.org metadata (hidden but accessible to search engines) -->
+        <div class="metadata-container">
+            <div itemscope itemtype="http://schema.org/SoftwareApplication">
+                <meta itemprop="applicationCategory" content="Game" />
+                <meta itemprop="operatingSystem" content="Web Browser" />
+                <meta itemprop="name" content="Snake Game" />
+                <meta itemprop="description" content="A modern implementation of the classic Snake game with day-night cycles, dynamic soundtrack, and innovative gameplay mechanics." />
+                <div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+                    <meta itemprop="price" content="0" />
+                    <meta itemprop="priceCurrency" content="USD" />
+                    <meta itemprop="availability" content="http://schema.org/InStock" />
+                </div>
+                <div itemprop="author" itemscope itemtype="http://schema.org/Person">
+                    <meta itemprop="name" content="Peter Adrianov" />
+                </div>
+                <meta itemprop="keywords" content="snake game, arcade game, browser game, canvas game, javascript game, retro game, day-night cycle, dynamic soundtrack" />
+                <meta itemprop="softwareVersion" content="1.0" />
+                <meta itemprop="datePublished" content="2023-05-01" />
+                <meta itemprop="image" content="/img/snake1-og.jpg" />
+                <meta itemprop="url" content="https://snake-game.app/" />
+            </div>
+        </div>
+    </article>
 
     <!-- Load melody data -->
     <script src="js/MusicSheets.js"></script>
@@ -275,5 +361,8 @@
 
     <!-- Load main game -->
     <script src="js/Game.js"></script>
+
+    <!-- Load panel manager -->
+    <script src="js/PanelManager.js"></script>
 </body>
 </html>
