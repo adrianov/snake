@@ -313,10 +313,14 @@ class UIManager {
 
     clearMelodyDisplay() {
         if (this.melodyElement) {
-            this.melodyElement.textContent = '';
+            const melodyTextElement = this.melodyElement.querySelector('.melody-text');
+            if (melodyTextElement) {
+                melodyTextElement.textContent = '';
+            }
         }
 
         if (this.musicInfoElement) {
+            // Just remove the has-melody class, but the note icon will remain visible
             this.musicInfoElement.classList.remove('has-melody');
         }
     }
@@ -324,25 +328,23 @@ class UIManager {
     updateMelodyDisplay() {
         if (!this.melodyElement || !this.musicInfoElement) return;
         const gameState = this.game.gameStateManager.getGameState();
+        const melodyTextElement = this.melodyElement.querySelector('.melody-text');
+
+        if (!melodyTextElement) return;
 
         if (!gameState.musicEnabled || !MusicManager.getCurrentMelody()) {
-            // Clear the melody display when no melody is playing or music is disabled
-            this.melodyElement.textContent = '';
+            // Clear the melody text when no melody is playing or music is disabled
+            melodyTextElement.textContent = '';
 
-            // If music is enabled but no melody is playing yet, show "Loading..."
-            if (gameState.musicEnabled && gameState.isGameStarted && !gameState.isPaused) {
-                this.melodyElement.textContent = 'Loading...';
-                this.musicInfoElement.classList.add('has-melody');
-            } else {
-                this.musicInfoElement.classList.remove('has-melody');
-            }
+            // Remove the has-melody class but keep the note icon visible
+            this.musicInfoElement.classList.remove('has-melody');
             return;
         }
 
         const melodyInfo = MusicManager.getCurrentMelody();
         if (!melodyInfo) {
             // This is a redundant check but ensures we always handle the case
-            this.melodyElement.textContent = '';
+            melodyTextElement.textContent = '';
             this.musicInfoElement.classList.remove('has-melody');
             return;
         }
@@ -350,7 +352,7 @@ class UIManager {
         const displayName = melodyInfo.name;
 
         // Update the melody display
-        this.melodyElement.textContent = displayName;
+        melodyTextElement.textContent = displayName;
 
         // Show the melody name
         this.musicInfoElement.classList.add('has-melody');

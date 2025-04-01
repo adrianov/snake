@@ -1,0 +1,332 @@
+/* =========== PANELS (DONATION & ABOUT) =========== */
+/* Common Panel Styles */
+.panel {
+    position: fixed;
+    top: 0;
+    height: 100vh;
+    background: var(--color-bg-light);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transition: transform var(--transition-panel);
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
+
+/* Donation Panel */
+.donation-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100vh;
+    background: var(--color-bg-light);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform var(--transition-panel);
+    display: flex;
+    flex-direction: column;
+}
+
+.donation-panel.active {
+    transform: translateX(0);
+}
+
+/* About Panel */
+.about-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: min(100%, 600px);
+    max-width: 100%;
+    height: 100vh;
+    background: var(--color-bg-light);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform var(--transition-panel);
+    display: flex;
+    flex-direction: column;
+}
+
+.about-panel.active {
+    transform: translateX(0);
+}
+
+/* Panel Headers */
+.panel-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    background: var(--color-bg-light);
+}
+
+.panel-header h1,
+.panel-header h3 {
+    margin: 0;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+}
+
+/* Close Buttons */
+.panel-close-button {
+    background: none;
+    border: none;
+    color: var(--color-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-normal);
+    text-decoration: none;
+    line-height: 1;
+}
+
+.panel-close-button:hover {
+    color: var(--color-primary);
+}
+
+/* Panel Content Area */
+.panel-content-area {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+    color: var(--color-text);
+    scrollbar-width: thin; /* For Firefox */
+    scrollbar-color: var(--color-primary) var(--color-bg-light); /* For Firefox */
+}
+
+/* Panel scrollbar styling for WebKit browsers */
+.panel-content-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel-content-area::-webkit-scrollbar-track {
+    background: var(--color-bg-light);
+    border-radius: 10px;
+}
+
+.panel-content-area::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    border-radius: 10px;
+    border: 2px solid var(--color-bg-light);
+}
+
+/* Panel Typography */
+.panel-content-area h2 {
+    font-size: 1.4rem;
+    color: var(--color-primary);
+    margin-bottom: 16px;
+}
+
+.panel-content-area h3 {
+    font-size: 1.1rem;
+    color: var(--color-primary);
+    margin: 24px 0 12px 0;
+}
+
+.panel-content-area h4 {
+    font-size: 0.9rem;
+    color: var(--color-text);
+    margin: 12px 0 8px 0;
+}
+
+.panel-content-area p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    color: var(--color-text-dim);
+}
+
+/* Panel Lists */
+.panel-content-area ul {
+    list-style-type: none;
+    padding-left: 5px;
+    margin-bottom: 16px;
+}
+
+.panel-content-area li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--color-text-dim);
+}
+
+.panel-content-area li:before {
+    content: "•";
+    color: var(--color-primary);
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1rem;
+}
+
+.panel-content-area footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Donation Panel Content */
+.donation-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.donation-method h4 {
+    margin: 0 0 12px 0;
+    font-size: 1rem;
+    color: var(--color-text);
+}
+
+/* QR Code */
+.qr-code-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.qr-code {
+    width: 180px;
+    height: 180px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-normal);
+}
+
+.qr-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.qr-label {
+    font-size: 0.8rem;
+    color: var(--color-text-dim);
+    text-align: center;
+}
+
+/* Crypto Address */
+.crypto-address-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+    max-width: 220px;
+    width: 100%;
+}
+
+.crypto-address {
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    color: var(--color-text);
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    outline: none;
+}
+
+.copy-btn {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    margin-left: 5px;
+    cursor: pointer;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.copy-btn:hover {
+    background: rgba(46, 204, 113, 0.3);
+    transform: translateY(-1px);
+}
+
+/* About Panel Specific Content */
+.controls-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.desktop-controls,
+.mobile-controls {
+    flex: 1;
+    min-width: 200px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+/* CTA Buttons */
+.cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.cta-button {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: all var(--transition-normal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid transparent;
+    background: rgba(46, 204, 113, 0.2);
+    border-color: rgba(46, 204, 113, 0.4);
+    color: var(--color-text);
+    font-family: var(--font-main);
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: rgba(46, 204, 113, 0.3);
+}
+
+.cta-button.play-button {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    border: none;
+    color: white;
+}
+
+.cta-button.play-button:hover {
+    background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+}

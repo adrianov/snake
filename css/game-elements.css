@@ -1,0 +1,34 @@
+/* =========== CANVAS & GAME ELEMENTS =========== */
+.canvas-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: min(80vh, 90vw);
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    overflow: hidden;
+    margin: 0 auto;
+    font-size: 0;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: linear-gradient(135deg, #dff5e6 0%, #e7f7f5 100%);
+    border-radius: var(--radius-md);
+}
+
+.game-controls {
+    width: 100%;
+    max-width: min(80vh, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 auto;
+}

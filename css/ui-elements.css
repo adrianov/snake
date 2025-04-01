@@ -1,0 +1,220 @@
+/* =========== GAME TIPS & TEXT =========== */
+.tip-container, .desktop-only-tip, .mobile-only-tip {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.mobile-only-tip {
+    display: none;
+}
+
+.tip-item {
+    display: inline-block;
+    padding: 4px 8px;
+    background: rgba(46, 204, 113, 0.15);
+    color: var(--color-text);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    flex-shrink: 0;
+}
+
+/* =========== SCORE CONTAINER =========== */
+.score-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 100%;
+    gap: 8px;
+}
+
+.score-item:first-child,
+.score-item:last-child {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 70px;
+    max-width: 25%;
+}
+
+.score-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    min-width: 40px;
+    text-align: center;
+}
+
+.high-score-container {
+    position: relative;
+}
+
+.reset-button {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background-color: rgba(231, 76, 60, 0.2);
+    color: var(--color-danger);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all var(--transition-normal);
+    padding: 0;
+}
+
+.reset-button:hover {
+    background-color: rgba(231, 76, 60, 0.4);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* =========== MUSIC & SOUND CONTROLS =========== */
+.music-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    background: rgba(46, 204, 113, 0.1);
+    border-radius: var(--radius-sm);
+    flex: 2 1 auto;
+    min-width: 8rem;
+    max-width: 50%;
+    margin: 0 8px;
+    text-align: center;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+}
+
+.melody-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    transition: all var(--transition-normal);
+    overflow: hidden;
+    text-align: center;
+    max-width: 100%;
+}
+
+.melody-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    overflow: hidden;
+    min-height: 1.8rem;
+}
+
+#currentMelody {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: auto;
+    max-width: 100%;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    min-height: 1.5rem;
+}
+
+.melody-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: none;
+}
+
+.music-info.has-melody #currentMelody .melody-text {
+    display: inline-block;
+    max-width: 30ch;
+}
+
+.music-icon {
+    display: inline-block;
+    color: var(--color-primary);
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
+    margin-right: 0.4rem;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.music-info.has-melody .music-icon {
+    opacity: 1;
+}
+
+/* Controls toggles */
+.control-toggle {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all var(--transition-normal);
+    background-color: rgba(46, 204, 113, 0.1);
+    min-width: 30px;
+    flex-shrink: 0;
+}
+
+.control-toggle:hover {
+    background-color: rgba(46, 204, 113, 0.25);
+    transform: translateY(-1px);
+}
+
+.control-toggle.disabled {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.control-icon {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.control-label {
+    font-size: 9px;
+    color: var(--color-text-dim);
+    font-weight: bold;
+    cursor: pointer;
+}

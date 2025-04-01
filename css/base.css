@@ -1,0 +1,55 @@
+/* =========== BASE STYLES =========== */
+:root {
+    /* Color palette */
+    --color-bg: #0f172a;
+    --color-bg-light: #1e293b;
+    --color-primary: #2ecc71;
+    --color-secondary: #27ae60;
+    --color-text: #f8fafc;
+    --color-text-dim: #cbd5e1;
+    --color-danger: #e74c3c;
+
+    /* Typography */
+    --font-main: 'Poppins', system-ui, -apple-system, sans-serif;
+
+    /* Shadows & Effects */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 20px rgba(46, 204, 113, 0.2);
+
+    /* Transitions */
+    --transition-normal: 0.2s ease-in-out;
+    --transition-panel: 0.3s ease-in-out;
+
+    /* Radiuses */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-light) 100%);
+    color: var(--color-text);
+    height: 100vh;
+    width: 100%;
+    overflow: hidden; /* Prevent scrollbars on body */
+}
+
+/* Hidden elements */
+.metadata-container {
+    display: none;
+}
+
+/* Helper classes */
+.hidden {
+    display: none !important;
+}

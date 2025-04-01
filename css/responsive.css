@@ -1,0 +1,209 @@
+/* =========== RESPONSIVE LAYOUT =========== */
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .mobile-arrow-controls {
+        display: block;
+    }
+
+    .mobile-only-tip {
+        display: flex;
+    }
+
+    .desktop-only-tip {
+        display: none;
+    }
+
+    .game-layout.game-active .canvas-wrapper {
+        max-width: min(95vh, 95vw);
+    }
+}
+
+/* Desktop layout - landscape */
+@media (orientation: landscape) and (min-width: 769px) {
+    .game-layout:not(.game-active) {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: 1fr auto;
+        grid-template-areas:
+            "header main"
+            "header footer";
+    }
+
+    .game-layout:not(.game-active) .game-header {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .game-layout:not(.game-active) .header-buttons {
+        flex-direction: column;
+        margin-left: 0;
+    }
+
+    .canvas-wrapper,
+    .game-controls {
+        max-width: min(80vh, 75vw);
+    }
+}
+
+/* Mobile layout */
+@media (orientation: portrait), (max-width: 768px) {
+    .game-header {
+        justify-content: center;
+        padding: 3px 0;
+    }
+
+    .header-buttons {
+        justify-content: center;
+        margin-left: 0;
+    }
+
+    .game-container {
+        gap: 12px;
+    }
+
+    .canvas-wrapper,
+    .game-controls,
+    .score-container,
+    .tip-container {
+        max-width: min(90vh, 95vw);
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .game-controls {
+        gap: 10px;
+    }
+
+    .score-container {
+        padding: 6px 10px;
+    }
+
+    .score-item {
+        min-width: 60px;
+    }
+
+    .music-info {
+        margin: 0 8px;
+        padding: 5px 8px;
+    }
+
+    #currentMelody, .melody-text {
+        font-size: 0.75rem;
+    }
+
+    .music-icon {
+        font-size: 0.9rem;
+        margin-right: 0.25rem;
+    }
+
+    .game-footer {
+        padding: 3px;
+    }
+
+    .mobile-arrow-controls {
+        max-width: min(90vh, 95vw);
+        margin-bottom: 10px;
+    }
+
+    .mobile-only-tip {
+        margin-bottom: 8px;
+    }
+
+    .tip-container {
+        padding: 0 5px 2px 5px;
+    }
+
+    .tip-item {
+        margin: 0 2px;
+        padding: 3px 6px;
+    }
+
+    .arrow-button-row {
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+
+    .spacer {
+        flex: 1;
+        max-width: 60px;
+        min-width: 10px;
+    }
+
+    /* Panel typography for mobile */
+    .panel-content-area h2 { font-size: 1.2rem; }
+    .panel-content-area h3 { font-size: 1rem; }
+    .panel-content-area h4 { font-size: 0.85rem; }
+    .panel-content-area p,
+    .panel-content-area li { font-size: 0.8rem; }
+
+    .controls-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .cta-button {
+        min-width: 100px;
+        padding: 8px 15px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Small screens */
+@media (max-height: 600px) and (orientation: portrait), (max-width: 350px) {
+    .canvas-wrapper,
+    .game-controls,
+    .score-container,
+    .tip-container,
+    .mobile-arrow-controls {
+        max-width: 95vw;
+    }
+
+    /* Compact layout */
+    .game-controls { gap: 5px; }
+    .score-container { padding: 5px 8px; }
+    .score-item { min-width: 55px; }
+    .score-label { font-size: 0.7rem; letter-spacing: 1px; }
+    .score-value { font-size: 1.3rem; }
+    .arrow-button, .spacer { width: 50px; height: 50px; }
+    .game-footer { display: none; }
+    .tip-item { padding: 2px 4px; font-size: 0.65rem; margin: 0 1px; }
+    .tip-container { padding: 0 3px 2px 3px; gap: 4px; }
+    .game-container { gap: 8px; }
+
+    /* Music controls */
+    .music-info {
+        padding: 3px 6px;
+        gap: 4px;
+        margin: 0 6px;
+    }
+    .control-toggle { padding: 3px 4px; min-width: 25px; }
+    .control-icon { font-size: 14px; }
+
+    /* Arrow controls */
+    .arrow-button-row { gap: 5px; margin-bottom: 5px; }
+    .mobile-arrow-controls { margin-bottom: 5px; }
+
+    /* Music text */
+    #currentMelody, .melody-text { font-size: 0.7rem; }
+    .music-icon {
+        font-size: 0.8rem;
+        margin-right: 0.2rem;
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 320px) {
+    .score-container { padding: 4px 6px; }
+    .score-item { min-width: 50px; }
+    .music-info { margin: 0 4px; }
+    .control-toggle { min-width: 22px; padding: 2px 3px; }
+    .score-label { font-size: 0.65rem; letter-spacing: 0.5px; }
+    .score-value { font-size: 1.2rem; }
+
+    #currentMelody, .melody-text { font-size: 0.65rem; }
+    .music-icon {
+        font-size: 0.75rem;
+        margin-right: 0.15rem;
+    }
+}
