@@ -25,6 +25,7 @@ class MusicManager {
     static nextNoteTime = 0;
     static melodyScheduler = null;
     static activeOscillators = new Set();
+    static hasStateChangeListener = false;
 
     // Prevent instantiation - this is a static-only class
     constructor() {
@@ -74,15 +75,15 @@ class MusicManager {
         // Use SoundManager's shared context instead of creating our own
         if (SoundManager.audioContext) {
             MusicManager.audioContext = SoundManager.audioContext;
-            
+
             // Setup gain nodes if needed
             if (!MusicManager.masterGain) {
                 MusicManager.setupGainNodes();
             }
-            
+
             return true;
         }
-        
+
         return false;
     }
 
@@ -92,7 +93,7 @@ class MusicManager {
             console.warn("MusicManager: Cannot setup gain nodes: AudioContext not available or not running");
             return false;
         }
-        
+
         if (MusicManager.masterGain) return true; // Already setup
 
         console.log("MusicManager: Setting up gain nodes...");
@@ -107,7 +108,7 @@ class MusicManager {
             // Set initial volumes
             MusicManager.masterGain.gain.value = 0.5; // Default master volume
             MusicManager.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
-            
+
             return true;
         } catch (e) {
             console.error("MusicManager: Error setting up gain nodes:", e);
@@ -150,7 +151,7 @@ class MusicManager {
             MusicManager.cleanupTimeouts.delete(gameInstance);
             console.log("MusicManager: Cancelled pending cleanup for music start");
         }
-        
+
         // Make sure we have a melody selected
         if (!MusicManager.currentMelodyId) {
             MusicManager.selectRandomMelody();
@@ -212,6 +213,9 @@ class MusicManager {
 
         // Start scheduler
         MusicManager.scheduleNotes();
+
+        // Setup context state change listener
+        MusicManager.setupContextStateChangeListener();
     }
 
     static scheduleNotes() {
@@ -387,7 +391,7 @@ class MusicManager {
             console.log("MusicManager: Music already stopped, skipping basic stop");
             return;
         }
-        
+
         // Immediately set playing state to false to prevent scheduled callbacks
         MusicManager.isPlaying = false;
 
@@ -494,10 +498,10 @@ class MusicManager {
         if (existingTimeout) {
             clearTimeout(existingTimeout);
         }
-        
+
         // Store the current melody ID to check later if it changed
         const currentMelodyId = MusicManager.currentMelodyId;
-        
+
         // Schedule a new cleanup
         const timeoutId = setTimeout(() => {
             // Only clean up if we're not playing music or if the melody ID has changed
@@ -510,7 +514,7 @@ class MusicManager {
                 console.log("MusicManager: Skipping cleanup because music is currently playing");
             }
         }, delay);
-        
+
         // Store the timeout ID for possible cancellation
         MusicManager.cleanupTimeouts.set(gameInstance, timeoutId);
     }
@@ -525,6 +529,61 @@ class MusicManager {
             console.log("MusicManager: Cleared melody ID for next game");
         } else {
             console.log("MusicManager: Skipped clearing melody ID because music is playing");
+        }
+    }
+
+    /**
+     * Set up a listener for audio context state changes
+     * This helps handle iOS behavior when app switching
+     */
+    static setupContextStateChangeListener() {
+        if (!MusicManager.audioContext) return;
+
+        // Remove any existing listener to avoid duplicates
+        if (MusicManager.hasStateChangeListener) {
+            try {
+                MusicManager.audioContext.removeEventListener('statechange', MusicManager.handleContextStateChange);
+            } catch (e) {
+                // Ignore errors from removal attempt
+            }
+        }
+
+        // Set up the listener
+        MusicManager.audioContext.addEventListener('statechange', MusicManager.handleContextStateChange);
+        MusicManager.hasStateChangeListener = true;
+    }
+
+    /**
+     * Handle audio context state changes
+     * @param {Event} event - The state change event
+     */
+    static handleContextStateChange(event) {
+        const context = MusicManager.audioContext;
+        if (!context) return;
+
+        console.log(`MusicManager: AudioContext state changed to ${context.state}`);
+
+        // If context was suspended and now running, check if we need to restart music
+        if (context.state === 'running' && MusicManager.isPlaying) {
+            // If we think music is playing but scheduler isn't running, restart scheduler
+            const now = context.currentTime;
+            const schedulerGap = now - MusicManager.nextNoteTime;
+
+            // If scheduler is more than 1 second behind, restart it
+            if (schedulerGap > 1) {
+                console.log("MusicManager: Restarting scheduler after context resume");
+                // Reset scheduler timing
+                MusicManager.currentNoteIndex = 0;
+                MusicManager.nextNoteTime = now;
+
+                // Clear any pending scheduler
+                if (MusicManager.melodyScheduler) {
+                    clearTimeout(MusicManager.melodyScheduler);
+                }
+
+                // Restart note scheduling
+                MusicManager.scheduleNotes();
+            }
         }
     }
 }

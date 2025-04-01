@@ -45,7 +45,7 @@ class SoundManager {
         if (SoundManager.instance) {
             throw new Error("SoundManager is a singleton, use getInstance().");
         }
-        
+
         SoundManager.instance = this;
         this.soundTemplates = {};
         this.silentNode = null;
@@ -81,7 +81,7 @@ class SoundManager {
                 sampleRate: 44100,
                 latencyHint: 'interactive'
             };
-            
+
             SoundManager.audioContext = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
             this.initSoundTemplates();
 
@@ -116,6 +116,7 @@ class SoundManager {
         // Platform detection for special handling
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         const needsSpecialHandling = isMobile || isSafari;
 
         // Only try to resume if suspended
@@ -124,23 +125,37 @@ class SoundManager {
                 .then(() => {
                     const isRunning = context?.state === 'running';
 
-                    if (isRunning && needsSpecialHandling && !SoundManager.hasPlayedAudio) {
-                        this.playSilentSound();
-                        
-                        // Second silent sound for stubborn devices
-                        if (!SoundManager.hasPlayedAudio) {
-                            setTimeout(() => this.playSilentSound(), 300);
+                    if (isRunning) {
+                        if (needsSpecialHandling && !SoundManager.hasPlayedAudio) {
+                            this.playSilentSound();
+
+                            // Second silent sound for stubborn devices
+                            if (!SoundManager.hasPlayedAudio) {
+                                setTimeout(() => this.playSilentSound(), 300);
+                            }
                         }
+                        return true;
+                    } else if (isIOS) {
+                        // If normal resume failed on iOS, try the forced approach
+                        console.log("SoundManager: Standard resume failed on iOS, trying forced wakeup");
+                        return this.forceIOSAudioWakeup();
                     }
 
-                    return isRunning;
+                    return false;
                 })
                 .catch(e => {
                     console.warn("Error resuming audio context:", e);
+
+                    // If there was an error and we're on iOS, try the forced approach
+                    if (isIOS) {
+                        console.log("SoundManager: Resume error on iOS, trying forced wakeup");
+                        return this.forceIOSAudioWakeup();
+                    }
+
                     return false;
                 });
         }
-        
+
         return Promise.resolve(false);
     }
 
@@ -149,7 +164,7 @@ class SoundManager {
      */
     playSilentSound() {
         const context = SoundManager.audioContext;
-        if (!context || context.state !== 'running' || SoundManager.hasPlayedAudio) {
+        if (!context || context.state !== 'running') {
             return;
         }
 
@@ -163,9 +178,76 @@ class SoundManager {
 
             unlockOsc.start(0);
             unlockOsc.stop(context.currentTime + 0.05);
+
+            // Mark that audio has been successfully played
+            SoundManager.hasPlayedAudio = true;
         } catch (e) {
             console.warn("Error playing silent sound:", e);
         }
+    }
+
+    /**
+     * Force iOS audio wakeup using HTML Audio fallback
+     * This is a more aggressive approach for iOS devices that resist normal WebAudio resumption
+     * @returns {Promise<boolean>} Whether the wakeup was successful
+     */
+    forceIOSAudioWakeup() {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (!isIOS) return Promise.resolve(false);
+
+        console.log("SoundManager: Attempting iOS-specific audio wakeup");
+
+        return new Promise((resolve) => {
+            // Create and immediately play a short, silent audio element
+            try {
+                const audioElement = document.createElement('audio');
+                audioElement.setAttribute('src', 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+                audioElement.setAttribute('playsinline', 'true');
+                audioElement.volume = 0.01;
+
+                // Try to play - this may help wake up iOS audio system
+                const playPromise = audioElement.play();
+
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log("SoundManager: iOS audio element played successfully");
+                        audioElement.remove();
+
+                        // Now try to resume the audio context
+                        setTimeout(() => {
+                            const context = SoundManager.audioContext;
+                            if (context && context.state === 'suspended') {
+                                context.resume().then(() => {
+                                    const success = context.state === 'running';
+                                    if (success) {
+                                        // Play another silent sound through WebAudio for good measure
+                                        this.playSilentSound();
+                                        // Mark that audio has been successfully played
+                                        SoundManager.hasPlayedAudio = true;
+                                    }
+                                    resolve(success);
+                                }).catch(() => resolve(false));
+                            } else {
+                                const success = context && context.state === 'running';
+                                if (success) {
+                                    SoundManager.hasPlayedAudio = true;
+                                }
+                                resolve(success);
+                            }
+                        }, 50);
+                    }).catch(e => {
+                        console.log("SoundManager: iOS audio element play failed:", e);
+                        audioElement.remove();
+                        resolve(false);
+                    });
+                } else {
+                    resolve(false);
+                }
+            } catch (e) {
+                console.error("SoundManager: Error in iOS audio wakeup:", e);
+                resolve(false);
+            }
+        });
     }
 
     /**
@@ -184,7 +266,7 @@ class SoundManager {
             if (context.state !== 'closed') {
                 context.close();
             }
-            
+
             SoundManager.audioContext = null;
         } catch (e) {
             console.warn("Error closing audio context:", e);
@@ -199,29 +281,43 @@ class SoundManager {
     unlockAudio(playClickSound = false) {
         // Set flag indicating user interaction
         SoundManager.hasUserInteraction = true;
-        
+
         // Initialize context if needed
         if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
             if (!this.initAudioContext(true)) {
                 return Promise.resolve(false);
             }
         }
-        
+
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
         // Resume context and unlock audio
         return this.resumeAudioContext()
             .then(resumed => {
                 if (resumed) {
+                    // Play a silent sound to fully engage audio system
                     this.playSilentSound();
-                    
+
                     if (playClickSound && !SoundManager.hasPlayedAudio) {
                         // Play click sound to fully engage audio system
                         setTimeout(() => {
                             this._createAndPlaySound('click', 0.3, true);
                         }, 50);
                     }
-                    
+
                     return true;
+                } else if (isIOS) {
+                    // If standard resume failed on iOS, try our specialized wakeup method
+                    return this.forceIOSAudioWakeup().then(success => {
+                        if (success && playClickSound) {
+                            setTimeout(() => {
+                                this._createAndPlaySound('click', 0.3, true);
+                            }, 50);
+                        }
+                        return success;
+                    });
                 }
+
                 return false;
             });
     }
@@ -304,9 +400,9 @@ class SoundManager {
      */
     playSound(soundType, volume = 1) {
         // Skip if sound disabled or templates not available
-        if (!this.isSoundEnabled() || 
-            !SoundManager.hasUserInteraction || 
-            !this.soundTemplates || 
+        if (!this.isSoundEnabled() ||
+            !SoundManager.hasUserInteraction ||
+            !this.soundTemplates ||
             !this.soundTemplates[soundType]) {
             return false;
         }
@@ -336,7 +432,7 @@ class SoundManager {
         this.resumeAudioContext().then(resumed => {
             if (resumed) this._createAndPlaySound(soundType, volume);
         });
-        
+
         return false;
     }
 
@@ -350,7 +446,7 @@ class SoundManager {
     _createAndPlaySound(soundType, volume, bypassSoundCheck = false) {
         // Skip if sound is disabled (unless bypassing)
         if (!bypassSoundCheck && !this.isSoundEnabled()) return;
-        
+
         const context = SoundManager.audioContext;
         if (!context || context.state !== 'running') return;
 
@@ -431,7 +527,7 @@ class SoundManager {
 
                     osc.start(now + note.time);
                     osc.stop(now + note.time + note.duration);
-                    
+
                     // Mark that audio has played successfully
                     SoundManager.hasPlayedAudio = true;
                 } catch (e) {

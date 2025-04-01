@@ -51,9 +51,11 @@
 - Music should initialize after first user interaction
 - Music should handle tab focus/blur correctly
 - Music should work on mobile devices
+- Music and sound effects should resume properly after switching to another app and back on iPhone/iPad
+- Audio should resume properly when returning to browser after device lock/sleep on mobile
 
 ### Edge Cases
 - Quick game restarts should not cause audio glitches
 - Multiple rapid music changes should work smoothly
 - Music should handle browser tab switching
-- Music should clean up properly on page close 
+- Music should clean up properly on page close
