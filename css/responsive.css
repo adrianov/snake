@@ -3,10 +3,12 @@
 @media (hover: none) and (pointer: coarse) {
     .mobile-arrow-controls {
         display: block;
+        margin-bottom: 3px;
     }
 
     .mobile-only-tip {
         display: flex;
+        margin-bottom: 3px;
     }
 
     .desktop-only-tip {
@@ -25,6 +27,16 @@
     /* Ensure CTA buttons remain visible */
     .panel-content-area footer {
         margin-bottom: env(safe-area-inset-bottom, 80px);
+    }
+
+    /* Reduce padding in main game container for mobile */
+    .game-container {
+        padding-bottom: 0;
+    }
+
+    /* Adjust padding for active game state */
+    .game-layout.game-active .game-container {
+        padding: 10px 0 0 0;
     }
 }
 
@@ -69,7 +81,18 @@
     }
 
     .game-container {
-        gap: 12px;
+        gap: 8px;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    .main-container {
+        padding-bottom: 0;
+    }
+
+    .game-controls {
+        gap: 6px;
+        margin-bottom: 3px;
     }
 
     .canvas-wrapper,
@@ -79,10 +102,6 @@
         max-width: min(90vh, 95vw);
         margin-left: auto;
         margin-right: auto;
-    }
-
-    .game-controls {
-        gap: 10px;
     }
 
     .score-container {
@@ -113,11 +132,11 @@
 
     .mobile-arrow-controls {
         max-width: min(90vh, 95vw);
-        margin-bottom: 10px;
+        margin-bottom: 5px;
     }
 
     .mobile-only-tip {
-        margin-bottom: 8px;
+        margin-bottom: 5px;
     }
 
     .tip-container {
@@ -173,7 +192,10 @@
     }
 
     /* Compact layout */
-    .game-controls { gap: 5px; }
+    .game-controls {
+        gap: 3px;
+        margin-bottom: 2px;
+    }
     .score-container { padding: 5px 8px; }
     .score-item { min-width: 55px; }
     .score-label { font-size: 0.7rem; letter-spacing: 1px; }
@@ -182,7 +204,16 @@
     .game-footer { display: none; }
     .tip-item { padding: 2px 4px; font-size: 0.65rem; margin: 0 1px; }
     .tip-container { padding: 0 3px 2px 3px; gap: 4px; }
-    .game-container { gap: 8px; }
+    .game-container {
+        gap: 5px;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    /* Ensure no extra padding in active game state on small screens */
+    .game-layout.game-active .game-container {
+        padding: 5px 0 0 0;
+    }
 
     /* Music controls */
     .music-info {
@@ -194,8 +225,8 @@
     .control-icon { font-size: 14px; }
 
     /* Arrow controls */
-    .arrow-button-row { gap: 5px; margin-bottom: 5px; }
-    .mobile-arrow-controls { margin-bottom: 5px; }
+    .arrow-button-row { gap: 5px; margin-bottom: 3px; }
+    .mobile-arrow-controls { margin-bottom: 3px; }
 
     /* Music text */
     #currentMelody, .melody-text { font-size: 0.7rem; }
