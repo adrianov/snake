@@ -34,24 +34,24 @@ class InputManager {
         const touchMoveHandler = (e) => this.handleTouchMove(e);
         const touchEndHandler = (e) => this.handleTouchEnd(e);
 
-        // We need non-passive listeners to prevent scrolling during gameplay
+        // We need non-passive listeners to allow preventDefault in specific cases
         canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
         canvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
         canvas.addEventListener('touchend', touchEndHandler, { passive: true });
 
-        // Allow scrolling by default but disable certain behaviors on the canvas
-        // Don't apply overscrollBehavior or touchAction to body/document to allow normal scrolling
+        // Canvas-specific styles - prevent text selection but allow other interactions
         canvas.style.webkitUserSelect = 'none';
         canvas.style.userSelect = 'none';
 
         // Document click handler
         document.addEventListener('click', this.handleDocumentClick.bind(this));
 
-        // Only prevent default on touch events for arrow buttons, not the whole document
+        // Be very specific about when to prevent default - only for arrow buttons
         document.addEventListener('touchstart', (e) => {
+            // Only prevent default for arrow buttons, not for entire document
             if (e.target.classList.contains('arrow-button') ||
                 e.target.closest('.arrow-button') ||
-                e.target.closest('svg')) {
+                (e.target.closest('svg') && e.target.closest('.arrow-button'))) {
                 e.preventDefault();
             }
         }, { passive: false });
@@ -197,7 +197,7 @@ class InputManager {
     }
 
     handleTouchStart(event) {
-        // Prevent default for multi-touch to avoid zooming
+        // Prevent default ONLY for multi-touch to avoid zooming
         if (event.touches.length > 1) {
             event.preventDefault();
         }
@@ -207,12 +207,7 @@ class InputManager {
 
         const gameState = this.game.gameStateManager.getGameState();
 
-        // Only prevent default if the game is active to allow scrolling otherwise
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            event.preventDefault();
-        }
-
-        // Store initial touch details
+        // Get touch coordinates and store them
         this.touchStartX = event.touches[0].clientX;
         this.touchStartY = event.touches[0].clientY;
         this.touchStartTime = new Date().getTime();
@@ -221,7 +216,7 @@ class InputManager {
         this.lastSwipeDirection = null;
         this.hasAdjustedSpeed = false;
 
-        // Handle two-finger tap for pause
+        // Handle two-finger tap for pause - still prevent default
         if (event.touches.length === 2 && gameState.isGameStarted && !gameState.isPaused) {
             event.preventDefault();
             this.game.togglePause();
@@ -230,14 +225,20 @@ class InputManager {
 
         // Unpause game with a single touch if paused
         if (gameState.isGameStarted && gameState.isPaused && event.touches.length === 1) {
-            event.preventDefault();
+            // Only prevent if the touch is on the canvas
+            if (event.target.id === 'gameCanvas') {
+                event.preventDefault();
+            }
             this.game.togglePause();
             return;
         }
 
         // Handle game over state - reset and start a new game
         if (gameState.isGameOver) {
-            event.preventDefault();
+            // Only prevent default if touch is on canvas
+            if (event.target.id === 'gameCanvas') {
+                event.preventDefault();
+            }
 
             // Calculate swipe direction from initial touch coordinates for the new game
             const centerX = this.game.canvas.width / 2;
@@ -263,7 +264,10 @@ class InputManager {
 
         // Start game if not started yet
         if (!gameState.isGameStarted) {
-            event.preventDefault();
+            // Only prevent default if touch is on canvas
+            if (event.target.id === 'gameCanvas') {
+                event.preventDefault();
+            }
 
             if (!this.game.hasUserInteraction) {
                 this.game.startRequested = true;
@@ -279,17 +283,17 @@ class InputManager {
     handleTouchMove(event) {
         const gameState = this.game.gameStateManager.getGameState();
 
-        // Only prevent default scrolling when game is active
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            event.preventDefault();
-        } else {
-            // Allow normal scrolling when game is not active
+        // Early exit if game is not running - allow normal scrolling
+        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) {
             return;
         }
 
-        if (event.touches.length !== 1) return;
+        // Only prevent default for game canvas interactions during active gameplay
+        if (event.target.id === 'gameCanvas' && gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            event.preventDefault();
+        }
 
-        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) return;
+        if (event.touches.length !== 1) return;
 
         // Calculate thresholds based on canvas size
         const canvasSize = this.game.canvas.width;

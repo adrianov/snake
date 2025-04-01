@@ -8,8 +8,9 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    /* Allow all scrolling on the container */
+    /* Explicitly allow all scrolling behaviors on the container */
     touch-action: auto;
+    pointer-events: auto;
     -webkit-touch-callout: none; /* Prevents callout menu on touch & hold */
     -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
 }

@@ -1,7 +1,7 @@
 /* =========== LAYOUT STRUCTURE =========== */
 .game-layout {
     display: grid;
-    height: 100vh;
+    min-height: 100vh; /* Use min-height instead of height to allow scrolling */
     width: 100vw;
     max-width: 100vw;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
@@ -10,7 +10,8 @@
         "header"
         "main"
         "footer";
-    overflow: hidden;
+    overflow-x: hidden; /* Only prevent horizontal scrolling */
+    overflow-y: auto; /* Allow vertical scrolling */
 }
 
 /* Header, Main & Footer */
@@ -32,7 +33,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow: hidden;
+    overflow-x: hidden; /* Only prevent horizontal scrolling */
+    overflow-y: auto; /* Allow vertical scrolling */
 }
 
 .game-container {
