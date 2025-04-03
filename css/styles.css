@@ -22,11 +22,15 @@
     border: 1px solid rgba(46, 204, 113, 0.25);
     border-radius: var(--radius-sm);
     text-align: center;
-    padding: 3px 6px;
-    margin: 0;
+    padding: 3px 12px;
+    margin: 0 auto;
     margin-top: 5px;
-    max-width: 100%;
+    display: inline-block;
     min-height: 1.4em;
     box-shadow: none;
     transition: all 0.2s ease-in-out;
+    pointer-events: none; /* Allow clicks to pass through */
+    position: relative;
+    z-index: 1; /* Lower than arrow controls */
+    white-space: nowrap; /* Keep text in one line */
 }

@@ -75,7 +75,7 @@ class SnakeGame {
 
         // Set up the speed threshold callback to update the tip area
         this.gameLoop.onSpeedThresholdReached = () => {
-            this.uiManager.updateTipArea("Press opposite arrow to slow down");
+            this.uiManager.updateTipArea("Press opposite arrows to slow down or ride like the wind");
         };
 
         // Set up callback for when snake returns to normal speed

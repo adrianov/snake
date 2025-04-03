@@ -101,19 +101,24 @@
 }
 
 /* Order within game-controls */
-.game-controls .mobile-arrow-controls {
+.game-controls .tip-area {
     order: 0;
-    width: 100%;
-    /* Remove specific max-width, rely on parent container's width */
-    /* max-width: min(65vh, 65vw); */
+    width: auto; /* Allow natural width */
     flex: 0 0 auto;
+    align-self: center; /* Center horizontally */
+    text-align: center; /* Center text */
 }
-.game-controls .desktop-only-tip,
-.game-controls .mobile-only-tip {
+
+.game-controls .mobile-arrow-controls {
     order: 1;
     width: 100%;
-    /* Remove specific max-width, rely on parent container's width */
-    /* max-width: min(70vh, 80vw); */
+    flex: 0 0 auto;
+}
+
+.game-controls .desktop-only-tip,
+.game-controls .mobile-only-tip {
+    order: 2;
+    width: 100%;
     flex: 0 0 auto;
 }
 

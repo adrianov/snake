@@ -13,6 +13,8 @@
     -webkit-touch-callout: none; /* Prevents callout menu on touch & hold */
     -webkit-tap-highlight-color: transparent; /* Removes tap highlight on iOS */
     transition: transform 0.3s ease-in-out;
+    position: relative;
+    z-index: 2; /* Ensure controls are above other elements */
 }
 
 /* Remove the old rule that showed controls based only on game-active */
@@ -34,13 +36,16 @@
 }
 
 /* Arrow buttons container should shrink as needed */
-.game-layout.game-active .arrow-controls-container {
+.arrow-controls-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 0;
     width: 100%;
+    pointer-events: auto; /* Explicitly enable pointer events */
+    position: relative;
+    z-index: 2; /* Match parent z-index */
 }
 
 .arrow-button-row {
@@ -49,6 +54,7 @@
     gap: 8px;
     margin-bottom: 8px;
     width: 100%;
+    pointer-events: auto; /* Explicitly enable pointer events */
 }
 
 /* Last row shouldn't have bottom margin */
@@ -83,6 +89,8 @@
     -ms-user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+    pointer-events: auto; /* Explicitly enable pointer events */
+    z-index: 2; /* Match parent z-index */
 }
 
 /* Arrow Button Backgrounds */
