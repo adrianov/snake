@@ -135,7 +135,7 @@ class FoodManager {
     }
 
     spawnSpecialFruit(snake, getRandomFruit, audioManager) {
-        if (this.food.length >= 5) return; // Limit total food
+        if (this.food.length >= 400) return; // Limit to 400 fruits max on 20x20 grid (20*20=400 cells)
 
         const head = snake.head();
         const newFruitPos = { x: head.x, y: head.y };
