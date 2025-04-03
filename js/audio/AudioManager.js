@@ -433,7 +433,7 @@ class AudioManager {
             const needsRestoration = (initialContext && (initialContext.state === 'suspended' || initialContext.state === 'interrupted')) || this.musicWasPlayingBeforeHidden;
 
             if (needsRestoration) {
-                console.log(`AudioManager: Restoration needed on visibility change. Reason: ${this.musicWasPlayingBeforeHidden ? 'Music needs resume' : `Context state ${initialContext?.state}`}. Attempting sync resume and adding listener...`);
+                console.log(`AudioManager: Restoration needed on visibility change. Reason: ${this.musicWasPlayingBeforeHidden ? 'Music needs resume' : `Context state ${initialContext?.state}`}. Attempting sync unlock and adding listener...`);
 
                 // Attempt synchronous unlock/resume - primarily for browser gesture requirements
                 SoundManager.tryUnlockAudioSync();
@@ -444,10 +444,19 @@ class AudioManager {
                 this.audioInitialized = false; // Mark as not initialized until confirmed
                 
                 // Remove previous listener (if any) and add the visibility-specific one-time listener
-                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility); // Use arrow fn directly
-                SoundManager.addContextRunningListener(this._handleContextRunningAfterVisibility);    // Use arrow fn directly
+                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility);
+                SoundManager.addContextRunningListener(this._handleContextRunningAfterVisibility);
                 console.log("AudioManager: Added one-time contextRunning listener for visibility change.");
-                // We DON'T check state here. _handleContextRunningAfterVisibility will do the work.
+                
+                // ADDED CHECK: Handle cases where context is *already* running when visibility changes
+                if (initialContext && initialContext.state === 'running') {
+                   console.log("AudioManager: Context already running on visibility change, triggering handler immediately.");
+                   // Call the handler directly, but ensure the listener is removed first 
+                   // since it might have been added unnecessarily just above.
+                   SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility); 
+                   this._handleContextRunningAfterVisibility(); 
+                }
+                // End of added check
 
             } else {
                 // No restoration needed (context already running and music wasn't playing)
@@ -529,7 +538,7 @@ class AudioManager {
         // Check if music needs resuming
         if (this.musicWasPlayingBeforeHidden) {
             console.log("AudioManager: Attempting to resume music via visibility listener.");
-            // Check enabled/muted state *now*
+            // Check enabled state *now*
             if (this._musicEnabled) {
                  const currentGameState = this.game.gameStateManager.getGameState();
                  if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
