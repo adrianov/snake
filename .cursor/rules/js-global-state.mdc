@@ -1,0 +1,8 @@
+---
+description: When editing JS
+globs: 
+alwaysApply: false
+---
+We have static JS application that should be able to open locally in the browser by index.html
+So we can use global state.
+We need to add all modules to index.html

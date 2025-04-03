@@ -638,70 +638,14 @@ class SoundManager {
      * Initialize all sound templates
      */
     initSoundTemplates() {
-        this.soundTemplates = {
-            'apple': {
-                type: 'sine',
-                frequency: 880,
-                gainValue: 0.3,
-                frequencyEnvelope: { targetFreq: 440, duration: 0.1 },
-                duration: 0.2
-            },
-            'banana': {
-                type: 'triangle',
-                frequency: 660,
-                gainValue: 0.3,
-                frequencyEnvelope: { targetFreq: 330, duration: 0.15 },
-                duration: 0.2
-            },
-            'orange': {
-                type: 'square',
-                frequency: 550,
-                gainValue: 0.3,
-                frequencyEnvelope: { targetFreq: 275, duration: 0.2 },
-                duration: 0.25
-            },
-            'strawberry': {
-                type: 'sine',
-                frequency: 1100,
-                gainValue: 0.3,
-                frequencyEnvelope: { targetFreq: 550, duration: 0.25 },
-                duration: 0.3
-            },
-            'cherry': {
-                type: 'sine',
-                frequency: 784,
-                gainValue: 0.25,
-                frequencyEnvelope: { targetFreq: 392, duration: 0.15 },
-                duration: 0.2
-            },
-            'crash': {
-                type: 'sawtooth',
-                frequency: 440,
-                gainValue: 0.3,
-                frequencyEnvelope: { targetFreq: 55, duration: 0.6 },
-                duration: 0.8
-            },
-            'highscore': {
-                type: 'triangle',
-                frequency: 523.25,
-                gainValue: 0.4,
-                frequencyEnvelope: { targetFreq: 1046.50, duration: 0.3 },
-                duration: 0.3
-            },
-            'disappear': {
-                type: 'sine',
-                frequency: 440,
-                gainValue: 0.08,
-                frequencyEnvelope: { targetFreq: 220, duration: 0.15 },
-                duration: 0.2
-            },
-            'click': {
-                type: 'sine',
-                frequency: 800,
-                gainValue: 0.1,
-                duration: 0.1
-            }
-        };
+        // Use templates from the external SOUND_TEMPLATES global
+        if (window.SOUND_TEMPLATES) {
+            this.soundTemplates = window.SOUND_TEMPLATES;
+        } else {
+            console.error('SoundManager: SOUND_TEMPLATES not found. Make sure SoundTemplates.js is loaded before SoundManager.js');
+            // Fallback - create an empty object to prevent errors
+            this.soundTemplates = {};
+        }
     }
 
     /**
@@ -813,56 +757,7 @@ class SoundManager {
      * Play a high score celebration fanfare
      */
     playHighScoreFanfare() {
-        if (!SoundManager.hasUserInteraction || 
-            !this.isSoundEnabled() || 
-            SoundManager.isDeviceAudioMuted()) {
-            return;
-        }
-
-        if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
-            if (!this.initAudioContext(true)) return;
-        }
-
-        this.resumeAudioContext().then(success => {
-            if (!success || SoundManager.audioContext.state !== 'running') return;
-
-            const now = SoundManager.audioContext.currentTime;
-            const notes = [
-                { freq: 392.00, time: 0.00, duration: 0.15, volume: 0.5 },  // G4
-                { freq: 523.25, time: 0.15, duration: 0.15, volume: 0.5 },  // C5
-                { freq: 659.25, time: 0.30, duration: 0.15, volume: 0.5 },  // E5
-                { freq: 783.99, time: 0.45, duration: 0.30, volume: 0.6 },  // G5
-                { freq: 783.99, time: 0.80, duration: 0.50, volume: 0.4 },  // G5
-                { freq: 987.77, time: 0.80, duration: 0.50, volume: 0.4 },  // B5
-                { freq: 1174.66, time: 0.80, duration: 0.50, volume: 0.4 }  // D6
-            ];
-
-            for (const note of notes) {
-                try {
-                    const osc = SoundManager.audioContext.createOscillator();
-                    const gain = SoundManager.audioContext.createGain();
-
-                    osc.type = 'triangle';
-                    osc.frequency.value = note.freq;
-
-                    gain.gain.setValueAtTime(0, now + note.time);
-                    gain.gain.linearRampToValueAtTime(note.volume, now + note.time + 0.05);
-                    gain.gain.setValueAtTime(note.volume, now + note.time + note.duration - 0.05);
-                    gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
-
-                    osc.connect(gain);
-                    gain.connect(SoundManager.audioContext.destination);
-
-                    osc.start(now + note.time);
-                    osc.stop(now + note.time + note.duration);
-
-                    // Mark that audio has played successfully
-                    SoundManager.hasPlayedAudio = true;
-                } catch (e) {
-                    // Ignore errors, music is not critical
-                }
-            }
-        });
+        return this.playSequence('highscoreFanfare');
     }
 
     /**
@@ -1035,6 +930,101 @@ class SoundManager {
              console.log("SoundManager: Resetting internal device mute flag from true to false.");
              SoundManager.isDeviceMuted = false;
              // We don't notify listeners here, let the actual detection logic do that if it finds mute again.
+        }
+    }
+
+    /**
+     * Play a sound sequence from templates
+     * @param {string} sequenceName - The name of the sequence in templates.sequences
+     * @returns {boolean} Success status (indicates if playback was initiated)
+     */
+    playSequence(sequenceName) {
+        if (!SoundManager.hasUserInteraction || 
+            !this.isSoundEnabled() || 
+            SoundManager.isDeviceAudioMuted()) {
+            return false;
+        }
+
+        // Ensure audio context exists and try to initialize if not
+        if (!SoundManager.audioContext || SoundManager.audioContext.state === 'closed') {
+            console.log("SoundManager: PlaySequence attempting context init.");
+            if (!this.initAudioContext(true)) {
+                console.warn("SoundManager: PlaySequence failed to initialize context.");
+                return false;
+            }
+        }
+
+        const context = SoundManager.audioContext;
+
+        // Handle suspended context - try to resume asynchronously
+        if (context?.state === 'suspended') {
+            console.log("SoundManager: PlaySequence detected suspended context, attempting resume.");
+            // Asynchronously resume and play if successful
+            this.resumeAudioContext().then(resumed => {
+                if (resumed && SoundManager.audioContext?.state === 'running') {
+                    console.log("SoundManager: Context resumed, playing sequence asynchronously.");
+                    this._playSequenceImpl(sequenceName);
+                } else {
+                    console.warn(`SoundManager: Context not running after resume attempt. Sequence skipped.`);
+                }
+            });
+            return false;
+        }
+
+        // Play immediately if running
+        if (context?.state === 'running') {
+            this._playSequenceImpl(sequenceName);
+            return true;
+        }
+
+        // If context exists but is not running or suspended, log and fail
+        console.warn(`SoundManager: PlaySequence context in unexpected state: ${context?.state}. Sequence skipped.`);
+        return false;
+    }
+
+    /**
+     * Internal implementation of sequence playback
+     * @param {string} sequenceName - The name of the sequence to play
+     * @private
+     */
+    _playSequenceImpl(sequenceName) {
+        // Get the sequence template
+        const sequenceTemplate = this.soundTemplates?.sequences?.[sequenceName];
+        if (!sequenceTemplate) {
+            console.warn(`SoundManager: Sequence template '${sequenceName}' not found`);
+            return;
+        }
+
+        const context = SoundManager.audioContext;
+        if (!context || context.state !== 'running') return;
+
+        const now = context.currentTime;
+        
+        // Play each note in the sequence
+        for (const note of sequenceTemplate.notes) {
+            try {
+                const osc = context.createOscillator();
+                const gain = context.createGain();
+
+                osc.type = note.type || sequenceTemplate.type;
+                osc.frequency.value = note.freq;
+
+                gain.gain.setValueAtTime(0, now + note.time);
+                gain.gain.linearRampToValueAtTime(note.volume, now + note.time + 0.05);
+                gain.gain.setValueAtTime(note.volume, now + note.time + note.duration - 0.05);
+                gain.gain.linearRampToValueAtTime(0, now + note.time + note.duration);
+
+                osc.connect(gain);
+                gain.connect(context.destination);
+
+                osc.start(now + note.time);
+                osc.stop(now + note.time + note.duration);
+
+                // Mark that audio has played successfully
+                SoundManager.hasPlayedAudio = true;
+            } catch (e) {
+                console.warn('Error playing sequence note:', e);
+            }
         }
     }
 }

@@ -75,5 +75,25 @@ window.FRUIT_CONFIG = {
         probability: 0.1,
         score: 25,
         color: '#e74c3c'
+    },
+    cherry: {
+        svg: `<?xml version="1.0" encoding="UTF-8"?>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+            <!-- Cherry body 1 -->
+            <circle cx="9" cy="15" r="5" fill="#e74c3c"/>
+            <!-- Cherry body 2 -->
+            <circle cx="15" cy="15" r="5" fill="#c0392b"/>
+            <!-- Cherry shine 1 -->
+            <circle cx="8" cy="14" r="1.5" fill="#ff6b6b"/>
+            <!-- Cherry shine 2 -->
+            <circle cx="14" cy="14" r="1.5" fill="#ff6b6b"/>
+            <!-- Stem -->
+            <path fill="#8b4513" d="M12 3c0 0-3 2-3 6 0 4 3 6 3 6s3-2 3-6c0-4-3-6-3-6z"/>
+            <!-- Leaf -->
+            <path fill="#2ecc71" d="M12 3c-1.5 0-3 0.5-3 2v1.5c0 1.5 1.5 2 3 2s3-0.5 3-2V5C15 3.5 13.5 3 12 3z"/>
+        </svg>`,
+        probability: 0.05,
+        score: 30,
+        color: '#c0392b'
     }
 };
