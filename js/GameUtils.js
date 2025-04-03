@@ -86,3 +86,6 @@ class GameUtils {
         }
     }
 }
+
+// Make GameUtils globally accessible
+window.GameUtils = GameUtils;

@@ -9,6 +9,8 @@
 - Game over should occur when snake hits wall and not evades it with luck feature
 - High score should persist between sessions
 - Game should pause/unpause with space key
+- Game should restart with space key after game over
+- Game should start with space key or any arrow key from initial screen (after interaction)
 
 ### Collision Mechanics
 - Luck feature should auto-avoid collisions 80% of the time when enabled
@@ -44,13 +46,24 @@
 - Toggle music OFF and ON during gameplay should stop and restart music
 - Game should respect music preference during gameplay (ON = music plays, OFF = no music)
 
+### Device Audio Muting
+- When device audio is muted (e.g., iPhone mute switch), music should pause automatically
+- When device audio is unmuted, music should resume if it was playing before
+- When device audio is muted, music should not start when starting a new game
+- When device audio is muted, music should not start when toggling music ON
+
 ### Music Controls
-- Toggle music button should stop/start music only during gameplay
-- Toggle music button in menu or game over screen should only change the setting but not play music
-- Change music button should switch to different melody only during gameplay
-- Change music button in menu or game over screen should only change the selected melody but not play it
+- Toggle music button (M key) should stop/start music only during gameplay
+- Toggle music button (M key) visual state (♫/♪ icon) should update correctly
+- Toggle music button (M key) in menu or game over screen should only change the setting but not play music
+- Change music button (N key) should switch to different melody only during gameplay
+- Change music button (N key) in menu or game over screen should only change the selected melody but not play it
 - Music volume should persist between sessions
 - Music should respect browser autoplay policies
+
+### Sound Controls
+- Toggle sound button (S key) should enable/disable sound effects
+- Toggle sound button (S key) visual state (🔊/🔇 icon) should update correctly
 
 ### Browser Compatibility
 - Music should work on Chrome, Firefox, Safari
@@ -59,6 +72,15 @@
 - Music should work on mobile devices
 - Music and sound effects should resume properly after switching to another app and back on iPhone/iPad
 - Audio should resume properly when returning to browser after device lock/sleep on mobile
+
+### PWA Mode Audio
+- Music should resume properly when returning to PWA from another app
+- Music should resume properly when returning to PWA after device lock/sleep
+- Music should resume properly when returning to PWA from background state
+- Music should maintain the same melody when resuming in PWA mode
+- Sound effects should work properly in PWA mode
+- Audio should initialize correctly when launching the game in PWA mode
+- Music should respect user preferences (ON/OFF) when resuming in PWA mode
 
 ### Edge Cases
 - Quick game restarts should not cause audio glitches
@@ -87,8 +109,21 @@
 - Game should handle mobile browser tab switching correctly
 - Header and footer should properly hide during gameplay and show after
 
-## Browser Compatibility
-// ... existing code ...
+## PWA Features
 
-## Edge Cases
-// ... existing code ...
+### Installation & Launch
+- Game should be installable as a PWA on supported devices
+- Game should display proper app icon when installed
+
+### PWA Audio Behavior
+- Music should automatically pause when switching away from the PWA
+- Music should automatically resume when returning to the PWA
+- Music should maintain the same melody when returning to the PWA
+- Music should maintain state after device lock/sleep and wake
+- Music should resume properly when returning from background state after short period
+- Music should resume properly when returning from background state after long period (>10 minutes)
+- Music should respect user preferences (enabled/disabled) when resuming
+- Multiple app switches in quick succession should not break audio playback
+- Sound effects should work properly after app switching in PWA mode
+- Audio should be completely recreated when returning to the app after switching
+- Context should be closed and recreated on first user interaction after app switch

@@ -1,0 +1,10 @@
+---
+description: When task is about audio, sound, music.
+globs: 
+alwaysApply: false
+---
+[Game.js](mdc:js/Game.js)
+[AudioManager.js](mdc:js/audio/AudioManager.js)
+[InputManager.js](mdc:js/InputManager.js)
+[SoundManager.js](mdc:js/audio/SoundManager.js)
+[MusicManager.js](mdc:js/audio/MusicManager.js)

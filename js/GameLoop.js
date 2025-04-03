@@ -148,3 +148,6 @@ class GameLoop {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { GameLoop };
 }
+
+// Make GameLoop globally accessible
+window.GameLoop = GameLoop;

@@ -245,43 +245,73 @@ class UIManager {
     }
 
     updateSoundToggleUI() {
-        if (!this.soundToggle) return;
-
+        console.log("UIManager: Updating Sound Toggle UI");
+        if (!this.soundToggle) {
+            console.error("UIManager: Sound toggle element not found!");
+            return;
+        }
         const soundOnIcon = this.soundToggle.querySelector('.sound-on');
         const soundOffIcon = this.soundToggle.querySelector('.sound-off');
-        const gameState = this.game.gameStateManager.getGameState();
+        if (!soundOnIcon || !soundOffIcon) {
+             console.error("UIManager: Sound toggle icons not found!");
+             // Don't return, maybe the main toggle class can still be updated
+        }
 
-        if (gameState.soundEnabled) {
+        // Get state directly from AudioManager
+        const isSoundEnabled = this.game.audioManager.isSoundEnabled();
+        console.log(`UIManager: Sound state is: ${isSoundEnabled}`);
+
+        if (isSoundEnabled) {
+            console.log("UIManager: Setting sound UI to ON");
             this.soundToggle.classList.remove('disabled');
             this.soundToggle.title = "Sound ON (S key to toggle)";
-            soundOnIcon.classList.remove('hidden');
-            soundOffIcon.classList.add('hidden');
+            if (soundOnIcon) soundOnIcon.classList.remove('hidden');
+            if (soundOffIcon) soundOffIcon.classList.add('hidden');
         } else {
+            console.log("UIManager: Setting sound UI to OFF");
             this.soundToggle.classList.add('disabled');
             this.soundToggle.title = "Sound OFF (S key to toggle)";
-            soundOnIcon.classList.add('hidden');
-            soundOffIcon.classList.remove('hidden');
+            if (soundOnIcon) soundOnIcon.classList.add('hidden');
+            if (soundOffIcon) soundOffIcon.classList.remove('hidden');
         }
+        console.log("UIManager: Sound Toggle classes:", this.soundToggle.classList);
+        if (soundOnIcon) console.log("UIManager: Sound ON Icon classes:", soundOnIcon.classList);
+        if (soundOffIcon) console.log("UIManager: Sound OFF Icon classes:", soundOffIcon.classList);
     }
 
     updateMusicToggleUI() {
-        if (!this.musicToggle) return;
-
+        console.log("UIManager: Updating Music Toggle UI");
+        if (!this.musicToggle) {
+            console.error("UIManager: Music toggle element not found!");
+            return;
+        }
         const musicOnIcon = this.musicToggle.querySelector('.music-on');
         const musicOffIcon = this.musicToggle.querySelector('.music-off');
-        const gameState = this.game.gameStateManager.getGameState();
+         if (!musicOnIcon || !musicOffIcon) {
+             console.error("UIManager: Music toggle icons not found!");
+             // Don't return, maybe the main toggle class can still be updated
+        }
 
-        if (gameState.musicEnabled) {
+         // Get state directly from AudioManager
+        const isMusicEnabled = this.game.audioManager.isMusicEnabled();
+        console.log(`UIManager: Music state is: ${isMusicEnabled}`); 
+
+        if (isMusicEnabled) {
+            console.log("UIManager: Setting music UI to ON");
             this.musicToggle.classList.remove('disabled');
             this.musicToggle.title = "Music ON (M key to toggle)";
-            musicOnIcon.classList.remove('hidden');
-            musicOffIcon.classList.add('hidden');
+            if (musicOnIcon) musicOnIcon.classList.remove('hidden');
+            if (musicOffIcon) musicOffIcon.classList.add('hidden');
         } else {
+            console.log("UIManager: Setting music UI to OFF");
             this.musicToggle.classList.add('disabled');
             this.musicToggle.title = "Music OFF (M key to toggle)";
-            musicOnIcon.classList.add('hidden');
-            musicOffIcon.classList.remove('hidden');
+            if (musicOnIcon) musicOnIcon.classList.add('hidden');
+            if (musicOffIcon) musicOffIcon.classList.remove('hidden');
         }
+        console.log("UIManager: Music Toggle classes:", this.musicToggle.classList);
+        if (musicOnIcon) console.log("UIManager: Music ON Icon classes:", musicOnIcon.classList);
+        if (musicOffIcon) console.log("UIManager: Music OFF Icon classes:", musicOffIcon.classList);
     }
 
     updateScore(score) {
@@ -327,34 +357,22 @@ class UIManager {
 
     updateMelodyDisplay() {
         if (!this.melodyElement || !this.musicInfoElement) return;
-        const gameState = this.game.gameStateManager.getGameState();
+        // Get state directly from AudioManager
+        const isMusicEnabled = this.game.audioManager.isMusicEnabled();
         const melodyTextElement = this.melodyElement.querySelector('.melody-text');
-
         if (!melodyTextElement) return;
 
-        if (!gameState.musicEnabled || !MusicManager.getCurrentMelody()) {
-            // Clear the melody text when no melody is playing or music is disabled
-            melodyTextElement.textContent = '';
+        const currentMelody = MusicManager.getCurrentMelody(); // Still get melody info from MusicManager
 
-            // Remove the has-melody class but keep the note icon visible
-            this.musicInfoElement.classList.remove('has-melody');
-            return;
-        }
-
-        const melodyInfo = MusicManager.getCurrentMelody();
-        if (!melodyInfo) {
-            // This is a redundant check but ensures we always handle the case
+        if (!isMusicEnabled || !currentMelody) {
+            // Clear melody text if music off or no melody
             melodyTextElement.textContent = '';
             this.musicInfoElement.classList.remove('has-melody');
             return;
         }
 
-        const displayName = melodyInfo.name;
-
-        // Update the melody display
-        melodyTextElement.textContent = displayName;
-
-        // Show the melody name
+        // Update display if music on and melody exists
+        melodyTextElement.textContent = currentMelody.name;
         this.musicInfoElement.classList.add('has-melody');
     }
 

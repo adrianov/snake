@@ -9,6 +9,7 @@
  * - Synchronizes music state with game events (pause, resume, game over)
  * - Implements dynamic instrument and timbre selection for musical variety
  * - Relies on SoundManager for core audio context management
+ * - Supports pausing and resuming when device audio is muted
  */
 class MusicManager {
     // Static properties
@@ -21,11 +22,13 @@ class MusicManager {
     static masterGain = null;
     static melodyGain = null;
     static isPlaying = false;
+    static isPaused = false; // New property to track pause state
     static currentNoteIndex = 0;
     static nextNoteTime = 0;
     static melodyScheduler = null;
     static activeOscillators = new Set();
     static hasStateChangeListener = false;
+    static pausedAtTime = 0; // Track when music was paused
 
     // Prevent instantiation - this is a static-only class
     constructor() {
@@ -89,12 +92,20 @@ class MusicManager {
 
     // Setup gain nodes (Master and Melody)
     static setupGainNodes() {
-        if (!MusicManager.audioContext || MusicManager.audioContext.state !== 'running') {
-            console.warn("MusicManager: Cannot setup gain nodes: AudioContext not available or not running");
-            return false;
+        // Ensure context exists
+        if (!MusicManager.audioContext) {
+             console.warn("MusicManager: Cannot setup gain nodes: AudioContext not available.");
+             return false; // Still return false if context is totally missing
+        }
+        // Log if context is not running, but attempt setup anyway
+        if (MusicManager.audioContext.state !== 'running') {
+             console.warn(`MusicManager: AudioContext state is '${MusicManager.audioContext.state}' during setupGainNodes. Attempting setup anyway.`);
         }
 
-        if (MusicManager.masterGain) return true; // Already setup
+        // Always recreate gain nodes when called - this is important after context recreation
+        // Disconnect existing nodes safely
+        if (MusicManager.masterGain) { try { MusicManager.masterGain.disconnect(); } catch (e) {} }
+        if (MusicManager.melodyGain) { try { MusicManager.melodyGain.disconnect(); } catch (e) {} }
 
         console.log("MusicManager: Setting up gain nodes...");
         try {
@@ -109,10 +120,14 @@ class MusicManager {
             MusicManager.masterGain.gain.value = 0.5; // Default master volume
             MusicManager.melodyGain.gain.value = 1.0; // Melody at full volume relative to master
 
-            return true;
+            console.log("MusicManager: Gain nodes set up successfully.");
+            return true; // Indicate success
         } catch (e) {
             console.error("MusicManager: Error setting up gain nodes:", e);
-            return false;
+            // Reset gain nodes on error to ensure clean state
+            MusicManager.masterGain = null;
+            MusicManager.melodyGain = null;
+            return false; // Indicate failure
         }
     }
 
@@ -175,6 +190,9 @@ class MusicManager {
             return false;
         }
 
+        // Reset pause state
+        MusicManager.isPaused = false;
+
         // Start playing the melody
         MusicManager.startMusicPlayback(melody);
         return true;
@@ -184,27 +202,37 @@ class MusicManager {
     static startMusicPlayback(musicData) {
         // Use the shared context stored in audioContext
         const context = MusicManager.audioContext;
+        // Check context state *first*
         if (!context || context.state !== 'running') {
-            console.error("Cannot start playback: Shared context not available or not running.");
+            console.error(`Cannot start playback: Shared context not available or not running (State: ${context?.state}).`);
+            MusicManager.isPlaying = false; // Ensure isPlaying is false if we bail early
             return;
         }
 
-        // Bail if we're missing required components
+        // Attempt to setup or verify gain nodes *after* confirming context is running
         if (!MusicManager.masterGain || !MusicManager.melodyGain) {
-            MusicManager.setupGainNodes();
-            // Check again if setup failed
-            if (!MusicManager.masterGain || !MusicManager.melodyGain) {
-                console.error("Failed to setup gain nodes. Cannot start music.");
-                return;
-            }
+             const setupSuccess = MusicManager.setupGainNodes();
+             // If setup failed even with a running context, bail out
+             if (!setupSuccess) {
+                  console.error("Failed to setup gain nodes despite running context. Cannot start music.");
+                  MusicManager.isPlaying = false; // Ensure isPlaying is false
+                  return;
+             }
         }
 
-        // Make sure master gain is set to audible level
-        MusicManager.masterGain.gain.cancelScheduledValues(context.currentTime);
-        MusicManager.masterGain.gain.setValueAtTime(0.5, context.currentTime);
+        // Make sure master gain is set to audible level (only if gain node exists)
+        if (MusicManager.masterGain) {
+            MusicManager.masterGain.gain.cancelScheduledValues(context.currentTime);
+            MusicManager.masterGain.gain.setValueAtTime(0.5, context.currentTime);
+        } else {
+             console.error("Cannot set master gain: masterGain node is missing.");
+             MusicManager.isPlaying = false; // Ensure isPlaying is false
+             return; // Cannot proceed without masterGain
+        }
 
         // Reset playback state
         MusicManager.isPlaying = true;
+        MusicManager.isPaused = false; // Ensure isPaused is false when starting
         MusicManager.currentNoteIndex = 0;
         MusicManager.nextNoteTime = context.currentTime;
 
@@ -585,6 +613,149 @@ class MusicManager {
                 MusicManager.scheduleNotes();
             }
         }
+    }
+
+    /**
+     * Pauses music playback without stopping it completely
+     * This allows for resuming from the same position later
+     */
+    static pauseMusic() {
+        // Only pause if we're playing and not already paused
+        if (!MusicManager.isPlaying || MusicManager.isPaused) {
+            return;
+        }
+        
+        console.log("MusicManager: Pausing music playback");
+        
+        // Set pause state
+        MusicManager.isPaused = true;
+        MusicManager.pausedAtTime = MusicManager.audioContext ? MusicManager.audioContext.currentTime : 0;
+        
+        // Clear the scheduler to stop scheduling new notes
+        if (MusicManager.melodyScheduler) {
+            clearTimeout(MusicManager.melodyScheduler);
+            MusicManager.melodyScheduler = null;
+        }
+        
+        // Fade out master gain over 100ms for smoother transition
+        if (MusicManager.masterGain && MusicManager.audioContext) {
+            const currentTime = MusicManager.audioContext.currentTime;
+            MusicManager.masterGain.gain.cancelScheduledValues(currentTime);
+            MusicManager.masterGain.gain.setValueAtTime(MusicManager.masterGain.gain.value || 0, currentTime);
+            MusicManager.masterGain.gain.linearRampToValueAtTime(0, currentTime + 0.1);
+        }
+        
+        // Stop all active oscillators
+        if (MusicManager.activeOscillators) {
+            MusicManager.activeOscillators.forEach(osc => {
+                try {
+                    if (typeof osc.stop === 'function') {
+                        osc.stop(MusicManager.audioContext ? MusicManager.audioContext.currentTime : 0);
+                    }
+                } catch (e) {
+                    // Ignore errors if oscillator already stopped
+                }
+            });
+            MusicManager.activeOscillators.clear();
+        }
+    }
+    
+    /**
+     * Resumes music playback from where it was paused
+     * @returns {boolean} Success status
+     */
+    static resumeMusic() {
+        // Only resume if we're in a paused state
+        if (!MusicManager.isPaused) {
+            return false;
+        }
+        
+        console.log("MusicManager: Resuming music playback");
+        
+        // Reset pause state
+        MusicManager.isPaused = false;
+        
+        // Get melody data
+        const melody = window.MusicData?.getMelody(MusicManager.currentMelodyId);
+        if (!melody) {
+            console.warn("MusicManager: Selected melody not found for resume");
+            return false;
+        }
+        
+        // Use SoundManager's shared context
+        MusicManager.audioContext = SoundManager.getAudioContext();
+        if (!MusicManager.audioContext || MusicManager.audioContext.state !== 'running') {
+            console.warn("MusicManager: AudioContext not available or not running for resume");
+            return false;
+        }
+        
+        // Resume music playback
+        MusicManager.resumeMusicPlayback(melody);
+        return true;
+    }
+    
+    /**
+     * Resume music playback from where it was paused
+     * @param {Object} musicData - The music data to resume
+     */
+    static resumeMusicPlayback(musicData) {
+        // Use the shared context stored in audioContext
+        const context = MusicManager.audioContext;
+        if (!context || context.state !== 'running') {
+            console.error("Cannot resume playback: Shared context not available or not running.");
+            return;
+        }
+        
+        // Bail if we're missing required components
+        if (!MusicManager.masterGain || !MusicManager.melodyGain) {
+            MusicManager.setupGainNodes();
+            // Check again if setup failed
+            if (!MusicManager.masterGain || !MusicManager.melodyGain) {
+                console.error("Failed to setup gain nodes. Cannot resume music.");
+                return;
+            }
+        }
+        
+        // Make sure master gain is set to audible level
+        MusicManager.masterGain.gain.cancelScheduledValues(context.currentTime);
+        MusicManager.masterGain.gain.setValueAtTime(0.5, context.currentTime);
+        
+        // Calculate how much time has passed since pause
+        const timeSincePause = context.currentTime - MusicManager.pausedAtTime;
+        
+        // Adjust next note time to account for pause duration
+        MusicManager.nextNoteTime = context.currentTime;
+        
+        // Set playing state to true
+        MusicManager.isPlaying = true;
+        
+        // Mark that audio is working
+        SoundManager.hasPlayedAudio = true;
+        
+        // Start scheduler
+        MusicManager.scheduleNotes();
+        
+        // Setup context state change listener
+        MusicManager.setupContextStateChangeListener();
+    }
+
+    /**
+     * Reset internal playback state, typically after context closure.
+     */
+    static resetPlaybackState() {
+        console.log("MusicManager: Resetting playback state.");
+        MusicManager.isPlaying = false;
+        MusicManager.isPaused = false;
+        MusicManager.currentNoteIndex = 0;
+        MusicManager.nextNoteTime = 0;
+        MusicManager.pausedAtTime = 0;
+        if (MusicManager.melodyScheduler) {
+            clearTimeout(MusicManager.melodyScheduler);
+            MusicManager.melodyScheduler = null;
+        }
+        MusicManager.activeOscillators.clear();
+        // We keep currentMelodyId, but gain nodes (masterGain, melodyGain) 
+        // are handled/nulled by AudioManager/SoundManager when context is closed.
     }
 }
 

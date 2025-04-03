@@ -51,22 +51,31 @@ class FoodManager {
         }
     }
 
-    manageFruits(snake, getRandomFruit, isGameStarted, isPaused, isGameOver, soundManager) {
-        // Remove expired fruits
-        const currentTime = Date.now();
-        this.food = this.food.filter(food => {
-            const age = currentTime - food.spawnTime;
-            if (age >= food.lifetime) {
-                if (isGameStarted && !isPaused && !isGameOver) {
-                    soundManager.playSound('disappear');
+    manageFruits(snake, getRandomFruit, isGameStarted, isPaused, isGameOver, audioManager) {
+        if (!isGameStarted || isPaused || isGameOver) return;
+
+        const now = Date.now();
+        // Filter out expired food
+        this.food = this.food.filter(f => {
+            if (f.lifetime && (now - f.spawnTime) > f.lifetime) {
+                // Play fade sound using audioManager
+                if (audioManager.canPlaySound()) {
+                    audioManager.soundManager.playSound('fade', 0.3);
                 }
-                return false;
+                return false; // Remove expired food
             }
             return true;
         });
 
-        // Spawn new food
-        this.spawnRandomFood(snake, getRandomFruit);
+        // Check if we need to add new food
+        if (this.food.length === 0 || (this.food.length < 3 && Math.random() < 0.02)) {
+             this.generateFood(snake, getRandomFruit);
+        }
+
+        // Add special fruit sometimes
+        if (Math.random() < 0.005) { // Lower chance for special fruit
+             this.spawnSpecialFruit(snake, getRandomFruit, audioManager); // Pass audioManager
+        }
     }
 
     checkFoodCollision(snake) {
@@ -124,7 +133,49 @@ class FoodManager {
             soundManager.playSound('click');
         }
     }
+
+    spawnSpecialFruit(snake, getRandomFruit, audioManager) {
+        if (this.food.length >= 5) return; // Limit total food
+
+        const head = snake.head();
+        const newFruitPos = { x: head.x, y: head.y };
+        // Attempt to place near the snake's path
+        const randomDirection = ['up', 'down', 'left', 'right'][Math.floor(Math.random() * 4)];
+        for (let i = 0; i < 5; i++) { // Move a few steps
+            const nextPos = GameUtils.getNextHeadPosition(newFruitPos, randomDirection);
+            newFruitPos.x = nextPos.x;
+            newFruitPos.y = nextPos.y;
+        }
+
+        // Clamp within bounds
+        newFruitPos.x = Math.max(0, Math.min(this.tileCount - 1, newFruitPos.x));
+        newFruitPos.y = Math.max(0, Math.min(this.tileCount - 1, newFruitPos.y));
+
+        // Check if position is occupied
+        const positionOccupied =
+            snake.isOccupyingPosition(newFruitPos.x, newFruitPos.y) ||
+            this.food.some(f => f.x === newFruitPos.x && f.y === newFruitPos.y);
+
+        if (!positionOccupied) {
+            const specialFruit = {
+                x: newFruitPos.x,
+                y: newFruitPos.y,
+                type: getRandomFruit(),
+                spawnTime: Date.now(),
+                lifetime: 10000 + Math.random() * 5000 // 10-15 seconds lifetime
+            };
+
+            this.food.push(specialFruit);
+            // Play spawn sound using audioManager
+            if (audioManager.canPlaySound()) {
+                audioManager.soundManager.playSound('click'); // Use soundManager via audioManager
+            }
+        }
+    }
 }
+
+// Make FoodManager globally accessible
+window.FoodManager = FoodManager;
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

@@ -96,3 +96,6 @@ class Snake {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { Snake };
 }
+
+// Make Snake globally accessible
+window.Snake = Snake;

@@ -268,3 +268,8 @@
     font-weight: bold;
     cursor: pointer;
 }
+
+/* Utility class to hide elements */
+.hidden {
+    display: none !important; /* Use !important to ensure override */
+}

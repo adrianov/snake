@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Each program module should be self-documented and contain a description of what it does and which other modules it relies on.

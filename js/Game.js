@@ -61,14 +61,16 @@ class SnakeGame {
     }
 
     setupManagers() {
-        // Create managers
+        // Get SoundManager instance directly (used for playing sounds via foodManager etc.)
         this.soundManager = SoundManager.getInstance();
 
-        // Create UI manager
+        // Create AudioManager FIRST, as UIManager needs it during initialization
+        this.audioManager = new AudioManager(this); 
+        
+        // Create UI manager AFTER AudioManager
         this.uiManager = new UIManager(this);
 
-        // Create new managers for refactored functionality
-        this.audioManager = new AudioManager(this);
+        // Create InputManager 
         this.inputManager = new InputManager(this);
 
         // Add listener for first interaction
@@ -79,21 +81,26 @@ class SnakeGame {
         // Use { once: true } so these listeners automatically remove themselves after firing
         document.addEventListener('click', this.handleFirstInteraction.bind(this), { once: true, passive: true });
         document.addEventListener('keydown', this.handleFirstInteraction.bind(this), { once: true, passive: true });
-        this.canvas.addEventListener('touchstart', this.handleFirstInteraction.bind(this), { once: true, passive: true });
+        // Attach touchstart to the document to catch any initial tap
+        document.addEventListener('touchstart', this.handleFirstInteraction.bind(this), { once: true, passive: true });
     }
 
     handleFirstInteraction() {
         if (this.hasUserInteraction) return; // Ensure it only runs once
         this.hasUserInteraction = true;
-        console.log("First user interaction detected. Initializing audio...");
+        console.log("First user interaction detected. Initializing audio manager...");
 
-        // Initialize audio contexts immediately
-        this.audioManager.init();
 
-        // If a game start was requested by the interaction, start the game now
+        // AudioManager handles its own initialization logic, including potential retries
+        this.audioManager.init(); 
+
+        // If a game start was *requested* before interaction, trigger it now.
+        // This covers cases like pressing spacebar before clicking.
         if (this.startRequested) {
             console.log("Starting game now after interaction and audio initialization.");
-            this.startGame();
+            // No need to call startGame directly, just ensure state allows it
+            // The main game loop or input handler will trigger startGame if needed
+            // based on the now-set hasUserInteraction flag.
             this.startRequested = false; // Reset the flag
         }
     }
@@ -263,27 +270,17 @@ class SnakeGame {
 
     pauseGame() {
         this.gameLoop.stopGameLoop();
-
-        // Save the current melody ID and stop music
-        MusicManager.stopMusic(true);
-
-        // Cleanup audio resources on pause
-        MusicManager.cleanupAudioResources(this, 200);
-
+        // Delegate audio handling
+        this.audioManager.handlePause();
         // Show header and footer when game is paused
         GameUtils.showHeaderFooter(this.gameLayout);
     }
 
     unpauseGame() {
-        // Get the sound manager instance
-        this.soundManager = SoundManager.getInstance();
-
-        // Initialize music using the AudioManager, don't force a new melody when unpausing
-        this.audioManager.initializeGameMusic(false);
-
+        // Delegate audio handling
+        this.audioManager.handleUnpause();
         // Hide header and footer when game is unpaused
         GameUtils.hideHeaderFooter(this.gameLayout);
-
         // Restart the game loop
         this.gameLoop.startGameLoop();
     }
@@ -294,57 +291,59 @@ class SnakeGame {
             return;
         }
 
-        // Ensure audio is initialized if interaction happened
-        if (this.hasUserInteraction) {
-            this.audioManager.initializeAudio();
+        // Need interaction before starting
+        if (!this.hasUserInteraction) {
+            console.log("[startGame] User interaction needed to start.");
+            this.startRequested = true; // Request start after interaction
+            // Potentially show a message like "Click or press key to start"
+            return;
         }
 
-        // Check if the game is over
-        const isGameOver = this.gameStateManager.getGameState().isGameOver;
-        const isFirstStart = !this.gameStateManager.getGameState().isGameStarted && !isGameOver;
+        const gameState = this.gameStateManager.getGameState();
+        const isGameOver = gameState.isGameOver;
+        const isFirstStart = !gameState.isGameStarted && !isGameOver;
 
-        if (isGameOver) {
-            // Don't force a new melody when restarting after game over
-            this.resetGame(false);
+        // Reset game state if restarting after game over or for the first time
+        if (isGameOver || isFirstStart) {
+            this.resetGame(isFirstStart); // Pass flag to resetGame
         } else {
-            // Reset game elements only if we didn't already reset via resetGame
-            this.resetGameState();
+            // If resuming from a non-game-over state (e.g., coming back to tab),
+            // ensure game elements are consistent, but don't fully reset.
+            // This path might be less common now with stricter pause/resume logic.
+            console.log("[startGame] Resuming game (not first start or game over).");
         }
 
-        // THEN set the game state to started
+        // Set game state to started *after* potential reset
         this.gameStateManager.startGame();
 
-        // Start loops
+        // Start core loops
         this.gameLoop.startGameLoop();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
 
-        // Initialize music with a small delay to avoid race conditions
-        // Force new melody ONLY on the first game start, not on restart after game over
-        setTimeout(() => {
-            this.audioManager.initializeGameMusic(isFirstStart);
-        }, 100);
+        // Delegate audio initialization for the game start
+        this.audioManager.handleGameStart(isFirstStart);
 
-        // Hide header and footer during gameplay
+        // UI updates
         GameUtils.hideHeaderFooter(this.gameLayout);
-
         this.draw(); // Initial draw after starting
     }
 
     resetGameState() {
-        this.drawer.generateNewSnakeColor();
-        this.gameStateManager.resetGameState();
-        this.uiManager.updateScore(this.gameStateManager.getScore());
+        // Reset visual/gameplay elements
+        if (this.drawer) {
+             this.drawer.generateNewSnakeColor();
+             if (this.drawer.snakeDrawer) {
+                 this.drawer.snakeDrawer.resetLevels();
+             }
+        }
+        this.gameStateManager.resetGameState(); // Resets score etc.
+        this.uiManager.updateScore(this.gameStateManager.getScore()); // Update UI score
         this.direction = 'right';
         this.nextDirection = 'right';
         this.gameLoop.resetSpeed();
         this.snake = new Snake(5, 5);
         this.foodManager.resetFood();
         this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
-
-        // Reset shake intensity to default value
-        if (this.drawer && this.drawer.snakeDrawer) {
-            this.drawer.snakeDrawer.resetLevels();
-        }
     }
 
     manageFruits() {
@@ -355,7 +354,7 @@ class SnakeGame {
             gameState.isGameStarted,
             gameState.isPaused,
             gameState.isGameOver,
-            this.soundManager
+            this.audioManager // Pass AudioManager for sound checks
         );
         this.draw();
     }
@@ -434,17 +433,17 @@ class SnakeGame {
             // Update score proportionally based on how many segments were lost
             const currentScore = this.gameStateManager.getScore();
             const scoreReduction = Math.floor(currentScore * (removedLength / originalLength));
-            const newScore = currentScore - scoreReduction;
+            const newScore = Math.max(0, currentScore - scoreReduction); // Ensure score doesn't go negative
 
             // Update the score in the game state and UI
-            this.gameStateManager.score = newScore;
+            this.gameStateManager.setScore(newScore);
             this.uiManager.updateScore(newScore);
 
             // Cut the tail by removing segments from collisionIndex to the end
             this.snake.cutTailAt(collisionIndex);
 
-            // Play a sound to indicate tail cutting
-            if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
+            // Play sound using AudioManager check
+            if (this.audioManager.canPlaySound()) {
                 this.soundManager.playSound('click', 0.5);
             }
 
@@ -533,12 +532,13 @@ class SnakeGame {
         }
 
         const safeHeadPos = GameUtils.getNextHeadPosition(this.snake.head(), this.direction);
-        const gameState = this.gameStateManager.getGameState();
 
-        if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
+        // Play sound using AudioManager check
+        if (this.audioManager.canPlaySound()) {
             this.soundManager.playSound('click', 0.3);
         }
 
+        // Visual effect
         if (this.drawer && this.drawer.snakeDrawer) {
             this.drawer.snakeDrawer.triggerLuckGlow();
         }
@@ -562,27 +562,30 @@ class SnakeGame {
         const fruitConfig = window.FRUIT_CONFIG[eatenFood.type];
         const gameState = this.gameStateManager.getGameState();
 
+        // Update score
         const score = this.gameStateManager.updateScore(fruitConfig.score);
         this.uiManager.updateScore(score);
         this.lastEatenTime = Date.now();
 
-        // Ensure the game loop continues smoothly after eating
+        // Adjust speed
         this.gameLoop.adjustSpeedAfterFoodEaten();
 
-        // Force an immediate frame update to avoid pauses
-        this.gameLoop.lastFrameTime = performance.now() - this.gameLoop.frameInterval;
+        // Force immediate frame update
+        // this.gameLoop.lastFrameTime = performance.now() - this.gameLoop.frameInterval; // Re-evaluate if needed
 
+        // Visuals
         if (this.drawer) {
             this.drawer.incrementDarknessLevel();
         }
 
-        // Only play sound if we have user interaction and sound is enabled
-        if (gameState.soundEnabled && this.audioManager.isAudioReady()) {
+        // Play sound using AudioManager check
+        if (this.audioManager.canPlaySound()) {
             this.soundManager.playSound(eatenFood.type);
         }
 
         this.snake.grow();
 
+        // Generate new food if needed
         if (this.foodManager.getAllFood().length === 0) {
             this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
         }
@@ -608,6 +611,11 @@ class SnakeGame {
         // Stop the game loop immediately
         this.gameLoop.stopGameLoop();
 
+        // Play game over sound immediately if possible
+        if (this.audioManager.canPlaySound()) {
+            this.soundManager.playSound('crash');
+        }
+
         // Set a transition flag in our state
         this.isTransitionState = true;
 
@@ -615,8 +623,8 @@ class SnakeGame {
         const currentScore = this.gameStateManager.getScore();
         const isNewHighScore = currentScore > this.gameStateManager.getHighScore();
 
-        // Play crash sound immediately
-        this.audioManager.handleGameOverAudio(isNewHighScore);
+        // Delegate audio handling for game over (plays sounds immediately)
+        this.audioManager.handleGameOver(isNewHighScore);
 
         // Don't mark the game as over in the state manager yet,
         // but do freeze snake movement by setting internal state
@@ -634,7 +642,12 @@ class SnakeGame {
             this.gameStateManager.gameOver();
 
             if (isNewHighScore) {
+                // Update the high score display
                 this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
+                // Play fanfare sound if sounds are enabled
+                if (this.audioManager.canPlaySound()) {
+                    this.soundManager.playHighScoreFanfare();
+                }
             }
 
             // After delay, clear transition state and update game state to game over
@@ -654,23 +667,6 @@ class SnakeGame {
             this.drawer.generateNewSnakeColor();
         }
 
-        // Get sound manager instance
-        this.soundManager = SoundManager.getInstance();
-
-        // Cancel any pending audio cleanups to prevent music stoppage after restart
-        // This is important when quickly restarting after game over
-        const timeoutId = MusicManager.cleanupTimeouts.get(this);
-        if (timeoutId) {
-            console.log("Cancelling pending audio cleanup from previous game over");
-            clearTimeout(timeoutId);
-            MusicManager.cleanupTimeouts.delete(this);
-        }
-
-        // Ensure audio context is initialized if user interaction has occurred
-        if (this.hasUserInteraction && SoundManager.getAudioContext()) {
-            MusicManager.initAudioContextIfNeeded();
-        }
-
         // Reinitialize snake and game elements for a clean slate
         this.snake = new Snake(5, 5);
         this.direction = 'right';
@@ -686,13 +682,9 @@ class SnakeGame {
         // Reset the start requested flag
         this.startRequested = false;
 
-        // We don't need to show header and footer here as we're resetting for a new game
-        // which will be followed by startGame() that will hide them
-
-        // Initialize music - this ensures music plays after game reset
-        if (this.hasUserInteraction) {
-            this.audioManager.initializeGameMusic(forceNewMelody);
-        }
+        // Delegate music handling for the reset/restart
+        // AudioManager will decide if music should play based on interaction state
+        this.audioManager.handleGameReset(forceNewMelody);
 
         // Force a redraw to show the new state
         this.draw();

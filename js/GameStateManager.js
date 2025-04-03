@@ -17,10 +17,10 @@ class GameStateManager {
         this.score = 0;
         this.highScore = localStorage.getItem('snakeHighScore') || 0;
 
-        // Feature toggles
+        // Feature toggles (Audio state removed)
         this.luckEnabled = true;
         this.shakeEnabled = true;
-        this.musicEnabled = localStorage.getItem('snakeMusicEnabled') !== 'false';
+        // this.musicEnabled = localStorage.getItem('snakeMusicEnabled') !== 'false'; // Removed
     }
 
     resetGameState() {
@@ -80,6 +80,10 @@ class GameStateManager {
         return this.score;
     }
 
+    setScore(newScore) {
+        this.score = Math.max(0, newScore); // Ensure score doesn't go negative
+    }
+
     getScore() {
         return this.score;
     }
@@ -98,6 +102,8 @@ class GameStateManager {
         return this.shakeEnabled;
     }
 
+    // Removed toggleSound and toggleMusic
+    /*
     toggleSound() {
         const soundManager = SoundManager.getInstance();
         return soundManager.toggleSound();
@@ -108,9 +114,15 @@ class GameStateManager {
         localStorage.setItem('snakeMusicEnabled', this.musicEnabled.toString());
         return this.musicEnabled;
     }
+    */
 
     getGameState() {
-        const soundManager = SoundManager.getInstance();
+        // Get audio states directly from AudioManager
+        // Assumes audioManager is accessible, e.g., via the game instance if needed,
+        // but since UIManager already uses this, let's call it directly for now.
+        // A better approach might be dependency injection.
+        const audioManager = window.SnakeGame?.audioManager; // Access via global game instance
+
         return {
             isGameStarted: this.isGameStarted,
             isPaused: this.isPaused,
@@ -119,11 +131,14 @@ class GameStateManager {
             highScore: this.highScore,
             luckEnabled: this.luckEnabled,
             shakeEnabled: this.shakeEnabled,
-            soundEnabled: soundManager.isSoundEnabled(),
-            musicEnabled: this.musicEnabled
+            soundEnabled: audioManager ? audioManager.isSoundEnabled() : false, // Use AudioManager getter
+            musicEnabled: audioManager ? audioManager.isMusicEnabled() : false  // Use AudioManager getter
         };
     }
 }
+
+// Make GameStateManager globally accessible
+window.GameStateManager = GameStateManager;
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

@@ -92,5 +92,5 @@ class GameDrawer {
     }
 }
 
-// Export the class
+// Make GameDrawer globally accessible
 window.GameDrawer = GameDrawer;

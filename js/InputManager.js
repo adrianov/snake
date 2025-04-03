@@ -72,51 +72,107 @@ class InputManager {
         }, { passive: false });
     }
 
+    /**
+     * Check and attempt to resume suspended audio context if necessary.
+     * Should be called within a user gesture handler.
+     * @private
+     */
+    _ensureAudioResumed() {
+        const audioManager = this.game.audioManager;
+        // Only check if audio *should* be playing (either sounds or music enabled)
+        if (audioManager && (audioManager.isMusicEnabled() || audioManager.isSoundEnabled())) {
+            const context = SoundManager.getAudioContext();
+            if (context && context.state === 'suspended') {
+                console.log("InputManager: Detected suspended context during interaction, attempting sync resume.");
+                const resumed = SoundManager.tryUnlockAudioSync(); // Attempt resume within the user gesture
+                if (resumed) {
+                    console.log("InputManager: Sync resume successful or context was already running.");
+                    // If successful, ensure AudioManager knows the context is likely ready now
+                    // This might trigger music resume if needed
+                    audioManager.markAudioAsInitialized();
+                } else {
+                    console.warn("InputManager: Sync resume attempt failed.");
+                }
+            }
+        }
+    }
+
     handleKeyDown(event) {
-        const gameState = this.game.gameStateManager.getGameState();
+        this._ensureAudioResumed(); // Check/Resume audio context first
+        this.game.handleFirstInteraction();
+        if (!this.game.hasUserInteraction) return;
 
-        // Special arrow key handling to start the game
-        // Always check this first, regardless of other key handling
-        if (!gameState.isGameStarted && !gameState.isGameOver &&
-            [37, 38, 39, 40].includes(event.keyCode)) {
-            event.preventDefault();
+        // --- Audio Init Retry ---
+        // Attempt to initialize audio on any keydown if not already initialized
+        this.game.audioManager.tryInitializeAudio();
+        // ----------------------
 
-            // Set direction based on which arrow key was pressed
-            let initialDirection = null;
-            if (event.keyCode === 37) initialDirection = 'left';
-            else if (event.keyCode === 38) initialDirection = 'up';
-            else if (event.keyCode === 39) initialDirection = 'right';
-            else if (event.keyCode === 40) initialDirection = 'down';
+        const initialGameState = this.game.gameStateManager.getGameState();
+        const isArrowKey = [37, 38, 39, 40].includes(event.keyCode);
+        const isSpacebar = event.keyCode === 32;
+        const canStartGame = !initialGameState.isGameStarted && !initialGameState.isGameOver;
+        let gameWasJustStarted = false; // Flag to track if start happened in this handler
 
-            // Start the game with the appropriate direction
-            this.startGameWithInitialDirection(initialDirection);
-            return;
+        // --- Interaction and Start --- 
+        if ((isArrowKey || isSpacebar) && canStartGame) {
+            event.preventDefault(); 
+            this.game.handleFirstInteraction();
+            if (this.game.hasUserInteraction) {
+                console.log(`InputManager: Starting game via ${isArrowKey ? 'arrow key' : 'spacebar'}.`);
+                this.game.startGame(); 
+                gameWasJustStarted = true; // Set the flag
+            } else {
+                this.game.startRequested = true;
+                return; // Exit if interaction needed but failed
+            }
         }
 
-        // Prevent default for game control keys
-        if ([37, 38, 39, 40, 32].includes(event.keyCode)) {
-            event.preventDefault();
+        // --- Prevent Default --- 
+        // Re-check state as it might have changed
+        const currentGameState = this.game.gameStateManager.getGameState(); 
+        // Prevent default if game is active OR if it *could* start (even if start failed above)
+        if ((isArrowKey || isSpacebar) && (currentGameState.isGameStarted || canStartGame)) {
+             event.preventDefault();
         }
 
-        // Feature toggles
-        if (this.handleFeatureToggleKeys(event)) {
-            return;
+        // --- Feature Toggles --- 
+        if (!gameWasJustStarted && this.handleFeatureToggleKeys(event)) {
+             // Don't process toggles if game was just started by this key press
+             // (e.g., prevent 'S' starting game AND toggling sound immediately)
+            return; 
         }
 
-        // Game state controls
-        if (this.handleGameStateKeys(event)) {
-            return;
-        }
+        // --- State Handling (Spacebar) & Direction (Arrows) --- 
+        // Get the absolute latest game state again
+        const latestGameState = this.game.gameStateManager.getGameState();
 
-        // Direction controls (only if game is running)
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            this.handleDirectionKeys(event);
+        // Use else-if structure and check the flag to prevent double actions
+        if (isSpacebar && !gameWasJustStarted) {
+            // Spacebar Action (only if game wasn't just started by *this* press)
+            if (latestGameState.isGameStarted && !latestGameState.isGameOver) {
+                console.log("InputManager: Toggling pause/unpause via spacebar.");
+                this.game.togglePause();
+            } else if (latestGameState.isGameOver) {
+                 console.log("InputManager: Attempting restart via spacebar.");
+                 this.game.handleFirstInteraction(); // Ensure interaction
+                 if (this.game.hasUserInteraction) {
+                     this.game.startGame(); // startGame handles reset logic
+                 }
+            }
+            return; // Spacebar action handled
+        } 
+        
+        // Arrow keys should only affect direction if game is running
+        // No 'else if' needed here as arrows don't have the same state-change conflict
+        if (isArrowKey && latestGameState.isGameStarted && !latestGameState.isPaused && !latestGameState.isGameOver) {
+            this.handleDirectionKeys(event); 
+            return; // Arrow key direction handled
         }
     }
 
     handleFeatureToggleKeys(event) {
         const key = event.key && event.key.toLowerCase();
-        const gameState = this.game.gameStateManager.getGameState();
+        // const gameState = this.game.gameStateManager.getGameState(); // Not needed directly
 
         if (key === 's') {
             event.preventDefault();
@@ -139,7 +195,8 @@ class InputManager {
         if (key === 'l') {
             event.preventDefault();
             const luckEnabled = this.game.gameStateManager.toggleLuck();
-            if (gameState.soundEnabled) {
+            // Use AudioManager to check if sound can be played
+            if (this.game.audioManager.canPlaySound()) {
                 this.game.soundManager.playSound('click', 0.3);
             }
             this.game.uiManager.showTemporaryMessage(
@@ -152,8 +209,8 @@ class InputManager {
         if (key === 'v') {
             event.preventDefault();
             const shakeEnabled = this.game.gameStateManager.toggleShake();
-
-            if (gameState.soundEnabled) {
+            // Use AudioManager to check if sound can be played
+            if (this.game.audioManager.canPlaySound()) {
                 this.game.soundManager.playSound('click', 0.3);
             }
             this.game.uiManager.showTemporaryMessage(
@@ -165,12 +222,13 @@ class InputManager {
 
         if (key === 'a') {
             event.preventDefault();
-            if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+            const currentGameState = this.game.gameStateManager.getGameState(); // Get current state
+            if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
                 this.game.foodManager.spawnFruitInSnakeDirection(
                     this.game.snake,
                     this.game.direction,
                     this.game.getRandomFruit.bind(this.game),
-                    this.game.soundManager
+                    this.game.soundManager // Pass the SoundManager instance
                 );
             }
             return true;
@@ -179,27 +237,8 @@ class InputManager {
         return false;
     }
 
-    handleGameStateKeys(event) {
-        const gameState = this.game.gameStateManager.getGameState();
-
-        if (event.keyCode === 32) { // Spacebar
-            event.preventDefault(); // Prevent space scrolling
-            if (gameState.isGameOver) {
-                // Start game with no specific direction
-                this.startGameWithInitialDirection();
-            } else if (gameState.isGameStarted) {
-                this.game.togglePause();
-            } else {
-                // Start the game with spacebar
-                this.startGameWithInitialDirection();
-            }
-            return true;
-        }
-
-        return false;
-    }
-
     handleDirectionKeys(event) {
+        // This method now ONLY handles direction changes when the game is running
         let keyDirection = null;
         if (event.keyCode === 37) keyDirection = 'left';
         else if (event.keyCode === 38) keyDirection = 'up';
@@ -207,24 +246,31 @@ class InputManager {
         else if (event.keyCode === 40) keyDirection = 'down';
 
         if (keyDirection) {
+            // Use the centralized method for applying direction and speed changes
             this.handleDirectionAndSpeed(keyDirection, false);
         }
     }
 
     handleTouchStart(event) {
+        this._ensureAudioResumed(); // Check/Resume audio context first
+        this.game.handleFirstInteraction();
+        if (!this.game.hasUserInteraction) return;
+
+        // --- Audio Init Retry ---
+        // Attempt to initialize audio on any touchstart if not already initialized
+        // Note: handleFirstInteraction ALSO attempts init, but this covers subsequent touches
+        this.game.audioManager.tryInitializeAudio();
+        // ----------------------
+        
         const gameState = this.game.gameStateManager.getGameState();
 
-        // Prevent default for all touch interactions during active gameplay
-        // This prevents pinch zooming and scrolling when the game is running
+        // Prevent default if needed
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver &&
             event.target.id === 'gameCanvas') {
             event.preventDefault();
         }
 
-        // Always try to initialize audio on any touch
-        this.ensureAudioInitialized();
-
-        // Get touch coordinates and store them
+        // Cache touch info
         this.touchStartX = event.touches[0].clientX;
         this.touchStartY = event.touches[0].clientY;
         this.touchStartTime = new Date().getTime();
@@ -233,75 +279,56 @@ class InputManager {
         this.lastSwipeDirection = null;
         this.hasAdjustedSpeed = false;
 
-        // Handle two-finger tap for pause - still prevent default
+        // Two-finger pause
         if (event.touches.length === 2 && gameState.isGameStarted && !gameState.isPaused) {
             event.preventDefault();
             this.game.togglePause();
             return;
         }
 
-        // Unpause game with a single touch if paused
+        // Single touch unpause
         if (gameState.isGameStarted && gameState.isPaused && event.touches.length === 1) {
-            // Only prevent if the touch is on the canvas
-            if (event.target.id === 'gameCanvas') {
-                event.preventDefault();
-            }
+            if (event.target.id === 'gameCanvas') event.preventDefault();
             this.game.togglePause();
             return;
         }
 
-        // Handle game over state - reset and start a new game
+        // Single touch restart (if game over)
         if (gameState.isGameOver) {
-            // Only prevent default if touch is on canvas
-            if (event.target.id === 'gameCanvas') {
-                event.preventDefault();
-            }
-
-            // Calculate swipe direction from initial touch coordinates for the new game
-            const centerX = this.game.canvas.width / 2;
-            const centerY = this.game.canvas.height / 2;
-            const touchX = this.touchStartX;
-            const touchY = this.touchStartY;
-
-            // Determine main direction from touch position relative to center
-            const deltaX = touchX - centerX;
-            const deltaY = touchY - centerY;
-
-            let initialDirection;
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                initialDirection = deltaX > 0 ? 'right' : 'left';
+            if (event.target.id === 'gameCanvas') event.preventDefault();
+            if (this.game.hasUserInteraction) {
+                 console.log("InputManager: Restarting game via touch.");
+                 this.game.startGame(); // Handles reset
             } else {
-                initialDirection = deltaY > 0 ? 'down' : 'up';
+                 this.game.startRequested = true;
             }
-
-            // Use extracted method to start game with calculated direction
-            this.startGameWithInitialDirection(initialDirection);
             return;
         }
 
-        // Start game if not started yet
+        // Single touch start (if not started)
         if (!gameState.isGameStarted) {
-            // Only prevent default if touch is on canvas
-            if (event.target.id === 'gameCanvas') {
-                event.preventDefault();
-            }
-
-            if (!this.game.hasUserInteraction) {
-                this.game.startRequested = true;
-                this.game.handleFirstInteraction();
+            if (event.target.id === 'gameCanvas') event.preventDefault();
+            if (this.game.hasUserInteraction) {
+                 console.log("InputManager: Starting game via touch.");
+                 this.game.startGame();
             } else {
-                // This is a fresh game start, let the startGame method handle melody selection
-                this.startGameWithInitialDirection();
+                 this.game.startRequested = true;
             }
             return;
         }
     }
 
     handleTouchMove(event) {
+        if (!this.game.hasUserInteraction) return;
+        // --- Audio Init Retry ---
+        // Attempt to initialize audio on any touchmove if not already initialized
+        // Important for cases where the first touch was on a UI element, not canvas
+        this.game.audioManager.tryInitializeAudio();
+        // ----------------------
+        
         const gameState = this.game.gameStateManager.getGameState();
 
         // Prevent default for ALL touch move events on canvas during active gameplay
-        // This completely prevents pinch-zooming and scrolling during play
         if (event.target.id === 'gameCanvas' && gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
             event.preventDefault();
         } else {
@@ -348,7 +375,9 @@ class InputManager {
             this.accumulatedSwipeDistance += primaryDelta;
 
             // Check if we haven't already adjusted speed for this touch or direction
-            if (!this.hasAdjustedSpeed) {
+            // AND that the game is actually running
+            const currentGameState = this.game.gameStateManager.getGameState(); // Check latest state
+            if (!this.hasAdjustedSpeed && currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
                 this.handleDirectionAndSpeed(newDirection, true, {
                     primaryDelta,
                     isWideSwipe: primaryDelta > wideSwipeThreshold,
@@ -365,13 +394,12 @@ class InputManager {
     }
 
     handleTouchEnd(event) {
-        const gameState = this.game.gameStateManager.getGameState();
-
+        if (!this.game.hasUserInteraction) return;
         // Reset speed adjustment flag when finger is lifted
         this.hasAdjustedSpeed = false;
 
         // Handle single tap to reduce speed - only if no movement occurred
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+        if (this.game.gameStateManager.getGameState().isGameStarted && !this.game.gameStateManager.getGameState().isPaused && !this.game.gameStateManager.getGameState().isGameOver) {
             const touchEndTime = new Date().getTime();
             const touchDuration = touchEndTime - this.touchStartTime;
 
@@ -384,83 +412,59 @@ class InputManager {
     }
 
     handleDocumentClick(event) {
-        // Skip if no user interaction yet
+        this._ensureAudioResumed(); // Check/Resume audio context first
+
+        // Moved the original audioManager.tryInitializeAudio() call earlier
+        // because _ensureAudioResumed might handle the suspended state.
+        // tryInitializeAudio will still handle the initial unlock and restoration path.
+        this.game.audioManager.tryInitializeAudio(); 
+
+        this.game.handleFirstInteraction();
         if (!this.game.hasUserInteraction) {
+            this.game.startRequested = true;
             return;
         }
 
         const gameState = this.game.gameStateManager.getGameState();
-
-        // Get all elements that should NOT pause the game when clicked
-        // Only active functionality elements should be here, not containers
-        const nonPausingElements = [
-            // Game canvas - clicking should not pause
+        const interactiveSelectors = [
             '#gameCanvas',
             '.canvas-wrapper',
-
-            // Active controls - these should work normally during gameplay
-            '#mobileArrowControls', // Contains all mobile arrow controls
-            '.arrow-button', // For any individually placed arrow buttons
-            '.spacer', // For any individual spacers
-            '#soundToggle', // Sound on/off button
-            '#musicToggle', // Music on/off button
-            '.control-toggle', // Any toggle buttons
-            '.melody-display', // Current melody display
-            '.reset-button', // Reset high score button
-
-            // Donation panel elements - should not pause when interacted with
-            '.donation-panel', // Contains all donation panel elements
-            '.copy-btn', // For any standalone copy buttons
-            '.qr-code-link' // For any standalone QR links
+            '#mobileArrowControls',
+            '.arrow-button',
+            '#soundToggle',
+            '#musicToggle',
+            '.control-toggle',
+            '.melody-display',
+            '.reset-button',
+            '.donation-panel',
+            '#aboutPanel',
+            '.panel-close-button',
+            '.panel-header',
+            '.github-button',
+            '#aboutButton',
+            '#donateButton',
+            '.header-buttons'
         ];
+        const isInteractiveClick = interactiveSelectors.some(selector => event.target.closest(selector));
+        const isCanvasClick = event.target.closest('#gameCanvas') !== null;
 
-        // Pause logic: Click outside when running & not paused
-        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
-            // Check if the clicked element (or any of its parents) is in the non-pausing list
-            const shouldNotPause = nonPausingElements.some(selector => {
-                return event.target.closest(selector) !== null;
-            });
-
-            if (!shouldNotPause) {
-                this.game.togglePause();
-                this.game.uiManager.showTemporaryMessage('Game paused', 1500);
-                return;
-            }
+        // Pause if running and click outside interactive
+        if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver && !isInteractiveClick) {
+            this.game.togglePause();
+            this.game.uiManager.showTemporaryMessage('Game paused', 1500);
+            return;
         }
 
-        // Start logic: Click inside canvas when not started
-        if (!gameState.isGameStarted && !gameState.isGameOver) {
-            if (this.game.canvas.contains(event.target)) {
-                this.game.startRequested = true;
-                this.startGameWithInitialDirection();
-                return;
+        // Start/Restart on canvas click
+        if (isCanvasClick) {
+            if (!gameState.isGameStarted && !gameState.isGameOver) {
+                console.log("InputManager: Starting game via canvas click.");
+                this.game.startGame();
+            } else if (gameState.isGameOver) {
+                console.log("InputManager: Restarting game via canvas click.");
+                this.game.startGame(); // Handles reset
             }
-        }
-
-        // Allow canvas clicks to restart game after game over
-        if (gameState.isGameOver) {
-            if (this.game.canvas.contains(event.target)) {
-                // Get click position relative to canvas center for direction
-                const rect = this.game.canvas.getBoundingClientRect();
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                const clickX = event.clientX - rect.left;
-                const clickY = event.clientY - rect.top;
-
-                // Determine initial direction from click position
-                const deltaX = clickX - centerX;
-                const deltaY = clickY - centerY;
-
-                let initialDirection;
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    initialDirection = deltaX > 0 ? 'right' : 'left';
-                } else {
-                    initialDirection = deltaY > 0 ? 'down' : 'up';
-                }
-
-                this.startGameWithInitialDirection(initialDirection);
-                return;
-            }
+            return;
         }
     }
 
@@ -501,72 +505,50 @@ class InputManager {
 
         // Helper function to handle button press
         const handleArrowButtonPress = (direction) => {
+             // --- Audio Init Retry ---
+             // Attempt to initialize audio on any arrow button press if not already initialized
+             this.game.audioManager.tryInitializeAudio();
+             // ----------------------
+
+             // Ensure interaction is handled (idempotent)
+             this.game.handleFirstInteraction();
+
+             // Only proceed if interaction is successful
+             if (!this.game.hasUserInteraction) {
+                console.log("InputManager: Arrow button pressed, interaction pending.");
+                this.game.startRequested = true;
+                return;
+            }
+
+            triggerHapticFeedback();
             const gameState = this.game.gameStateManager.getGameState();
 
-            // Always ensure audio is initialized on button press
-            this.ensureAudioInitialized();
+            if (gameState.isGameOver) return; // Ignore presses on game over
 
-            // Trigger haptic feedback
-            triggerHapticFeedback();
-
-            // If game over, ignore arrow presses to prevent accidental restarts
-            if (gameState.isGameOver) {
-                return;
-            }
-
-            // If game hasn't started, handle game start
             if (!gameState.isGameStarted) {
-                this.game.startRequested = true;
-
-                // Check if this is the first interaction
-                const isFirstInteraction = !this.game.hasUserInteraction;
-
-                // Ensure interaction flag is set and audio is initialized
-                this.game.handleFirstInteraction();
-
-                // If this was the first interaction, startGame was already called by handleFirstInteraction
-                if (!isFirstInteraction) {
-                    // Explicitly initialize audio contexts - redundant but ensures audio works
-                    SoundManager.hasUserInteraction = true;
-                    this.game.audioManager.initializeAudio(true);
-
-                    // Start game and loops
-                    this.game.startGame();
-                    this.game.gameLoop.startGameLoop();
-                    this.game.gameLoop.startFruitLoop(this.game.manageFruits.bind(this.game));
-                }
-
-                // Also set initial direction based on the button pressed
-                if (this.game.isValidDirectionChange(direction)) {
-                    this.game.direction = direction;
-                    this.game.nextDirection = direction;
-                }
-
-                return;
-            }
-
-            if (gameState.isPaused) {
-                return;
-            }
-
-            // Use the shared method for handling direction changes and speed adjustments
-            this.handleDirectionAndSpeed(direction, false);
+                // Start the game if not started
+                 console.log("InputManager: Starting game via arrow button.");
+                 this.game.startGame();
+                 // Set initial direction *after* starting
+                 if (this.game.isValidDirectionChange(direction)) {
+                     // Use a small delay to ensure game loop has processed the start
+                     setTimeout(() => {
+                         this.game.direction = direction;
+                         this.game.nextDirection = direction;
+                     }, 0); // Minimal delay
+                 }
+            } else if (!gameState.isPaused) {
+                 // If running, handle direction change
+                 this.handleDirectionAndSpeed(direction, false); // Treat button like keyboard
+             }
+             // If paused, do nothing
         };
 
         // Add event listeners for buttons with proper event handling
         const createArrowButtonHandler = (direction) => {
             return (e) => {
-                // Always prevent default behavior for all types of events
                 e.preventDefault();
-                e.stopPropagation(); // Prevent event bubbling
-
-                // Ensure audio is initialized directly from touch event
-                if (!this.game.hasUserInteraction) {
-                    this.game.hasUserInteraction = true;
-                    SoundManager.hasUserInteraction = true;
-                    this.game.audioManager.initializeAudio();
-                }
-
+                e.stopPropagation();
                 handleArrowButtonPress(direction);
             };
         };
@@ -676,3 +658,6 @@ class InputManager {
         return false;
     }
 }
+
+// Make InputManager globally accessible
+window.InputManager = InputManager;
