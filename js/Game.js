@@ -623,14 +623,44 @@ class SnakeGame {
         }
         this.isTransitionState = true;
         const currentScore = this.gameStateManager.getScore();
-        const isNewHighScore = currentScore > this.gameStateManager.getHighScore();
+        const highScore = this.gameStateManager.getHighScore();
+        const isNewHighScore = currentScore > highScore;
         this.audioManager.handleGameOver(isNewHighScore);
         this.frozen = true;
         this.draw();
         GameUtils.showHeaderFooter(this.gameLayout);
         
         // Update tip area for game over
-        this.uiManager.updateTipArea("Space or tap to play again");
+        let gameOverMessage;
+        
+        if (isNewHighScore) {
+            const celebrationMessages = [
+                "New high score! Tap to bask in your glory again!",
+                "You've topped yourself! Space or tap to defend your title!",
+                "Snake superstar! Tap to chase your own record!"
+            ];
+            gameOverMessage = celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
+        } else if (currentScore > highScore * 0.8) {
+            gameOverMessage = `So close to glory! Just ${highScore - currentScore} points shy of your best!`;
+        } else if (currentScore > highScore * 0.5) {
+            gameOverMessage = `Solid effort! Space or tap to beat your ${highScore - currentScore} point gap!`;
+        } else if (currentScore < 50) {
+            const lowScoreMessages = [
+                "That was just a warm-up, right? Tap to really play!",
+                "Oops! Your snake forgot how to snake. Try again?",
+                "Even baby snakes start somewhere! Space or tap to grow longer!"
+            ];
+            gameOverMessage = lowScoreMessages[Math.floor(Math.random() * lowScoreMessages.length)];
+        } else {
+            const defaultMessages = [
+                `${currentScore} points? Your snake can do better! Tap to prove it!`,
+                "The fruits are laughing! Space or tap to show them who's boss!",
+                "Game over, but your snake saga continues! Tap to restart!"
+            ];
+            gameOverMessage = defaultMessages[Math.floor(Math.random() * defaultMessages.length)];
+        }
+        
+        this.uiManager.updateTipArea(gameOverMessage);
 
         setTimeout(() => {
             this.gameStateManager.gameOver();
