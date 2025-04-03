@@ -630,7 +630,7 @@ class SnakeGame {
         GameUtils.showHeaderFooter(this.gameLayout);
         
         // Update tip area for game over
-        this.uiManager.updateTipArea("Space or tap to restart.");
+        this.uiManager.updateTipArea("Space or tap to play again");
 
         setTimeout(() => {
             this.gameStateManager.gameOver();
