@@ -1,7 +1,7 @@
 ---
-description: 
+description: When dealing with design and layout
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 **Glob:** `css/**/*.css`
 

@@ -1,4 +1,11 @@
 /* =========== CANVAS & GAME ELEMENTS =========== */
+.canvas-wrapper, .game-controls, .score-container, .arrow-button, .control-toggle {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
 .canvas-wrapper {
     position: relative;
     width: 100%;

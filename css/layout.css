@@ -128,6 +128,10 @@
 /* --- Game Active State Specific Styles --- */
 .game-layout.game-active {
     touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* Remove container max-width override for active state */
