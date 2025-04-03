@@ -6,7 +6,6 @@
  * - Handles cross-browser compatibility and mobile device constraints
  * - Implements sound effect creation and playback functionality
  * - Manages the audio enabled/disabled state
- * - Detects device-level audio muting (e.g., iPhone mute switch)
  */
 class SoundManager {
     // Static flags and references
@@ -14,8 +13,6 @@ class SoundManager {
     static hasPlayedAudio = false;
     static instance = null;
     static audioContext = null;
-    static isDeviceMuted = false;
-    static audioStateListeners = new Set();
     static contextRunningListeners = new Set(); // New listener set
 
     /**
@@ -53,9 +50,7 @@ class SoundManager {
         SoundManager.instance = this;
         this.soundTemplates = {};
         this.silentNode = null;
-        this.audioStateChangeHandler = this.handleAudioStateChange.bind(this);
         this.audioContextStateChangeHandler = this.handleAudioContextStateChange.bind(this);
-        this.muteDetectionSetupComplete = false; // Flag to track setup
 
         if (forceInit) {
             this.initAudioContext(true);
@@ -90,12 +85,6 @@ class SoundManager {
                 // resumeAudioContext will handle setup if successful
                 return this.resumeAudioContext().then(resumed => resumed);
             }
-            // If already running, ensure setup has happened
-            if (currentContext.state === 'running' && !this.muteDetectionSetupComplete) {
-                 console.log("SoundManager: Context already running, ensuring mute detection setup.");
-                 this.setupDeviceAudioStateDetection();
-                 this.muteDetectionSetupComplete = true;
-            }
             return true;
         }
 
@@ -122,11 +111,6 @@ class SoundManager {
             if (SoundManager.audioContext.state === 'running') {
                  console.log("SoundManager: Context started running immediately.");
                  this.playSilentSound();
-                 // Setup mute detection if not already done
-                 if (!this.muteDetectionSetupComplete) {
-                     this.setupDeviceAudioStateDetection();
-                     this.muteDetectionSetupComplete = true;
-                 }
             } else if (fromUserGesture && SoundManager.audioContext.state === 'suspended') {
                 // Attempt resume; setup will happen inside resumeAudioContext if successful
                 console.log("SoundManager: Context suspended after creation, attempting resume.");
@@ -134,9 +118,6 @@ class SoundManager {
                     if (resumed) this.playSilentSound();
                 });
             }
-
-            // REMOVED: Unconditional setup call moved to after state confirmation
-            // this.setupDeviceAudioStateDetection();
 
             return true;
         } catch (e) {
@@ -146,153 +127,6 @@ class SoundManager {
         }
     }
 
-    /**
-     * Set up detection for device-level audio muting (e.g., iPhone mute switch)
-     * This uses a combination of techniques to detect when audio is muted at the device level
-     */
-    setupDeviceAudioStateDetection() {
-        // Prevent multiple setups of the core logic/listeners if already done
-        if (this.muteDetectionSetupComplete) {
-             console.log("SoundManager: Mute detection core setup already complete.");
-             // Ensure nodes are started if context is running
-             this.startMuteDetection(); 
-             return;
-        }
-        console.log("SoundManager: Performing initial setup for device audio state detection...");
-
-        // Initial setup logic... (iOS audio element, visibility listener)
-        if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-            if (!this.iosAudioElement) {
-                 this.iosAudioElement = document.createElement('audio');
-                 this.iosAudioElement.setAttribute('src', 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
-                 this.iosAudioElement.volume = 0.01;
-                 document.addEventListener('visibilitychange', () => {
-                     if (document.visibilityState === 'visible') {
-                         this.checkIOSAudioState();
-                     }
-                 });
-                 this.checkIOSAudioState();
-                 console.log("SoundManager: iOS mute detection elements created.");
-            }
-        }
-        
-        // Mark core setup as complete
-        this.muteDetectionSetupComplete = true;
-        console.log("SoundManager: Mute detection core setup complete.");
-
-        // Start the nodes if context is running
-        this.startMuteDetection();
-    }
-
-    /**
-     * Creates (if needed) and starts the silent oscillator for mute detection.
-     */
-    startMuteDetection() {
-        // Only start if context is running
-        if (!SoundManager.audioContext || SoundManager.audioContext.state !== 'running') {
-            console.log(`SoundManager: Skipping startMuteDetection, context not running (State: ${SoundManager.audioContext?.state})`);
-            return;
-        }
-        // Only start if nodes don't already exist and aren't running
-        if (this.detectionOscillator) {
-             console.log("SoundManager: Mute detection oscillator already exists, skipping start.");
-             return;
-        }
-
-        console.log("SoundManager: Starting mute detection nodes...");
-        try {
-             const context = SoundManager.audioContext;
-             this.detectionOscillator = context.createOscillator();
-             this.detectionGainNode = context.createGain();
-
-             this.detectionOscillator.type = 'sine';
-             this.detectionOscillator.frequency.value = 440;
-             this.detectionGainNode.gain.value = 0.00001; // Extremely quiet
-
-             this.detectionOscillator.connect(this.detectionGainNode);
-             this.detectionGainNode.connect(context.destination);
-
-             // Add listener to the gain node (ensure handler exists)
-             if (this.audioStateChangeHandler) {
-                 this.detectionGainNode.addEventListener('statechange', this.audioStateChangeHandler);
-             }
-
-             this.detectionOscillator.start();
-             console.log("SoundManager: Mute detection nodes started.");
-        } catch (e) {
-             console.error("SoundManager: Error starting mute detection nodes:", e);
-             // Clean up if error occurs during start
-             this.stopMuteDetection();
-        }
-    }
-
-    /**
-     * Stops and disconnects the silent oscillator used for mute detection.
-     */
-    stopMuteDetection() {
-        console.log("SoundManager: Stopping mute detection nodes...");
-        if (this.detectionOscillator) {
-            try {
-                this.detectionOscillator.stop();
-                this.detectionOscillator.disconnect();
-            } catch (e) { console.warn("SoundManager: Error stopping detection oscillator:", e); }
-            this.detectionOscillator = null;
-        }
-
-        if (this.detectionGainNode) {
-            try {
-                // Remove listener before disconnecting
-                if (this.audioStateChangeHandler) {
-                     this.detectionGainNode.removeEventListener('statechange', this.audioStateChangeHandler);
-                }
-                this.detectionGainNode.disconnect();
-            } catch (e) { console.warn("SoundManager: Error disconnecting detection gain node:", e); }
-            this.detectionGainNode = null;
-        }
-         console.log("SoundManager: Mute detection nodes stopped.");
-    }
-    
-    /**
-     * Check if iOS device has audio muted
-     * This is a more efficient approach than periodic polling
-     */
-    checkIOSAudioState() {
-        if (!this.iosAudioElement) return;
-        
-        // Try to play the silent audio element
-        const playPromise = this.iosAudioElement.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                // If we can play, audio is not muted
-                if (SoundManager.isDeviceMuted) {
-                    SoundManager.isDeviceMuted = false;
-                    this.notifyAudioStateListeners(false);
-                }
-            }).catch(() => {
-                // If we can't play, audio is likely muted
-                if (!SoundManager.isDeviceMuted) {
-                    SoundManager.isDeviceMuted = true;
-                    this.notifyAudioStateListeners(true);
-                }
-            });
-        }
-    }
-    
-    /**
-     * Handle audio state changes from the gain node
-     * @param {Event} event - The state change event
-     */
-    handleAudioStateChange(event) {
-        // Check if the audio is muted at the device level
-        const isMuted = event.target.state === 'muted';
-        
-        if (isMuted !== SoundManager.isDeviceMuted) {
-            SoundManager.isDeviceMuted = isMuted;
-            this.notifyAudioStateListeners(isMuted);
-        }
-    }
-    
     /**
      * Handle audio context state changes
      * @param {Event} event - The state change event
@@ -315,9 +149,6 @@ class SoundManager {
 
         // If the context is suspended, it might be due to device muting
         if (context.state === 'suspended') {
-            // Check if this is likely due to device muting
-            this.checkIOSAudioState();
-            
             // We won't attempt automatic reinitialization here anymore
             // This is now handled by AudioManager which waits for user interaction
             if (document.visibilityState === 'visible') {
@@ -327,42 +158,21 @@ class SoundManager {
     }
     
     /**
-     * Register a listener for audio state changes
-     * @param {Function} listener - The callback function to call when audio state changes
-     * @returns {Function} A function to unregister the listener
+     * Register a listener for when the audio context becomes RUNNING
+     * @param {Function} listener - The callback function to call
      */
-    static addAudioStateListener(listener) {
-        SoundManager.audioStateListeners.add(listener);
-        
-        // Return a function to remove the listener
-        return () => {
-            SoundManager.audioStateListeners.delete(listener);
-        };
+    static addContextRunningListener(listener) {
+        SoundManager.contextRunningListeners.add(listener);
+        console.log("SoundManager: Added contextRunning listener.");
     }
-    
+
     /**
-     * Notify all registered listeners about audio state changes
-     * @param {boolean} isMuted - Whether audio is muted
+     * Unregister a listener for when the audio context becomes RUNNING
+     * @param {Function} listener - The callback function to remove
      */
-    notifyAudioStateListeners(isMuted) {
-        console.log("Device audio state changed:", isMuted ? "muted" : "unmuted");
-        
-        // Notify all registered listeners
-        for (const listener of SoundManager.audioStateListeners) {
-            try {
-                listener(isMuted);
-            } catch (e) {
-                console.error("Error in audio state listener:", e);
-            }
-        }
-    }
-    
-    /**
-     * Check if the device has audio muted at the system level
-     * @returns {boolean} Whether the device has audio muted
-     */
-    static isDeviceAudioMuted() {
-        return SoundManager.isDeviceMuted;
+    static removeContextRunningListener(listener) {
+        SoundManager.contextRunningListeners.delete(listener);
+        console.log("SoundManager: Removed contextRunning listener.");
     }
 
     /**
@@ -392,12 +202,6 @@ class SoundManager {
                     console.log("SoundManager: Resume finished. Context state:", context?.state);
 
                     if (isRunning) {
-                        // Ensure setup runs once after context is confirmed running
-                        if (!this.muteDetectionSetupComplete) {
-                            this.setupDeviceAudioStateDetection();
-                            // muteDetectionSetupComplete flag is set inside setup function now
-                        }
-
                         if (needsSpecialHandling && !SoundManager.hasPlayedAudio) {
                             this.playSilentSound();
 
@@ -493,11 +297,6 @@ class SoundManager {
                                     const success = context.state === 'running';
                                     console.log("SoundManager: Context resumed after iOS wakeup. State:", context?.state);
                                     if (success) {
-                                        // Ensure setup runs once after context is confirmed running
-                                        if (!this.muteDetectionSetupComplete) {
-                                            this.setupDeviceAudioStateDetection();
-                                            // muteDetectionSetupComplete flag is set inside setup function now
-                                        }
                                         // Play another silent sound through WebAudio for good measure
                                         this.playSilentSound();
                                         // Mark that audio has been successfully played
@@ -508,12 +307,7 @@ class SoundManager {
                             } else {
                                 const success = context && context.state === 'running';
                                 if (success) {
-                                     // If context somehow became running without resume, ensure setup runs
-                                     if (!this.muteDetectionSetupComplete) {
-                                         this.setupDeviceAudioStateDetection();
-                                         // muteDetectionSetupComplete flag is set inside setup function now
-                                     }
-                                     SoundManager.hasPlayedAudio = true;
+                                    SoundManager.hasPlayedAudio = true;
                                 }
                                 resolve(success);
                             }
@@ -552,9 +346,6 @@ class SoundManager {
                 }
             }
             
-            // Clean up detection resources by calling stopMuteDetection
-            this.stopMuteDetection(); 
-            
             if (this.silentNode) {
                 try {
                     this.silentNode.disconnect();
@@ -573,14 +364,12 @@ class SoundManager {
             }
 
             SoundManager.audioContext = null;
-            this.muteDetectionSetupComplete = false; // Reset flag as context is gone
             SoundManager.hasPlayedAudio = false; // Reset this flag too
             // MusicManager gain nodes are reset in AudioManager::handleGameStart
         } catch (e) {
             console.warn("Error closing audio context:", e);
             // Ensure context is nulled even if error occurs during cleanup
             SoundManager.audioContext = null;
-            this.muteDetectionSetupComplete = false;
             SoundManager.hasPlayedAudio = false;
         }
     }
@@ -659,9 +448,8 @@ class SoundManager {
         if (!this.isSoundEnabled() ||
             !SoundManager.hasUserInteraction ||
             !this.soundTemplates ||
-            !this.soundTemplates[soundType] ||
-            SoundManager.isDeviceAudioMuted()) {
-             console.log(`SoundManager: PlaySound skipped. Enabled: ${this.isSoundEnabled()}, Interaction: ${SoundManager.hasUserInteraction}, Template: ${!!this.soundTemplates[soundType]}, Muted: ${SoundManager.isDeviceAudioMuted()}`);
+            !this.soundTemplates[soundType]) {
+             console.log(`SoundManager: PlaySound skipped. Enabled: ${this.isSoundEnabled()}, Interaction: ${SoundManager.hasUserInteraction}, Template: ${!!this.soundTemplates[soundType]}`);
             return false;
         }
 
@@ -801,22 +589,6 @@ class SoundManager {
                     }
                 }
                 
-                // Clean up other audio resources
-                if (this.detectionOscillator) {
-                    try {
-                        this.detectionOscillator.stop();
-                        this.detectionOscillator.disconnect();
-                    } catch (e) { /* Ignore */ }
-                    this.detectionOscillator = null;
-                }
-                
-                if (this.detectionGainNode) {
-                    try {
-                        this.detectionGainNode.disconnect();
-                    } catch (e) { /* Ignore */ }
-                    this.detectionGainNode = null;
-                }
-                
                 // Close the context regardless of its state to avoid issues with forcible stops
                 try {
                     console.log(`SoundManager: Closing previous audio context (state: ${SoundManager.audioContext.state})`);
@@ -904,44 +676,13 @@ class SoundManager {
     }
 
     /**
-     * Register a listener for when the audio context becomes RUNNING
-     * @param {Function} listener - The callback function to call
-     */
-    static addContextRunningListener(listener) {
-        SoundManager.contextRunningListeners.add(listener);
-        console.log("SoundManager: Added contextRunning listener.");
-    }
-
-    /**
-     * Unregister a listener for when the audio context becomes RUNNING
-     * @param {Function} listener - The callback function to remove
-     */
-    static removeContextRunningListener(listener) {
-        SoundManager.contextRunningListeners.delete(listener);
-        console.log("SoundManager: Removed contextRunning listener.");
-    }
-
-    /**
-     * Resets the internal flag for device mute state.
-     * Should be called when resuming the app to clear potentially stale state.
-     */
-    static resetDeviceMuteFlag() {
-        if (SoundManager.isDeviceMuted) {
-             console.log("SoundManager: Resetting internal device mute flag from true to false.");
-             SoundManager.isDeviceMuted = false;
-             // We don't notify listeners here, let the actual detection logic do that if it finds mute again.
-        }
-    }
-
-    /**
      * Play a sound sequence from templates
      * @param {string} sequenceName - The name of the sequence in templates.sequences
      * @returns {boolean} Success status (indicates if playback was initiated)
      */
     playSequence(sequenceName) {
-        if (!SoundManager.hasUserInteraction || 
-            !this.isSoundEnabled() || 
-            SoundManager.isDeviceAudioMuted()) {
+        if (!SoundManager.hasUserInteraction ||
+            !this.isSoundEnabled()) {
             return false;
         }
 

@@ -1,10 +1,9 @@
 /**
  * Coordinates sound and music systems based on game state and browser events.
  * - Handles audio initialization upon first user interaction.
- * - Manages music playback lifecycle: starts on game start, pauses on pause/blur/mute, stops on game over.
+ * - Manages music playback lifecycle: starts on game start, pauses on pause/blur, stops on game over.
  * - Manages sound effect permissions based on game state and user settings.
  * - Ensures music resumes correctly after PWA app switching or device sleep.
- * - Listens for device mute changes and reacts accordingly.
  * - Provides methods for toggling sound/music preferences.
  * - Delegates actual sound/music playing to SoundManager and MusicManager.
  */
@@ -21,10 +20,7 @@ class AudioManager {
         this.musicWasPlayingBeforePause = false;
         this.musicWasPlayingBeforeHidden = false;
         this.needsSoundRestoration = false;
-        this.deviceAudioStateListener = null;
         this._pendingMusicStart = false; // Flag for deferred music start
-        this._handleContextRunningCallback = this._handleContextRunning.bind(this); // Standard running handler
-        this._handleContextRunningAfterVisibilityCallback = this._handleContextRunningAfterVisibility.bind(this); // Visibility-specific handler
 
         // Store audio states internally
         this._soundEnabled = localStorage.getItem('snakeSoundEnabled') !== 'false';
@@ -79,7 +75,6 @@ class AudioManager {
         if (!this.audioInitialized) {
             console.log("AudioManager: Marking audio as initialized (externally triggered).");
             this.audioInitialized = true;
-            this._setupDeviceAudioStateListener(); // Ensure listener is set up
         }
     }
 
@@ -102,14 +97,12 @@ class AudioManager {
             if (currentContext && currentContext.state === 'running') {
                 console.log("AudioManager: Sync unlock/resume SUCCEEDED via interaction. Context is running.");
                 this.audioInitialized = true; // Mark as initialized
-                SoundManager.resetDeviceMuteFlag(); // Reset potentially stale mute flag
-                this._setupDeviceAudioStateListener(); // Ensure listener is active
 
                 // Check if music needs resuming specifically due to visibility change
                 if (this.musicWasPlayingBeforeHidden) {
                     console.log("AudioManager: Attempting to resume music after successful interaction resume.");
                     // Only try if music is enabled AND device not detected as muted *now*
-                    if (this._musicEnabled && !SoundManager.isDeviceAudioMuted()) {
+                    if (this._musicEnabled) {
                          // Check game state AFTER context is confirmed ready
                          const currentGameState = this.game.gameStateManager.getGameState();
                          if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
@@ -118,7 +111,7 @@ class AudioManager {
                             console.log("AudioManager: Conditions not met to resume music (wrong game state).");
                          }
                     } else {
-                        console.log(`AudioManager: Conditions not met to resume music (enabled: ${this._musicEnabled}, muted: ${SoundManager.isDeviceAudioMuted()}).`);
+                        console.log(`AudioManager: Conditions not met to resume music (enabled: ${this._musicEnabled}).`);
                     }
                     // Reset the flag after attempting resumption
                     this.musicWasPlayingBeforeHidden = false;
@@ -156,8 +149,7 @@ class AudioManager {
     canPlaySound() {
         const gameState = this.game.gameStateManager.getGameState();
         return this.audioInitialized &&
-               this._soundEnabled &&
-               !SoundManager.isDeviceAudioMuted();
+               this._soundEnabled;
                // Game state (started, not paused, not game over) is implicitly handled by caller
                // or checked directly where needed (e.g., food eating sound)
     }
@@ -177,7 +169,7 @@ class AudioManager {
             const existingContext = SoundManager.getAudioContext();
             if (existingContext) {
                 console.log("AudioManager: Closing existing audio context before first start.");
-                this.soundManager.closeAudioContext(); // This now calls stopMuteDetection internally
+                this.soundManager.closeAudioContext(); 
                 this.audioInitialized = false; // Mark as uninitialized after closing
                 MusicManager.resetPlaybackState(); // Reset music state as context is gone
                 MusicManager.masterGain = null;
@@ -189,38 +181,33 @@ class AudioManager {
         // --- Attempt Synchronous Unlock/Resume & Reset Mute State ---
         console.log("AudioManager: Attempting synchronous audio unlock/init...");
         const contextReadyAttempt = SoundManager.tryUnlockAudioSync();
-        SoundManager.resetDeviceMuteFlag(); // Reset mute flag *after* sync attempt, before checks
 
         if (contextReadyAttempt) {
-            // Assume audio is potentially initialized if sync attempt was made
-            // Actual state check below determines readiness for playback
-            this.audioInitialized = true; 
-            this._setupDeviceAudioStateListener(); // Ensure listener for device mute is active
+            // Assume audio is initialized if sync attempt was made
+            this.audioInitialized = true;
 
             // Check context state AFTER the sync attempt
             const context = SoundManager.getAudioContext();
             if (context && context.state === 'running') {
                 console.log("AudioManager: Context is running after sync unlock. Starting music & mute detection.");
-                // Start mute detection oscillator now that context is running
-                this.soundManager.startMuteDetection(); 
                 // Attempt music start (checks enabled/mute state internally again)
                 this._tryStartMusic(false);
                 this._pendingMusicStart = false; // Ensure flag is clear
-                SoundManager.removeContextRunningListener(this._handleContextRunningCallback); // Remove standard listener if added previously
-                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibilityCallback); // Also remove visibility listener if pending
+                SoundManager.removeContextRunningListener(this._handleContextRunning); // Remove standard listener if added previously
+                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility); // Also remove visibility listener if pending
             } else if (context && (context.state === 'suspended' || context.state === 'interrupted')) {
-                console.log(`AudioManager: Context state is ${context.state} after sync unlock. Deferring music & mute detection start.`);
+                console.log(`AudioManager: Context state is ${context.state} after sync unlock. Deferring music start.`);
                 this._pendingMusicStart = true;
                  // Use the standard listener for deferred start
-                SoundManager.removeContextRunningListener(this._handleContextRunningCallback);
-                SoundManager.addContextRunningListener(this._handleContextRunningCallback); 
+                SoundManager.removeContextRunningListener(this._handleContextRunning);
+                SoundManager.addContextRunningListener(this._handleContextRunning);    // Use arrow fn directly
             } else {
-                console.warn(`AudioManager: Context in unexpected state (${context?.state}) after sync unlock. Music/Mute Detection not started.`);
+                console.warn(`AudioManager: Context in unexpected state (${context?.state}) after sync unlock. Music not started.`);
                 this._pendingMusicStart = false; // Clear flag
                 this.audioInitialized = false; // Mark as not initialized if context state is bad
             }
         } else {
-            console.warn("AudioManager: Failed to initialize/unlock audio context synchronously. Music/Mute Detection not started.");
+            console.warn("AudioManager: Failed to initialize/unlock audio context synchronously. Music not started.");
             this.audioInitialized = false;
             this._pendingMusicStart = false; // Clear flag
         }
@@ -239,8 +226,6 @@ class AudioManager {
         } else {
             this.musicWasPlayingBeforePause = false;
         }
-        // Stop mute detection when paused to prevent Safari showing sound icon
-        this.soundManager.stopMuteDetection();
     }
 
     /**
@@ -249,13 +234,9 @@ class AudioManager {
     handleUnpause() {
         const gameState = this.game.gameStateManager.getGameState();
         
-        // Start mute detection again when unpausing (if context is running)
-        this.soundManager.startMuteDetection();
-
         // Resume music only if game is running, music is enabled, 
-        // device isn't muted, and music was playing before the pause.
-        if (gameState.isGameStarted && !gameState.isGameOver && this._musicEnabled && 
-            !SoundManager.isDeviceAudioMuted() && this.musicWasPlayingBeforePause) {
+        // and music was playing before the pause.
+        if (gameState.isGameStarted && !gameState.isGameOver && this._musicEnabled && this.musicWasPlayingBeforePause) {
             console.log("AudioManager: Resuming music after game unpause.");
             // Use _tryStartMusic which handles both starting and resuming
              this._tryStartMusic(false); 
@@ -274,9 +255,6 @@ class AudioManager {
             MusicManager.stopMusic(false); // Use partial cleanup, context remains
         }
         
-        // Stop mute detection on game over
-        this.soundManager.stopMuteDetection();
-
         // Reset flags including pending start
         this.musicWasPlayingBeforePause = false;
         this.musicWasPlayingBeforeHidden = false;
@@ -284,7 +262,7 @@ class AudioManager {
         if (this._pendingMusicStart) {
             console.log("AudioManager: Cancelling pending music start due to game over.");
             this._pendingMusicStart = false;
-            SoundManager.removeContextRunningListener(this._handleContextRunningCallback);
+            SoundManager.removeContextRunningListener(this._handleContextRunning); // Use arrow fn directly
         }
 
         // Game over sounds (like 'die' or fanfare) will be triggered by Game.js 
@@ -312,7 +290,7 @@ class AudioManager {
         if (this._pendingMusicStart) {
             console.log("AudioManager: Cancelling pending music start due to game reset.");
             this._pendingMusicStart = false;
-            SoundManager.removeContextRunningListener(this._handleContextRunningCallback);
+            SoundManager.removeContextRunningListener(this._handleContextRunning); // Use arrow fn directly
         }
 
         // Always select a new random melody on game reset (ensures variety)
@@ -335,7 +313,7 @@ class AudioManager {
 
         // Play feedback sound if enabling and possible
         // Use the updated internal state directly
-        if (this._soundEnabled && this.audioInitialized && !SoundManager.isDeviceAudioMuted()) {
+        if (this._soundEnabled && this.audioInitialized) {
              this.soundManager.playSound('click', 0.5);
         }
 
@@ -426,8 +404,6 @@ class AudioManager {
             if (success) {
                 console.log("AudioManager: Audio context is active (via retry).");
                 this.audioInitialized = true;
-                // Ensure listener is set up if the initial attempt failed
-                this._setupDeviceAudioStateListener(); 
                 return true;
             } else {
                 console.error("AudioManager: Failed to activate audio context (on retry).");
@@ -439,97 +415,6 @@ class AudioManager {
             this.audioInitialized = false;
             return false;
         }
-    }
-
-    /**
-     * Sets up the listener for device mute changes (e.g., iPhone mute switch).
-     */
-    _setupDeviceAudioStateListener() {
-        if (this.deviceAudioStateListener) return; // Already set up
-
-        this.deviceAudioStateListener = SoundManager.addAudioStateListener((isMuted) => {
-            console.log(`AudioManager: Device audio state changed: ${isMuted ? 'muted' : 'unmuted'}`);
-            // const gameState = this.game.gameStateManager.getGameState(); // No longer needed here
-
-            if (isMuted) {
-                // If device is muted, pause music if it's playing
-                if (MusicManager.isPlaying) {
-                    this.musicWasPlayingBeforeHidden = true; // Treat mute like becoming hidden
-                    MusicManager.pauseMusic();
-                    console.log("AudioManager: Music paused due to device mute.");
-                }
-            } else {
-                // Check internal state
-                const currentGameState = this.game.gameStateManager.getGameState(); // Still need game state here
-                if (this.musicWasPlayingBeforeHidden && this._musicEnabled &&
-                    currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
-                    console.log("AudioManager: Resuming music after device unmute.");
-                    this._tryStartMusic(false);
-                }
-            }
-            // Update UI toggle states regardless
-            this.game.uiManager.updateSoundToggleUI();
-            this.game.uiManager.updateMusicToggleUI(); // Also update music toggle
-        });
-        console.log("AudioManager: Device audio state listener set up.");
-    }
-
-    /**
-     * Attempts to start or resume music playback if conditions are met.
-     * Assumes the caller has ensured the audio context is potentially ready (e.g., via user interaction).
-     * @param {boolean} forceNewMelody - Select a new melody before playing.
-     */
-    _tryStartMusic(forceNewMelody) {
-        const gameState = this.game.gameStateManager.getGameState();
-        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) {
-             console.log("AudioManager: Conditions not met to start music (wrong game state). Music stopped.");
-             if (MusicManager.isPlaying || MusicManager.isPaused) {
-                 MusicManager.stopMusic();
-             }
-             return;
-        }
-
-        // Get the current context directly
-        const context = SoundManager.getAudioContext();
-
-        // Check if context exists and is running
-        if (!context || context.state !== 'running') {
-            console.warn(`AudioManager: Cannot start music, audio context not ready. State: ${context?.state}`);
-            // We might want to queue a start attempt for the next interaction if context is suspended
-            return;
-        }
-
-        // Check music enabled and device mute state
-        if (!this._musicEnabled || SoundManager.isDeviceAudioMuted()) {
-            console.log("AudioManager: Conditions not met to start music (disabled / muted). Music stopped.");
-             if (MusicManager.isPlaying || MusicManager.isPaused) {
-                MusicManager.stopMusic(); // Stop if it somehow started
-             }
-            return;
-        }
-
-        // If we are here, context is OK, music is enabled, device not muted, game state OK
-        console.log("AudioManager: All conditions met, proceeding with music playback.");
-
-        // Ensure MusicManager is using the correct context (might have been recreated)
-        MusicManager.audioContext = context;
-
-        // Select new melody if needed
-        if (forceNewMelody || !MusicManager.currentMelodyId) {
-            console.log("AudioManager: Selecting new melody before starting.");
-            MusicManager.selectRandomMelody();
-            this.game.uiManager.updateMelodyDisplay();
-        }
-
-        // Start/Resume the music
-        if (MusicManager.isPaused) {
-            console.log("AudioManager: Resuming paused music.");
-            MusicManager.resumeMusic(); // resumeMusic internally checks context state again
-        } else if (!MusicManager.isPlaying) {
-             console.log("AudioManager: Starting music playback.");
-             MusicManager.startMusic(); // startMusic internally checks context state again
-        }
-        this.game.uiManager.updateMelodyDisplay(); // Ensure display is up-to-date
     }
 
     /**
@@ -559,8 +444,8 @@ class AudioManager {
                 this.audioInitialized = false; // Mark as not initialized until confirmed
                 
                 // Remove previous listener (if any) and add the visibility-specific one-time listener
-                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibilityCallback); 
-                SoundManager.addContextRunningListener(this._handleContextRunningAfterVisibilityCallback);
+                SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility); // Use arrow fn directly
+                SoundManager.addContextRunningListener(this._handleContextRunningAfterVisibility);    // Use arrow fn directly
                 console.log("AudioManager: Added one-time contextRunning listener for visibility change.");
                 // We DON'T check state here. _handleContextRunningAfterVisibility will do the work.
 
@@ -571,8 +456,6 @@ class AudioManager {
                 // If context is running, ensure audio is marked as initialized
                 if (initialContext && initialContext.state === 'running') {
                     this.audioInitialized = true;
-                    // Ensure mute detection is running if needed
-                    this.soundManager.startMuteDetection();
                 }
             }
 
@@ -596,8 +479,6 @@ class AudioManager {
                 this.musicWasPlayingBeforeHidden = false;
                  console.log(`AudioManager: Not setting musicWasPlayingBeforeHidden. shouldBePlaying=${shouldBePlaying}, isPlaying=${MusicManager.isPlaying}, isPaused=${MusicManager.isPaused}`);
             }
-             // Stop mute detection when hidden (optional, can save battery)
-             // this.soundManager.stopMuteDetection(); // Consider if needed
         }
     }
 
@@ -606,22 +487,21 @@ class AudioManager {
      * Used for deferred music start during initial game load.
      * @private
      */
-    _handleContextRunning() {
+    _handleContextRunning = () => {
         console.log("AudioManager: Received context running notification (standard).");
-        // Start mute detection now that context is confirmed running
-        this.soundManager.startMuteDetection(); 
 
         if (this._pendingMusicStart) {
             console.log("AudioManager: Context is now running, starting deferred music (standard).");
             this._pendingMusicStart = false;
-            SoundManager.removeContextRunningListener(this._handleContextRunningCallback); // Clean up standard listener
+            SoundManager.removeContextRunningListener(this._handleContextRunning); // Clean up standard listener
             // Now attempt to start music
             this._tryStartMusic(false);
         } else {
              console.log("AudioManager: Context running notification received (standard), but no music start was pending.");
              // Remove listener just in case it was somehow added without flag being set
-              SoundManager.removeContextRunningListener(this._handleContextRunningCallback);
+              SoundManager.removeContextRunningListener(this._handleContextRunning); // Use arrow fn directly
         }
+        this.needsSoundRestoration = false; // Clear restoration flag
     }
 
     /**
@@ -629,10 +509,10 @@ class AudioManager {
      * after the page becomes visible.
      * @private
      */
-    _handleContextRunningAfterVisibility() {
+    _handleContextRunningAfterVisibility = () => {
         console.log("AudioManager: Received context running notification (AFTER VISIBILITY CHANGE).");
         // Remove this specific listener immediately as it's one-time
-        SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibilityCallback);
+        SoundManager.removeContextRunningListener(this._handleContextRunningAfterVisibility); // Use arrow fn directly
 
         const context = SoundManager.getAudioContext();
         if (!context || context.state !== 'running') {
@@ -646,18 +526,11 @@ class AudioManager {
         this.audioInitialized = true; // Mark as initialized
         this.needsSoundRestoration = false; // Clear restoration flag
         
-        // Reset the device mute flag (important for iOS resume)
-        SoundManager.resetDeviceMuteFlag();
-        
-        // Ensure device listener and mute detection are active
-        this._setupDeviceAudioStateListener();
-        this.soundManager.startMuteDetection();
-
         // Check if music needs resuming
         if (this.musicWasPlayingBeforeHidden) {
             console.log("AudioManager: Attempting to resume music via visibility listener.");
             // Check enabled/muted state *now*
-            if (this._musicEnabled && !SoundManager.isDeviceAudioMuted()) {
+            if (this._musicEnabled) {
                  const currentGameState = this.game.gameStateManager.getGameState();
                  if (currentGameState.isGameStarted && !currentGameState.isPaused && !currentGameState.isGameOver) {
                     this._tryStartMusic(false);
@@ -665,12 +538,71 @@ class AudioManager {
                     console.log("AudioManager: Conditions not met to resume music post-visibility (wrong game state).");
                  }
             } else {
-                console.log(`AudioManager: Conditions not met to resume music post-visibility (enabled: ${this._musicEnabled}, muted: ${SoundManager.isDeviceAudioMuted()}).`);
+                console.log(`AudioManager: Conditions not met to resume music post-visibility (enabled: ${this._musicEnabled}).`);
             }
         }
 
         // Reset the hidden flag regardless of whether music was resumed
         this.musicWasPlayingBeforeHidden = false;
+    }
+
+    /**
+     * Attempts to start or resume music playback if conditions are met.
+     * Assumes the caller has ensured the audio context is potentially ready (e.g., via user interaction).
+     * @param {boolean} forceNewMelody - Select a new melody before playing.
+     * @private // Make this an arrow function property
+     */
+    _tryStartMusic = (forceNewMelody) => {
+        const gameState = this.game.gameStateManager.getGameState();
+        if (!gameState.isGameStarted || gameState.isPaused || gameState.isGameOver) {
+            console.log("AudioManager: Conditions not met to start music (wrong game state). Music stopped.");
+            if (MusicManager.isPlaying || MusicManager.isPaused) {
+                MusicManager.stopMusic();
+            }
+            return;
+        }
+
+        // Get the current context directly
+        const context = SoundManager.getAudioContext();
+
+        // Check if context exists and is running
+        if (!context || context.state !== 'running') {
+            console.warn(`AudioManager: Cannot start music, audio context not ready. State: ${context?.state}`);
+            // We might want to queue a start attempt for the next interaction if context is suspended
+            return;
+        }
+
+        // Check music enabled state
+        if (!this._musicEnabled) {
+            console.log("AudioManager: Conditions not met to start music (disabled). Music stopped.");
+            if (MusicManager.isPlaying || MusicManager.isPaused) {
+                MusicManager.stopMusic(); // Stop if it somehow started
+            }
+            return;
+        }
+
+        // If we are here, context is OK, music is enabled, game state OK
+        console.log("AudioManager: All conditions met, proceeding with music playback.");
+
+        // Ensure MusicManager is using the correct context (might have been recreated)
+        MusicManager.audioContext = context;
+
+        // Select new melody if needed
+        if (forceNewMelody || !MusicManager.currentMelodyId) {
+            console.log("AudioManager: Selecting new melody before starting.");
+            MusicManager.selectRandomMelody();
+            this.game.uiManager.updateMelodyDisplay();
+        }
+
+        // Start/Resume the music
+        if (MusicManager.isPaused) {
+            console.log("AudioManager: Resuming paused music.");
+            MusicManager.resumeMusic(); // resumeMusic internally checks context state again
+        } else if (!MusicManager.isPlaying) {
+            console.log("AudioManager: Starting music playback.");
+            MusicManager.startMusic(); // startMusic internally checks context state again
+        }
+        this.game.uiManager.updateMelodyDisplay(); // Ensure display is up-to-date
     }
 }
 
