@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+**Glob:** `css/**/*.css`
+
+**Description:**
+- Ensure layouts are responsive without using media queries.
+- Use relative units (like %, em, rem, vw, vh) instead of fixed pixel (`px`) sizing.
+- Leverage modern CSS features where appropriate (e.g., CSS variables, calc(), newer selectors).
+- Maintain a consistent color palette throughout the application. Use predefined variables if available.
+- Ensure consistent grid layouts and gap spacing. Define standard gap values if possible.
+- Prefer Flexbox for layout design.

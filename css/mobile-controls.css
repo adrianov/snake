@@ -2,7 +2,7 @@
 .mobile-arrow-controls {
     display: none; /* Default to hidden */
     width: 100%;
-    margin: 0 auto;
+    margin: 0; /* Remove margin */
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -32,7 +32,7 @@
 
 /* Inside the controls middle section */
 .game-layout.game-active .controls-middle-section .mobile-arrow-controls {
-    margin-bottom: 0; /* Remove margin since we use gap in the parent */
+    margin: 0; /* Remove margin */
 }
 
 /* Arrow buttons container should shrink as needed */
@@ -46,6 +46,7 @@
     pointer-events: auto; /* Explicitly enable pointer events */
     position: relative;
     z-index: 2; /* Match parent z-index */
+    margin: 0; /* Remove margin */
 }
 
 .arrow-button-row {

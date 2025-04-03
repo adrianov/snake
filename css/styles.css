@@ -23,8 +23,7 @@
     border-radius: var(--radius-sm);
     text-align: center;
     padding: 3px 12px;
-    margin: 0 auto;
-    margin-top: 5px;
+    margin: 0; /* Remove all margins */
     display: inline-block;
     min-height: 1.4em;
     box-shadow: none;

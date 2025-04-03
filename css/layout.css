@@ -64,7 +64,7 @@
     align-items: center; /* Center items horizontally */
     width: min(95vw, 78vh); /* Increased vw constraint slightly */
     /* height: 100%; /* Removed - let content define height */
-    gap: 1.5vh; /* Add uniform gap between items */
+    gap: 0.75vh; /* Reduced from 1.5vh for more consistent spacing */
     box-sizing: border-box;
 }
 
@@ -87,7 +87,7 @@
     align-items: center;
     width: 100%; /* Fill the new column parent */
     /* max-width: min(90vw, 80vh); /* Constraint moved to parent */
-    gap: 8px;
+    gap: 0.75vh; /* Match parent gap for consistency */
     margin: 0;
     box-sizing: border-box;
 }
@@ -107,12 +107,14 @@
     flex: 0 0 auto;
     align-self: center; /* Center horizontally */
     text-align: center; /* Center text */
+    margin: 0; /* Remove any margin */
 }
 
 .game-controls .mobile-arrow-controls {
     order: 1;
     width: 100%;
     flex: 0 0 auto;
+    margin: 0; /* Remove any margin */
 }
 
 .game-controls .desktop-only-tip,
@@ -120,6 +122,7 @@
     order: 2;
     width: 100%;
     flex: 0 0 auto;
+    margin: 0; /* Remove any margin */
 }
 
 /* --- Game Active State Specific Styles --- */
