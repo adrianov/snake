@@ -16,29 +16,60 @@
 
 /* Tip Area Styles */
 .tip-area {
-    /* Larger on mobile, smaller on desktop */
-    font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+    /* Base styles */
     color: var(--color-text);
     background: rgba(46, 204, 113, 0.15);
     border: 1px solid rgba(46, 204, 113, 0.25);
     border-radius: var(--radius-sm);
     text-align: center;
     padding: 4px 14px;
-    margin: 0; /* Remove all margins */
-    display: inline-block;
+    margin: 0;
+    display: block; /* Changed from inline-block */
     min-height: 1.5em;
+    max-width: 92vw; /* Set maximum width */
+    width: fit-content; /* Use fit-content for better sizing */
+    margin: 0 auto; /* Center the element */
     box-shadow: none;
     transition: all 0.2s ease-in-out;
-    pointer-events: none; /* Allow clicks to pass through */
+    pointer-events: none;
     position: relative;
-    z-index: 1; /* Lower than arrow controls */
-    white-space: nowrap; /* Keep text in one line */
+    z-index: 1;
+    
+    /* Prevent text wrapping */
+    white-space: nowrap;
+    
+    /* Auto-sizing font properties */
+    font-size: clamp(0.4rem, 2vw, 0.95rem); /* More aggressive minimum */
+    
+    /* Advanced text scaling for very long messages */
+    transform-origin: center center;
+    
+    /* Use CSS containment for better performance */
+    contain: content;
+    box-sizing: border-box;
+    overflow: visible;
 }
 
-/* Increase size only on mobile devices */
+/* Use CSS hacks to help with text fitting */
+@supports (font-size-adjust: from-font) {
+    .tip-area {
+        font-size-adjust: from-font;
+    }
+}
+
+/* Media query for different screen sizes */
 @media (max-width: 768px) {
     .tip-area {
-        font-size: clamp(0.9rem, 3.0vw, 1.1rem);
+        font-size: clamp(0.6rem, 2.8vw, 1.1rem);
         padding: 5px 15px;
+        max-width: 90vw; /* Slightly narrower on mobile */
+    }
+}
+
+/* Even smaller text for very small screens */
+@media (max-width: 480px) {
+    .tip-area {
+        font-size: clamp(0.35rem, 2.5vw, 0.9rem);
+        padding: 4px 10px;
     }
 }
