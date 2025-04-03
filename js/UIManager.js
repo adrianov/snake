@@ -21,22 +21,19 @@ class UIManager {
         this.resetButton = document.getElementById('resetHighScore');
         this.melodyElement = document.getElementById('currentMelody');
         this.musicInfoElement = document.querySelector('.music-info');
+        this.tipAreaElement = document.getElementById('tipArea');
+        this.initialTipText = this.tipAreaElement ? this.tipAreaElement.textContent : "← → ↑ ↓ / Swipe. Space / 2-finger tap Pause."; // Store initial text
 
         // Donation panel elements
         this.donateButton = document.getElementById('donateButton');
         this.donationPanel = document.getElementById('donationPanel');
         this.closeDonationButton = document.getElementById('closeDonationPanel');
 
-        // Element for temporary messages
-        this.tempMessageElement = document.createElement('div');
-        this.tempMessageElement.className = 'temp-message';
-        document.body.appendChild(this.tempMessageElement);
-
-        // Message timeout
-        this.messageTimeout = null;
-
         // Initialize the UI controls
         this.initializeControls();
+
+        // Ensure initial tip is set (reading might happen after constructor in some cases)
+        this.updateTipArea(this.initialTipText);
     }
 
     initializeControls() {
@@ -335,7 +332,7 @@ class UIManager {
             this.updateHighScore(0);
 
             // Play sound if sound is enabled
-            if (this.game.soundManager) {
+            if (this.game.soundManager && this.game.audioManager.isSoundEnabled()) {
                 this.game.soundManager.playSound('crash');
             }
         }
@@ -392,6 +389,27 @@ class UIManager {
             this.tempMessageElement.classList.remove('visible');
             this.messageTimeout = null;
         }, duration);
+    }
+
+    /**
+     * Updates the text content of the tip area.
+     * If no message is provided, it resets to the initial tip text.
+     * @param {string} [message] The message to display. Defaults to the initial tip text.
+     */
+    updateTipArea(message) {
+        if (this.tipAreaElement) {
+            // Use the provided message or fall back to the stored initial text
+            const newText = message || this.initialTipText;
+            this.tipAreaElement.textContent = newText;
+            
+            // Only add flash animation when displaying a non-default tip
+            if (message && message !== this.initialTipText) {
+                this.tipAreaElement.classList.remove('tip-flash');
+                // Force reflow to restart animation
+                void this.tipAreaElement.offsetWidth;
+                this.tipAreaElement.classList.add('tip-flash');
+            }
+        }
     }
 }
 

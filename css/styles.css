@@ -8,3 +8,25 @@
 @import 'panels.css';
 @import 'animations.css';
 @import 'responsive.css';
+
+/* Global utility classes */
+.hidden {
+    display: none !important;
+}
+
+/* Tip Area Styles */
+.tip-area {
+    font-size: clamp(0.65rem, 2.0vw, 0.8rem);
+    color: var(--color-text);
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid rgba(46, 204, 113, 0.25);
+    border-radius: var(--radius-sm);
+    text-align: center;
+    padding: 3px 6px;
+    margin: 0;
+    margin-top: 5px;
+    max-width: 100%;
+    min-height: 1.4em;
+    box-shadow: none;
+    transition: all 0.2s ease-in-out;
+}

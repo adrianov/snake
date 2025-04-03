@@ -133,13 +133,6 @@
 
                     <!-- Game controls and info (Arrows, Tips) -->
                     <div class="game-controls">
-                        <!-- Control tips for desktop -->
-                        <div class="desktop-only-tip">
-                            <span class="tip-item">← → ↑ ↓ to move</span>
-                            <span class="tip-item">Opposite direction to slow down</span>
-                            <span class="tip-item">Space to pause</span>
-                        </div>
-
                         <!-- Mobile Arrow Controls - Only visible on touch devices -->
                         <div id="mobileArrowControls" class="mobile-arrow-controls">
                             <div class="arrow-controls-container">
@@ -171,11 +164,10 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Mobile-only tip -->
-                        <div class="mobile-only-tip">
-                            <span class="tip-item">Opposite direction to slow down</span>
-                            <span class="tip-item">Swipe gestures also available</span>
+                        
+                        <!-- Unified Tip Area - Moved below the arrow controls -->
+                        <div id="tipArea" class="tip-area">
+                            <span class="tip-text">← → ↑ ↓ / Swipe. Space / 2-finger tap Pause.</span>
                         </div>
                     </div>
 

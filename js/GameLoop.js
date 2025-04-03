@@ -20,6 +20,10 @@ class GameLoop {
         this.speedMultiplier = window.GAME_CONSTANTS.SNAKE.SPEED_MULTIPLIER;
         this.slowMultiplier = window.GAME_CONSTANTS.SNAKE.SLOW_MULTIPLIER;
         this.frameInterval = this.baseSpeed;
+        this.speedTipShown = false;
+        this.SPEED_TIP_THRESHOLD = 3.0; // Show tip when speed is 3x base speed
+        this.NORMAL_SPEED_THRESHOLD = 1.5; // Speed returned close to normal
+        this.speedNormalNotified = true; // Start as true to avoid triggering at game start
     }
 
     startGameLoop() {
@@ -75,6 +79,9 @@ class GameLoop {
             'right': 'left'
         }[currentDirection];
 
+        // Store previous speed for comparison
+        const oldSpeed = this.speed;
+
         if (isCurrentDirection) {
             this.speed *= speedMult;
         } else if (isOppositeDirection) {
@@ -85,6 +92,12 @@ class GameLoop {
         this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
         this.speed = Math.min(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MAX_SPEED_FACTOR);
         this.frameInterval = this.speed;
+        
+        // Check if we should show the slowdown tip
+        this.checkSpeedForTip();
+
+        // Check if we should notify about returning to normal speed
+        this.checkReturnToNormalSpeed(oldSpeed);
     }
 
     updateGameSpeed(keyDirection, currentDirection) {
@@ -106,15 +119,13 @@ class GameLoop {
         );
     }
 
-    resetSpeed() {
-        this.speed = this.baseSpeed;
-        this.frameInterval = this.baseSpeed;
-    }
-
     adjustSpeedAfterFoodEaten() {
         this.speed *= window.GAME_CONSTANTS.SNAKE.SPEED_INCREASE_AFTER_FOOD;
         this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
         this.frameInterval = this.speed;
+        
+        // Check if we should show the slowdown tip
+        this.checkSpeedForTip();
     }
 
     adjustSpeedAfterLuckEffect() {
@@ -141,6 +152,58 @@ class GameLoop {
         // Ensure speed doesn't get too fast
         this.speed = Math.max(this.speed, this.baseSpeed * window.GAME_CONSTANTS.SNAKE.MIN_SPEED_FACTOR);
         this.frameInterval = this.speed;
+    }
+
+    // Check if speed crosses the threshold for showing the slowdown tip
+    checkSpeedForTip() {
+        // Calculate speed ratio (lower speed value = faster snake movement)
+        const speedRatio = this.baseSpeed / this.speed;
+        
+        // Check if we've crossed the threshold and haven't shown the tip yet
+        if (speedRatio >= this.SPEED_TIP_THRESHOLD && !this.speedTipShown) {
+            // Set flag so we only trigger this once per game session
+            this.speedTipShown = true;
+            
+            // Trigger callback if provided (will be set by Game.js)
+            if (typeof this.onSpeedThresholdReached === 'function') {
+                this.onSpeedThresholdReached();
+            }
+
+            // Reset the normal speed notified flag so we can show the calm message later
+            this.speedNormalNotified = false;
+        }
+    }
+
+    // Check if speed has returned to near normal after being fast
+    checkReturnToNormalSpeed(oldSpeed) {
+        // Only check if we previously showed the fast tip
+        if (this.speedTipShown && !this.speedNormalNotified) {
+            // Calculate speed ratio (lower speed value = faster snake movement)
+            const speedRatio = this.baseSpeed / this.speed;
+            
+            // If speed is now close to normal and previous speed was faster
+            if (speedRatio <= this.NORMAL_SPEED_THRESHOLD && this.baseSpeed / oldSpeed > speedRatio) {
+                this.speedNormalNotified = true;
+                
+                // Trigger callback if provided
+                if (typeof this.onReturnToNormalSpeed === 'function') {
+                    this.onReturnToNormalSpeed();
+                }
+            }
+        }
+    }
+
+    // Reset speed tip shown flag
+    resetSpeedTip() {
+        this.speedTipShown = false;
+        this.speedNormalNotified = true; // Reset this flag too
+    }
+
+    resetSpeed() {
+        this.speed = this.baseSpeed;
+        this.frameInterval = this.baseSpeed;
+        this.speedTipShown = false;
+        this.speedNormalNotified = true; // Reset this flag too
     }
 }
 

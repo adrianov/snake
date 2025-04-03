@@ -20,15 +20,50 @@ class TipsManager {
     // Get the list of game tips
     static getTips() {
         return [
-            "Snakes love fruit! Each one gobbled makes them happier and faster.",
-            "Need to slow down? Press the opposite direction arrow to hit the brakes.",
-            "As your snake grows, it sheds its cheerful attitude - and its skin gets darker.",
-            "The moon's phase reflects the real astronomical day. Accurate astronomy in a snake game!",
-            "Scientists confirm: No one has ever seen the dark side of this moon either!",
-            "Your snake is quite clever - it can avoid collisions 8 out of 10 times on its own.",
-            "Different fruits have different scores: Apple (10), Banana (15), Orange (20), Strawberry (25).",
-            "Press 'L' to toggle luck mode, 'V' for vibration, 'S' for sound, and 'M' for music.",
-            "Tired of the current music? Press 'N' during gameplay to switch to a different melody!"
+            // Game mechanics tips
+            "Snakes love fruit. Each one gobbled makes them happier and a bit faster.",
+            "Need to slow down? Press the opposite direction arrow to gently brake.",
+            "As your snake grows, its mood darkens - and so does its skin color.",
+            "The moon's phase mirrors the real astronomical day. Yes, we added astronomy to a snake game.",
+            "Scientific fact: No one has ever seen the dark side of this moon either.",
+            "Your snake is quite clever. It can avoid collisions 8 out of 10 times on its own.",
+            "Different fruits offer various points: Apple (10), Banana (15), Orange (20), Strawberry (25).",
+            "Keyboard shortcuts: 'L' for luck mode, 'V' for vibration, 'S' for sound, 'M' for music.",
+            "Not vibing with the current tune? Press 'N' during gameplay to switch melodies.",
+            "Fun fact: Your snake carries a tiny lucky charm. It might save you from a collision.",
+            "Did you know? Your snake has an 80% chance to slither away from danger.",
+            "No need for four-leaf clovers. Your snake has its own brand of serpentine luck.",
+            
+            // Interesting snake facts
+            "The longest snake ever recorded was a reticulated python measuring 33 feet long.",
+            "Snakes don't have eyelids. They sleep with their eyes open.",
+            "The king cobra can grow up to 18 feet long, making it the longest venomous snake.",
+            "Snakes smell with their tongues by collecting scent particles from the air.",
+            "Some snakes can go months between meals. Talk about intermittent fasting.",
+            
+            // Educational facts
+            "The human brain processes images 60,000 times faster than text.",
+            "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old.",
+            "There are more possible iterations of a game of chess than there are atoms in the known universe.",
+            "The first computer programmer was Ada Lovelace, who wrote algorithms for Charles Babbage's Analytical Engine in the 1840s.",
+            "The world's oldest known living tree is over 5,000 years old and grows in California.",
+            
+            // Quotes from great thinkers
+            "Life is like riding a bicycle. To keep your balance, you must keep moving. — Albert Einstein",
+            "Imagination is more important than knowledge. — Albert Einstein",
+            "The unexamined life is not worth living. — Socrates",
+            "The only true wisdom is in knowing you know nothing. — Socrates",
+            "It does not matter how slowly you go as long as you do not stop. — Confucius",
+            "Our greatest glory is not in never falling, but in rising every time we fall. — Confucius",
+            "The future belongs to those who believe in the beauty of their dreams. — Eleanor Roosevelt",
+            "Be the change that you wish to see in the world. — Mahatma Gandhi",
+            "In the middle of difficulty lies opportunity. — Albert Einstein",
+            "The journey of a thousand miles begins with one step. — Lao Tzu",
+            "The only way to do great work is to love what you do. — Steve Jobs",
+            "It always seems impossible until it's done. — Nelson Mandela",
+            "Stay hungry, stay foolish. — Steve Jobs",
+            "The best way to predict the future is to invent it. — Alan Kay",
+            "Logic will get you from A to B. Imagination will take you everywhere. — Albert Einstein"
         ];
     }
 

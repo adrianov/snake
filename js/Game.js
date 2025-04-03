@@ -61,10 +61,10 @@ class SnakeGame {
     }
 
     setupManagers() {
-        // Get SoundManager instance directly (used for playing sounds via foodManager etc.)
+        // Get SoundManager instance directly
         this.soundManager = SoundManager.getInstance();
 
-        // Create AudioManager FIRST, as UIManager needs it during initialization
+        // Create AudioManager FIRST
         this.audioManager = new AudioManager(this); 
         
         // Create UI manager AFTER AudioManager
@@ -72,6 +72,17 @@ class SnakeGame {
 
         // Create InputManager 
         this.inputManager = new InputManager(this);
+
+        // Set up the speed threshold callback to update the tip area
+        this.gameLoop.onSpeedThresholdReached = () => {
+            this.uiManager.updateTipArea("Press opposite arrow to slow down");
+        };
+
+        // Set up callback for when snake returns to normal speed
+        this.gameLoop.onReturnToNormalSpeed = () => {
+            // Show a calm message when speed returns to normal
+            this.showCalmSpeedMessage();
+        };
 
         // Add listener for first interaction
         this.addInteractionListeners();
@@ -239,6 +250,8 @@ class SnakeGame {
         this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
         this.foodManager.resetFood();
         this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
+        // Reset tip area to default game instructions
+        this.uiManager.updateTipArea(); // Use default initial text
         this.draw();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
     }
@@ -270,19 +283,18 @@ class SnakeGame {
 
     pauseGame() {
         this.gameLoop.stopGameLoop();
-        // Delegate audio handling
         this.audioManager.handlePause();
-        // Show header and footer when game is paused
         GameUtils.showHeaderFooter(this.gameLayout);
+        // Update tip area when pausing
+        this.uiManager.updateTipArea("Game Paused. Press Space / Tap to resume.");
     }
 
     unpauseGame() {
-        // Delegate audio handling
         this.audioManager.handleUnpause();
-        // Hide header and footer when game is unpaused
         GameUtils.hideHeaderFooter(this.gameLayout);
-        // Restart the game loop
         this.gameLoop.startGameLoop();
+        // Update tip area when unpausing - use default
+        this.uiManager.updateTipArea(); // Use default initial text
     }
 
     startGame() {
@@ -291,11 +303,11 @@ class SnakeGame {
             return;
         }
 
-        // Need interaction before starting
         if (!this.hasUserInteraction) {
             console.log("[startGame] User interaction needed to start.");
-            this.startRequested = true; // Request start after interaction
-            // Potentially show a message like "Click or press key to start"
+            this.startRequested = true; 
+            // Update tip area to prompt for interaction
+            this.uiManager.updateTipArea("Click or press any key to start.");
             return;
         }
 
@@ -303,29 +315,20 @@ class SnakeGame {
         const isGameOver = gameState.isGameOver;
         const isFirstStart = !gameState.isGameStarted && !isGameOver;
 
-        // Reset game state if restarting after game over or for the first time
         if (isGameOver || isFirstStart) {
-            this.resetGame(isFirstStart); // Pass flag to resetGame
+            this.resetGame(isFirstStart); 
         } else {
-            // If resuming from a non-game-over state (e.g., coming back to tab),
-            // ensure game elements are consistent, but don't fully reset.
-            // This path might be less common now with stricter pause/resume logic.
             console.log("[startGame] Resuming game (not first start or game over).");
         }
 
-        // Set game state to started *after* potential reset
         this.gameStateManager.startGame();
-
-        // Start core loops
         this.gameLoop.startGameLoop();
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
-
-        // Delegate audio initialization for the game start
         this.audioManager.handleGameStart(isFirstStart);
-
-        // UI updates
         GameUtils.hideHeaderFooter(this.gameLayout);
-        this.draw(); // Initial draw after starting
+        // Set initial game tip - use default
+        this.uiManager.updateTipArea(); // Use default initial text
+        this.draw(); 
     }
 
     resetGameState() {
@@ -388,23 +391,13 @@ class SnakeGame {
 
     handleCollision(nextHeadPos) {
         const gameState = this.gameStateManager.getGameState();
-
-        // First, determine what type of collision this is
         const isWallCollision = !GameUtils.isPositionInBounds(nextHeadPos.x, nextHeadPos.y, this.tileCount);
-
-        // Check if it's a self collision
         const isSelfCollision = !isWallCollision && this.snake.isOccupyingPosition(nextHeadPos.x, nextHeadPos.y, true);
 
         if (isSelfCollision && Math.random() < 0.5) {
-            // 50% chance to cut tail when snake hits itself
             this.cutTail(nextHeadPos);
         } else if (gameState.luckEnabled && Math.random() < 0.8) {
-            // Original luck-based collision handling (80% chance to avoid crash)
-            const safeDirection = this.snake.findSafeDirection(
-                this.direction,
-                (x, y) => this.isPositionSafe(x, y)
-            );
-
+            const safeDirection = this.snake.findSafeDirection(this.direction, (x, y) => this.isPositionSafe(x, y));
             if (safeDirection) {
                 this.applyLuckEffect(safeDirection);
             } else {
@@ -418,50 +411,36 @@ class SnakeGame {
     cutTail(collisionPos) {
         const segments = this.snake.getSegments();
         const gameState = this.gameStateManager.getGameState();
+        const collisionIndex = segments.findIndex(segment => segment.x === collisionPos.x && segment.y === collisionPos.y);
 
-        // Find which segment we collided with
-        const collisionIndex = segments.findIndex(segment =>
-            segment.x === collisionPos.x && segment.y === collisionPos.y
-        );
-
-        if (collisionIndex > 0) {  // Make sure we found a valid segment (not the head)
-            // Calculate how many segments will be removed
+        if (collisionIndex > 0) {
             const originalLength = segments.length;
             const remainingLength = collisionIndex;
             const removedLength = originalLength - remainingLength;
-
-            // Update score proportionally based on how many segments were lost
             const currentScore = this.gameStateManager.getScore();
             const scoreReduction = Math.floor(currentScore * (removedLength / originalLength));
-            const newScore = Math.max(0, currentScore - scoreReduction); // Ensure score doesn't go negative
+            const newScore = Math.max(0, currentScore - scoreReduction);
 
-            // Update the score in the game state and UI
             this.gameStateManager.setScore(newScore);
             this.uiManager.updateScore(newScore);
-
-            // Cut the tail by removing segments from collisionIndex to the end
             this.snake.cutTailAt(collisionIndex);
 
-            // Play sound using AudioManager check
             if (this.audioManager.canPlaySound()) {
                 this.soundManager.playSound('click', 0.5);
             }
 
-            // Show a message to the player
-            this.uiManager.showTemporaryMessage(
-                `Snake cut its tail! Lost ${scoreReduction} points.`,
-                1800
-            );
+            // Update tip area with tail cut message
+            this.uiManager.updateTipArea(`Snake trimmed its tail. A fresh start with ${scoreReduction} fewer points.`);
+            // Reset tip after a delay - use default
+            setTimeout(() => {
+                this.uiManager.updateTipArea(); // Use default initial text
+            }, 2500);
 
-            // Move the snake to the next position (avoiding collision)
             this.snake.move(collisionPos.x, collisionPos.y);
-
-            // Visual effects for tail cutting
             if (this.drawer && this.drawer.snakeDrawer) {
                 this.drawer.snakeDrawer.triggerLuckGlow();
             }
         } else {
-            // Fallback to normal collision handling if we couldn't identify the collision segment
             this.gameOver();
         }
     }
@@ -543,8 +522,38 @@ class SnakeGame {
             this.drawer.snakeDrawer.triggerLuckGlow();
         }
 
+        // Show a luck feature tip when luck is activated
+        this.showLuckTip();
+
         this.gameLoop.adjustSpeedAfterLuckEffect();
         this.snake.move(safeHeadPos.x, safeHeadPos.y);
+    }
+
+    // New method to show luck-related tips
+    showLuckTip() {
+        const luckTips = [
+            "Lucky escape. Your snake just borrowed some rabbit's luck.",
+            "Phew. Your snake's lucky charm quietly did its job.",
+            "Fortune smiles upon the slithery today.",
+            "Narrow miss. The snake gods must like your style.",
+            "Your snake just used one of its nine lives. Eight to go.",
+            "Smooth moves. Your snake deftly avoided that collision.",
+            "A dance with destiny. Your snake knows the steps.",
+            "The universe decided your snake journey isn't over yet."
+        ];
+        
+        const randomTip = luckTips[Math.floor(Math.random() * luckTips.length)];
+        this.uiManager.updateTipArea(randomTip);
+        
+        // Reset tip after 3 seconds
+        setTimeout(() => {
+            // Only reset if we're still playing (not game over or paused)
+            if (this.gameStateManager.getGameState().isGameStarted && 
+                !this.gameStateManager.getGameState().isGameOver && 
+                !this.gameStateManager.getGameState().isPaused) {
+                this.uiManager.updateTipArea();
+            }
+        }, 3000);
     }
 
     checkFoodCollision() {
@@ -608,49 +617,29 @@ class SnakeGame {
     }
 
     gameOver() {
-        // Stop the game loop immediately
         this.gameLoop.stopGameLoop();
-
-        // Play game over sound immediately if possible
         if (this.audioManager.canPlaySound()) {
             this.soundManager.playSound('crash');
         }
-
-        // Set a transition flag in our state
         this.isTransitionState = true;
-
-        // Store current score for high score comparison
         const currentScore = this.gameStateManager.getScore();
         const isNewHighScore = currentScore > this.gameStateManager.getHighScore();
-
-        // Delegate audio handling for game over (plays sounds immediately)
         this.audioManager.handleGameOver(isNewHighScore);
-
-        // Don't mark the game as over in the state manager yet,
-        // but do freeze snake movement by setting internal state
         this.frozen = true;
-
-        // Draw the current state with transition overlay
         this.draw();
-
-        // Show header and footer when game is over
         GameUtils.showHeaderFooter(this.gameLayout);
+        
+        // Update tip area for game over
+        this.uiManager.updateTipArea("Space or tap to restart.");
 
-        // Add a 1-second delay before showing the game over screen
         setTimeout(() => {
-            // Now mark the game as over in the state manager
             this.gameStateManager.gameOver();
-
             if (isNewHighScore) {
-                // Update the high score display
                 this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
-                // Play fanfare sound if sounds are enabled
                 if (this.audioManager.canPlaySound()) {
                     this.soundManager.playHighScoreFanfare();
                 }
             }
-
-            // After delay, clear transition state and update game state to game over
             this.isTransitionState = false;
             this.frozen = false;
             this.draw();
@@ -662,31 +651,24 @@ class SnakeGame {
         this.isTransitionState = false;
         this.frozen = false;
 
-        // Generate a new color for the snake
         if (this.drawer) {
             this.drawer.generateNewSnakeColor();
         }
 
-        // Reinitialize snake and game elements for a clean slate
         this.snake = new Snake(5, 5);
         this.direction = 'right';
         this.nextDirection = 'right';
-        this.gameLoop.resetSpeed();
+        this.gameLoop.resetSpeed(); // This also resets speedTipShown
         this.foodManager.resetFood();
         this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
 
-        // Ensure UI is updated with initial state
+        // Reset the tip area to initial instructions - use default
+        this.uiManager.updateTipArea(); // Use default initial text
+
         this.uiManager.updateScore(this.gameStateManager.getScore());
         this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
-
-        // Reset the start requested flag
         this.startRequested = false;
-
-        // Delegate music handling for the reset/restart
-        // AudioManager will decide if music should play based on interaction state
         this.audioManager.handleGameReset(forceNewMelody);
-
-        // Force a redraw to show the new state
         this.draw();
     }
 
@@ -735,6 +717,30 @@ class SnakeGame {
 
     changeMusic() {
         this.audioManager.changeMusic();
+    }
+
+    // New method to show calm messages when speed returns to normal
+    showCalmSpeedMessage() {
+        const calmMessages = [
+            "Much better. A calm snake is a happy snake.",
+            "Ah, back to a gentle pace. Your snake appreciates that.",
+            "Cruising speed achieved. Enjoy the scenery.",
+            "Perfect pace for thoughtful fruit gathering.",
+            "Slow and steady wins the race, as they say."
+        ];
+        
+        const randomMessage = calmMessages[Math.floor(Math.random() * calmMessages.length)];
+        this.uiManager.updateTipArea(randomMessage);
+        
+        // Reset tip after 3 seconds
+        setTimeout(() => {
+            // Only reset if we're still playing (not game over or paused)
+            if (this.gameStateManager.getGameState().isGameStarted && 
+                !this.gameStateManager.getGameState().isGameOver && 
+                !this.gameStateManager.getGameState().isPaused) {
+                this.uiManager.updateTipArea();
+            }
+        }, 3000);
     }
 }
 

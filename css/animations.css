@@ -5,6 +5,17 @@
     100% { opacity: 0.7; }
 }
 
+/* Flash animation for tips */
+@keyframes tipFlash {
+    0% { background: rgba(46, 204, 113, 0.15); border-color: rgba(46, 204, 113, 0.25); }
+    50% { background: rgba(46, 204, 113, 0.5); border-color: rgba(46, 204, 113, 0.7); box-shadow: 0 0 12px rgba(46, 204, 113, 0.6); transform: scale(1.02); }
+    100% { background: rgba(46, 204, 113, 0.15); border-color: rgba(46, 204, 113, 0.25); }
+}
+
+.tip-flash {
+    animation: tipFlash 0.6s ease-in-out;
+}
+
 .temp-message {
     position: fixed;
     top: 50%;
