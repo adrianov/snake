@@ -404,6 +404,16 @@ class AudioManager {
             if (success) {
                 console.log("AudioManager: Audio context is active (via retry).");
                 this.audioInitialized = true;
+
+                // ADDED CHECK: Handle pending music start if context became active here
+                if (this._pendingMusicStart) {
+                    console.log("AudioManager: Context became active via retry, starting pending music.");
+                    this._pendingMusicStart = false; // Clear the flag
+                    SoundManager.removeContextRunningListener(this._handleContextRunning); // Remove listener
+                    this._tryStartMusic(false); // Attempt to start music now
+                }
+                // END ADDED CHECK
+                
                 return true;
             } else {
                 console.error("AudioManager: Failed to activate audio context (on retry).");
