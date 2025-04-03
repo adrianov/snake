@@ -4,4 +4,4 @@ globs:
 alwaysApply: true
 ---
 [manual_tests.md](mdc:docs/manual_tests.md)
-Upon realization of a new feature, add 1-2 tests to docs/manual_tests.md. Remove duplicate tests.
+Mind the spec. Upon realization of a new feature, add 1-2 tests to docs/manual_tests.md. Remove duplicate tests.
