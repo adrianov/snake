@@ -16,20 +16,29 @@
 
 /* Tip Area Styles */
 .tip-area {
-    font-size: clamp(0.65rem, 2.0vw, 0.8rem);
+    /* Larger on mobile, smaller on desktop */
+    font-size: clamp(0.85rem, 2.5vw, 0.95rem);
     color: var(--color-text);
     background: rgba(46, 204, 113, 0.15);
     border: 1px solid rgba(46, 204, 113, 0.25);
     border-radius: var(--radius-sm);
     text-align: center;
-    padding: 3px 12px;
+    padding: 4px 14px;
     margin: 0; /* Remove all margins */
     display: inline-block;
-    min-height: 1.4em;
+    min-height: 1.5em;
     box-shadow: none;
     transition: all 0.2s ease-in-out;
     pointer-events: none; /* Allow clicks to pass through */
     position: relative;
     z-index: 1; /* Lower than arrow controls */
     white-space: nowrap; /* Keep text in one line */
+}
+
+/* Increase size only on mobile devices */
+@media (max-width: 768px) {
+    .tip-area {
+        font-size: clamp(0.9rem, 3.0vw, 1.1rem);
+        padding: 5px 15px;
+    }
 }

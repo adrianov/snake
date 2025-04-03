@@ -660,6 +660,8 @@ class SnakeGame {
             gameOverMessage = defaultMessages[Math.floor(Math.random() * defaultMessages.length)];
         }
         
+        // Store the game over message for persistence
+        this.lastGameOverMessage = gameOverMessage;
         this.uiManager.updateTipArea(gameOverMessage);
 
         setTimeout(() => {
@@ -672,11 +674,18 @@ class SnakeGame {
             }
             this.isTransitionState = false;
             this.frozen = false;
+            
+            // Reapply the game over message after the transition is complete
+            this.uiManager.updateTipArea(this.lastGameOverMessage);
+            
             this.draw();
         }, 1000);
     }
 
     resetGame(forceNewMelody = false) {
+        // Store current game state before resetting
+        const wasGameOver = this.gameStateManager.getGameState().isGameOver;
+        
         this.gameStateManager.resetGame();
         this.isTransitionState = false;
         this.frozen = false;
@@ -692,8 +701,10 @@ class SnakeGame {
         this.foodManager.resetFood();
         this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
 
-        // Reset the tip area to initial instructions - use default
-        this.uiManager.updateTipArea(); // Use default initial text
+        // Only reset tip area if we weren't coming from a game over state
+        if (!wasGameOver) {
+            this.uiManager.updateTipArea(); // Use default initial text
+        }
 
         this.uiManager.updateScore(this.gameStateManager.getScore());
         this.uiManager.updateHighScore(this.gameStateManager.getHighScore());
