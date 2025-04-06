@@ -1,6 +1,6 @@
 ---
-description: When editing JS
-globs: 
+description: 
+globs: *.js
 alwaysApply: false
 ---
 We have static JS application that should be able to open locally in the browser by index.html

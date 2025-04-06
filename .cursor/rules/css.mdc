@@ -1,6 +1,6 @@
 ---
-description: When dealing with design and layout
-globs: 
+description: 
+globs: *.css
 alwaysApply: false
 ---
 **Glob:** `css/**/*.css`
