@@ -8,7 +8,7 @@
 class NewMoonDrawer {
     constructor(pixelRatio = 1) {
         this.pixelRatio = pixelRatio;
-        // Basic color, can be adjusted
+        // Enhanced colors for more natural look
         this.moonColorLight = 'rgb(240, 240, 230)';
         this.glowColor = 'rgba(220, 235, 255, 0.15)';
 
@@ -46,7 +46,7 @@ class NewMoonDrawer {
      * @param {number} radius - Moon radius.
      * @param {number} alpha - Global transparency (0-1).
      */
-    draw(ctx, x, y, radius, alpha = 1.0) { // Removed phase parameter
+    draw(ctx, x, y, radius, alpha = 1.0) {
         // Calculate phase based on the internal current date
         const phase = this.calculatePhase(this.currentDate);
 
@@ -58,15 +58,8 @@ class NewMoonDrawer {
         ctx.save(); // Save original alpha setting etc.
         ctx.globalAlpha = alpha;
 
-        // --- 1. Draw Subtle Glow ---
-        const glowRadius = radius * 1.8;
-        const glowGradient = ctx.createRadialGradient(x, y, radius * 0.8, x, y, glowRadius);
-        glowGradient.addColorStop(0, this.glowColor);
-        glowGradient.addColorStop(1, 'rgba(220, 235, 255, 0)');
-        ctx.fillStyle = glowGradient;
-        ctx.beginPath();
-        ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
-        ctx.fill();
+        // --- 1. Draw Enhanced Glow ---
+        this.drawEnhancedGlow(ctx, x, y, radius, phase, alpha);
 
         // --- 2. Draw the moon using clipping ---
         ctx.save(); // Save context state before clipping
@@ -94,11 +87,8 @@ class NewMoonDrawer {
         }
         // Else: Full moon, no clipping needed, full circle is drawn
         
-        // Draw the full lit moon background - only the clipped area will be visible
-        ctx.fillStyle = this.moonColorLight;
-        ctx.beginPath(); // Start new path for the main moon fill
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
+        // Draw the moon with natural gradient
+        this.drawMoonGradient(ctx, x, y, radius, alpha);
 
         // --- Draw Realistic Craters (within the clip) ---
         // Calculate parameters needed for drawCraters
@@ -120,6 +110,64 @@ class NewMoonDrawer {
         ctx.restore();
 
         ctx.restore(); // Restore original alpha setting etc.
+    }
+
+    // Draw enhanced glow around the moon
+    drawEnhancedGlow(ctx, x, y, radius, phase, alpha) {
+        // Calculate illumination based on phase
+        const illuminationRatio = Math.sin(phase * Math.PI);
+        
+        // Adjust glow strength based on phase and visibility
+        let glowStrength;
+        if (alpha < 0.3) {
+            // Stronger initial glow when moon first appears
+            glowStrength = 0.05 + Math.min(0.3, (0.3 - alpha) * 2) + illuminationRatio * 0.1;
+        } else {
+            // Normal glow for more visible moon
+            glowStrength = 0.1 + illuminationRatio * 0.15;
+        }
+        
+        // Create a graduated glow that varies with phase
+        const glowSize = radius * (1.8 + illuminationRatio * 0.5);
+        const glowAlpha = glowStrength * alpha;
+        
+        // Create radial gradient for natural glow
+        const glowGradient = ctx.createRadialGradient(
+            x, y, radius * 0.3,
+            x, y, glowSize
+        );
+        
+        // Brighter inner glow that transitions to transparent
+        glowGradient.addColorStop(0, `rgba(255, 255, 255, ${glowAlpha * 0.8})`);
+        glowGradient.addColorStop(0.4, `rgba(240, 245, 255, ${glowAlpha * 0.5})`);
+        glowGradient.addColorStop(0.7, `rgba(220, 235, 255, ${glowAlpha * 0.3})`);
+        glowGradient.addColorStop(1, 'rgba(220, 235, 255, 0)');
+        
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw moon with natural gradient
+    drawMoonGradient(ctx, x, y, radius, alpha) {
+        // Create gradient for more natural moon surface
+        const moonGradient = ctx.createRadialGradient(
+            x - radius * 0.2, y - radius * 0.2, 0,
+            x, y, radius
+        );
+        
+        // More natural color gradient with subtle variations
+        moonGradient.addColorStop(0, `rgba(255, 255, 252, ${alpha})`);   // Bright center
+        moonGradient.addColorStop(0.4, `rgba(245, 245, 240, ${alpha})`); // Mid tone
+        moonGradient.addColorStop(0.8, `rgba(230, 235, 240, ${alpha})`); // Slightly blue tint
+        moonGradient.addColorStop(1, `rgba(215, 225, 235, ${alpha})`);   // Darker edge
+
+        // Draw the moon circle with gradient
+        ctx.fillStyle = moonGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     // Draw craters on the visible portion of the moon (copied from MoonDrawer.js)
@@ -161,32 +209,16 @@ class NewMoonDrawer {
 
         // Loop through and draw each crater
         craters.forEach((crater, i) => {
-            // Restore visibility checks, but remove the explicit visibleSide check
             // Skip craters that aren't visible based on phase/side
-            // if (visibleSide === 'right' && crater.x < -0.05) return; // Removed
-            // if (visibleSide === 'left' && crater.x > 0.05) return;  // Removed
+            if (visibleSide === 'right' && crater.x < 0) return;
+            if (visibleSide === 'left' && crater.x > 0) return;
 
             // If there's a terminator line (day/night divider), check if crater is visible
             if (terminatorX !== null) {
-                // For waxing moon (light on right), crater center must be > terminatorX
-                if (phase < 0.5 && (x + crater.x * radius) < terminatorX) return; // Corrected: should be < for waxing?
-                // For waning moon (light on left), crater center must be < terminatorX
-                if (phase > 0.5 && (x + crater.x * radius) > terminatorX) return; // Corrected: should be > for waning?
-                // Let's re-think this: terminatorX is calculated based on the SHADOW offset.
-                // terminatorOffset = direction * (radius * (1 - phaseDistance));
-                // direction = isWaxing ? -1 : 1;
-                // Waxing (phase<0.5): direction=-1 => terminatorOffset is negative (to the left of center x)
-                //                     Light is on the right. Terminator is the left edge of the light.
-                //                     Crater X must be GREATER than terminatorX.
-                // Waning (phase>0.5): direction=1 => terminatorOffset is positive (to the right of center x)
-                //                     Light is on the left. Terminator is the right edge of the light.
-                //                     Crater X must be LESS than terminatorX.
-                
                 const craterCenterX = x + crater.x * radius;
-                if (phase < 0.5 && craterCenterX < terminatorX) return; // Keep crater if RIGHT of terminator
-                if (phase > 0.5 && craterCenterX > terminatorX) return; // Keep crater if LEFT of terminator
+                if (phase < 0.5 && craterCenterX < terminatorX) return;
+                if (phase > 0.5 && craterCenterX > terminatorX) return;
             }
-            
 
             // Convert relative coordinates to canvas coordinates
             const craterX = x + crater.x * radius;
@@ -196,30 +228,47 @@ class NewMoonDrawer {
 
             // Modify opacity based on global alpha
             const craterAlpha = alpha * 0.8; // Slightly more transparent than moon
+            
+            // Calculate shadow direction based on phase
+            const shadowDir = (phase < 0.5) ? 1 : -1; // Shadow opposite to light
 
             // Draw crater base
             ctx.beginPath();
             ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
 
-            // Set crater color as a slightly darker shade than the moon
+            // Create subtle gradient for crater base
+            const craterGradient = ctx.createRadialGradient(
+                craterX - craterRadius * 0.3 * shadowDir,
+                craterY - craterRadius * 0.3,
+                0,
+                craterX,
+                craterY,
+                craterRadius
+            );
+            
+            // Calculate a pseudo-random variation for crater color
             const variation = pseudoRandom(i, 0.5) * 0.2 - 0.1; // -0.1 to 0.1 variation
             const colorValue = Math.max(150, Math.min(215, 180 + variation * 35));
-            ctx.fillStyle = `rgba(${colorValue}, ${colorValue + 3}, ${colorValue + 10}, ${craterAlpha})`;
-            ctx.fill(); // Fill the base first
+            
+            // Create natural gradient for crater
+            craterGradient.addColorStop(0, `rgba(${colorValue + 15}, ${colorValue + 18}, ${colorValue + 20}, ${craterAlpha})`);
+            craterGradient.addColorStop(0.7, `rgba(${colorValue + 5}, ${colorValue + 8}, ${colorValue + 15}, ${craterAlpha})`);
+            craterGradient.addColorStop(1, `rgba(${colorValue}, ${colorValue + 3}, ${colorValue + 10}, ${craterAlpha})`);
+            
+            ctx.fillStyle = craterGradient;
+            ctx.fill(); // Fill the base with gradient
 
             // Add subtle shadow for depth (drawn over the base)
-            ctx.shadowColor = `rgba(0, 0, 0, ${0.25 * alpha})`;
+            ctx.shadowColor = `rgba(0, 0, 0, ${0.3 * alpha})`;
             ctx.shadowBlur = shadowBlur; // Use pixel ratio scaled shadow
-            // Adjust shadow offset based on phase direction (more realistic)
-            const shadowDir = (phase < 0.5) ? 1 : -1; // Shadow opposite to light
-            ctx.shadowOffsetX = craterRadius * craterDepth * 12 * shadowDir * -1;
-            ctx.shadowOffsetY = craterRadius * craterDepth * 12 * 0.5; // Slight downward offset
+            ctx.shadowOffsetX = craterRadius * craterDepth * 12 * shadowDir;
+            ctx.shadowOffsetY = craterRadius * craterDepth * 12 * 0.5;
             
-            // Re-fill slightly offset to apply shadow
-            ctx.fillStyle = `rgba(0,0,0,0)`; // Use transparent fill just to draw the shadow
+            // Re-fill with transparent color to apply shadow
+            ctx.fillStyle = `rgba(0,0,0,0)`;
             ctx.fill();
 
-            // Add highlight on opposite side for 3D effect (drawn over the base)
+            // Add highlight on opposite side for 3D effect
             ctx.beginPath();
             ctx.arc(
                 craterX - craterRadius * craterDepth * 18 * shadowDir * -1,
@@ -234,8 +283,20 @@ class NewMoonDrawer {
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
-            // Semi-transparent white for highlight
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.08 * alpha})`;
+            // Semi-transparent white for highlight with gradient
+            const highlightGradient = ctx.createRadialGradient(
+                craterX - craterRadius * craterDepth * 18 * shadowDir * -1,
+                craterY - craterRadius * craterDepth * 18 * 0.5,
+                0,
+                craterX - craterRadius * craterDepth * 18 * shadowDir * -1,
+                craterY - craterRadius * craterDepth * 18 * 0.5,
+                craterRadius * 0.8
+            );
+            
+            highlightGradient.addColorStop(0, `rgba(255, 255, 255, ${0.15 * alpha})`);
+            highlightGradient.addColorStop(1, `rgba(255, 255, 255, ${0.05 * alpha})`);
+            
+            ctx.fillStyle = highlightGradient;
             ctx.fill();
         });
 
