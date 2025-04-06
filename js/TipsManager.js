@@ -15,6 +15,10 @@ class TipsManager {
         this.currentTip = null;
         this.tipLines = [];
         this.tipFontSize = 16; // Default font size
+        
+        // Add a timestamp to avoid rapid tip changes
+        this.lastTipChangeTime = 0;
+        this.minTipChangeInterval = 5000; // Minimum ms between tip changes (5 seconds)
     }
 
     // Get the list of game tips
@@ -76,6 +80,16 @@ class TipsManager {
 
     // Reset the current tip
     resetTip() {
+        console.log("TipsManager: Resetting current tip");
+        
+        // Check if we should actually change the tip based on time elapsed
+        const now = Date.now();
+        if (now - this.lastTipChangeTime < this.minTipChangeInterval) {
+            console.log("TipsManager: Tip reset ignored - too soon since last change");
+            return; // Don't reset if it's too soon
+        }
+        
+        this.lastTipChangeTime = now;
         this.currentTip = null;
         this.tipLines = [];
     }
@@ -84,6 +98,8 @@ class TipsManager {
     ensureCurrentTip() {
         if (this.currentTip === null) {
             this.currentTip = this.getRandomTip();
+            this.lastTipChangeTime = Date.now(); // Record when we changed the tip
+            console.log("TipsManager: Generated new tip:", this.currentTip);
         }
         return this.currentTip;
     }
@@ -92,6 +108,7 @@ class TipsManager {
     recalculateTipLines(ctx, maxWidth) {
         // Get current tip, generate if needed
         const tip = this.ensureCurrentTip();
+        console.log("TipsManager: Recalculating tip lines for:", tip);
 
         // For long tips, break them into multiple lines
         const words = tip.split(' ');
@@ -111,12 +128,15 @@ class TipsManager {
             }
         }
         this.tipLines.push(currentLine);
+        console.log("TipsManager: Calculated", this.tipLines.length, "lines");
 
         return this.tipLines;
     }
 
     // Draw the tip on the screen
     drawTip(ctx, canvasWidth, canvasHeight, gridSize, pixelRatio = 1) {
+        console.log("TipsManager: drawTip called", new Date().getTime());
+        
         // Ensure we have a tip
         this.ensureCurrentTip();
 

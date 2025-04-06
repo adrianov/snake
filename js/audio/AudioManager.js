@@ -379,6 +379,36 @@ class AudioManager {
         }
     }
 
+    /**
+     * Updates music based on the current game state
+     * Called during game initialization and state transitions
+     * @param {Object} gameState - The current game state
+     */
+    updateMusicForState(gameState) {
+        if (!gameState) {
+            console.warn("AudioManager: updateMusicForState called with null/undefined gameState");
+            return;
+        }
+
+        console.log(`AudioManager: Updating music for state - started: ${gameState.isGameStarted}, paused: ${gameState.isPaused}, gameover: ${gameState.isGameOver}`);
+        
+        if (gameState.isGameOver) {
+            this.handleGameOver();
+        } else if (gameState.isPaused) {
+            this.handlePause();
+        } else if (gameState.isGameStarted) {
+            // Check if this is the first time the game is being started
+            // or if music is already playing/paused (resuming from a state change)
+            const isFirstStart = !MusicManager.isPlaying && !MusicManager.isPaused;
+            this.handleGameStart(isFirstStart);
+        } else {
+            // Game not started yet - no music
+            if (MusicManager.isPlaying) {
+                MusicManager.stopMusic();
+            }
+        }
+    }
+
     // --- Private Helpers --- 
 
     /**

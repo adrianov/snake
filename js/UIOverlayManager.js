@@ -274,6 +274,9 @@ class UIOverlayManager {
 
     // Draw start message overlay
     drawStartMessage(ctx, visualWidth, visualHeight) {
+        // DEBUG: Log when UI start message is drawn
+        console.log("UIOverlayManager: Drawing Start Message UI", new Date().getTime());
+        
         // Set common text properties
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -341,6 +344,7 @@ class UIOverlayManager {
         ctx.fillText('to start', visualWidth / 2, visualHeight / 2 + this.gridSize * 0.8);
 
         // Draw a game tip
+        console.log("UIOverlayManager: About to draw tip", this.tipsManager.currentTip);
         this.tipsManager.drawTip(ctx, visualWidth, visualHeight, this.gridSize, this.pixelRatio);
     }
 

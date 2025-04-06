@@ -20,6 +20,7 @@ class SceneDrawer {
         this.backgroundManager = new BackgroundManager();
         this.starfieldManager = new StarfieldManager(this.pixelRatio);
         this.moonDrawer = new MoonDrawer(this.pixelRatio);
+        this.newMoonDrawer = new NewMoonDrawer(this.pixelRatio);
         this.uiOverlayManager = new UIOverlayManager(gridSize, this.pixelRatio);
 
         // Moon animation properties
@@ -31,7 +32,27 @@ class SceneDrawer {
 
         // Performance tracking
         this.lastFrameTime = 0;
+
+        // Add key listener for phase advance
+        this._handleKeyDown = this._handleKeyDown.bind(this); // Bind context
+        window.addEventListener('keydown', this._handleKeyDown);
     }
+
+    // Keydown handler
+    _handleKeyDown(event) {
+        if (event.key === 'p' || event.key === 'P') {
+            this.newMoonDrawer.advanceDay();
+            // No need to explicitly redraw here, the animation loop will handle it
+        }
+    }
+
+    // Cleanup listener when SceneDrawer is no longer needed (if applicable)
+    // You might need a destroy method depending on your app structure
+    /*
+    destroy() {
+        window.removeEventListener('keydown', this._handleKeyDown);
+    }
+    */
 
     // Update gridSize (for responsive design)
     updateGridSize(gridSize, pixelRatio = 1) {
@@ -40,6 +61,7 @@ class SceneDrawer {
         this.uiOverlayManager.updateGridSize(gridSize, this.pixelRatio);
         this.starfieldManager.updatePixelRatio(this.pixelRatio);
         this.moonDrawer.updatePixelRatio(this.pixelRatio);
+        this.newMoonDrawer.updatePixelRatio(this.pixelRatio);
     }
 
     // Reset darkness level when starting a new game
@@ -167,9 +189,11 @@ class SceneDrawer {
                 if (resetElapsedTime >= this.moonResetDuration) {
                     this.isMoonResetting = false;
                     this.moonStartTime = currentTime - 100; // Small offset to ensure we start at beginning
+                    // Recalculate animation state after reset completes
                     moonAnimation = {
-                        cycleProgress: 0,
-                        isResetting: false
+                        cycleProgress: 0, // Start cycle from beginning
+                        isResetting: false,
+                        progress: 0
                     };
                 }
             }
@@ -187,21 +211,34 @@ class SceneDrawer {
 
             // Skip drawing if moon wouldn't be visible
             if (moonAlpha > 0.01) {
-                // Get the current sky color for proper shadow blending
+                // Get the current sky color for proper shadow blending (for original moon)
                 const skyColor = this.backgroundManager.getCurrentTopColorRgb();
 
                 // Calculate moon position using MoonDrawer's position calculator
+                // This position is shared by both moons, but we'll offset the new one
                 const moonPosition = this.moonDrawer.calculatePosition(this.canvas, moonAnimation);
 
-                // Use the MoonDrawer to draw the moon with the current context, position and exact sky color
+                // --- Draw Original Moon ---
+                /* // Commented out old moon drawing
                 this.moonDrawer.draw(
                     this.ctx,
                     moonPosition.x,
                     moonPosition.y,
                     moonSize,
                     moonAlpha,
-                    skyColor,
-                    this.isMoonResetting ? moonAnimation : null
+                    skyColor, // Pass sky color
+                    this.isMoonResetting ? moonAnimation : null // Pass reset animation state if active
+                );
+                */
+
+                // --- Draw New Moon (at the original position) ---
+                // Phase is now calculated internally by NewMoonDrawer
+                this.newMoonDrawer.draw(
+                    this.ctx,
+                    moonPosition.x, 
+                    moonPosition.y,
+                    moonSize, // Use same size
+                    moonAlpha // Use same alpha
                 );
             }
         }
@@ -251,6 +288,9 @@ class SceneDrawer {
 
     // Draw start message overlay
     drawStartMessage(ctx = this.ctx, canvas = this.canvas) {
+        // DEBUG: Log when start message is drawn
+        console.log("SceneDrawer: Drawing Start Message", new Date().getTime());
+        
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = canvas.width / this.pixelRatio;
         const visualHeight = canvas.height / this.pixelRatio;

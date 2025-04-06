@@ -328,46 +328,46 @@
     </article>
 
     <!-- Load melody data -->
-    <script src="js/audio/MusicSheets.js"></script>
+    <script src="js/audio/MusicSheets.js" defer></script>
 
     <!-- Load game constants -->
-    <script src="js/Constants.js"></script>
+    <script src="js/Constants.js" defer></script>
 
     <!-- Load game files -->
-    <script src="js/Fruits.js"></script>
+    <script src="js/Fruits.js" defer></script>
     <!-- Load Sound Templates -->
-    <script src="js/audio/SoundTemplates.js"></script>
-    <script src="js/audio/SoundManager.js"></script>
-    <script src="js/audio/MusicManager.js"></script>
+    <script src="js/audio/SoundTemplates.js" defer></script>
+    <script src="js/audio/SoundManager.js" defer></script>
+    <script src="js/audio/MusicManager.js" defer></script>
 
-    <!-- Load extracted manager classes -->
-    <script src="js/TipsManager.js"></script>
-    <script src="js/BackgroundManager.js"></script>
-    <script src="js/StarfieldManager.js"></script>
+    <!-- Load Drawing & UI Manager Classes (Ensure correct dependency order) -->
+    <script src="js/TipsManager.js" defer></script>
+    <script src="js/BackgroundManager.js" defer></script>
+    <script src="js/StarfieldManager.js" defer></script>
+    <script src="js/MoonDrawer.js" defer></script>
+    <script src="js/NewMoonDrawer.js" defer></script>
+    <script src="js/UIOverlayManager.js" defer></script>
+    <script src="js/SceneDrawer.js" defer></script>     <!-- Depends on Background, Starfield, MoonDrawer, NewMoonDrawer, UIOverlayManager -->
+    <script src="js/SnakeDrawer.js" defer></script>
+    <script src="js/GameDrawer.js" defer></script>      <!-- Depends on SceneDrawer, SnakeDrawer -->
+    <script src="js/UIManager.js" defer></script>        <!-- Depends on TipsManager, GameDrawer -->
 
-    <!-- Load remaining drawing classes -->
-    <script src="js/SnakeDrawer.js"></script>
-    <script src="js/MoonDrawer.js"></script>
-    <script src="js/UIOverlayManager.js"></script>
-    <script src="js/SceneDrawer.js"></script>
-    <script src="js/GameDrawer.js"></script>
-    <script src="js/UIManager.js"></script>
+    <!-- Load Core Gameplay Classes -->
+    <script src="js/Snake.js" defer></script>
+    <script src="js/FoodManager.js" defer></script>
+    <script src="js/GameStateManager.js" defer></script>
+    <script src="js/GameLoop.js" defer></script>
 
-    <!-- Load extracted classes -->
-    <script src="js/Snake.js"></script>
-    <script src="js/FoodManager.js"></script>
-    <script src="js/GameStateManager.js"></script>
-    <script src="js/GameLoop.js"></script>
+    <!-- Load Utility Classes & Other Managers -->
+    <script src="js/GameUtils.js" defer></script>
+    <script src="js/audio/AudioManager.js" defer></script> <!-- Depends on SoundManager, MusicManager -->
+    <script src="js/InputManager.js" defer></script>
+    <script src="js/PanelManager.js" defer></script>
 
-    <!-- Load new utility classes and managers -->
-    <script src="js/GameUtils.js"></script>
-    <script src="js/audio/AudioManager.js"></script>
-    <script src="js/InputManager.js"></script>
+    <!-- Load Main Game -->
+    <script src="js/Game.js" defer></script>
 
-    <!-- Load main game -->
-    <script src="js/Game.js"></script>
-
-    <!-- Load panel manager -->
-    <script src="js/PanelManager.js"></script>
+    <!-- Load Entry Point -->
+    <script src="js/main.js" defer></script>
 </body>
 </html>

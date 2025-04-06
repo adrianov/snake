@@ -10,41 +10,92 @@
  */
 class SnakeGame {
     constructor() {
+        // Initialize canvas and context first
         this.canvas = document.getElementById('gameCanvas');
+        if (!this.canvas) {
+            console.error("ERROR: Canvas element #gameCanvas not found!");
+            return;
+        }
         this.ctx = this.canvas.getContext('2d');
-        this.tileCount = 20;
-        this.startRequested = false;
-        this.lastEatenTime = 0;
-        this.imagesLoaded = false;
+
+        // Initialize settings (without calling resizeCanvas)
         this.hasUserInteraction = false;
-        this.isTransitionState = false;
-        this.frozen = false;
+        this.startRequested = false;
+        this.gameStateManager = new GameStateManager();
+        this.snake = new Snake(5, 5);
+        this.direction = 'right';
+        this.nextDirection = 'right';
+        this.gameLoop = new GameLoop(this.update.bind(this));
+        this.lastEatenTime = 0;
+        
+        // Calculate initial grid size but don't resize canvas yet
+        this.calculateGridSize();
+        this.foodManager = new FoodManager(this.tileCount);
 
-        // Initialize game layout reference - make sure we get it correctly
-        this.gameLayout = document.querySelector('.game-layout');
+        // Setup managers (including the drawer) *before* resizing
+        this.setupManagers();
 
-        // Ensure we have a valid gameLayout reference
-        if (!this.gameLayout) {
-            console.error('Game layout element not found! Some mobile features may not work correctly.');
-            // Try to create a fallback reference to the body as last resort
-            this.gameLayout = document.body;
+        // Load images and then perform initial setup
+        this.loadImages().then(() => {
+            console.log("DEBUG: Images loaded, initializing game");
+            
+            // Resize canvas only once
+            this.resizeCanvas(false); // Pass false to avoid triggering a draw
+            
+            this.init(false); // Pass false to avoid triggering a draw
+            this.addInteractionListeners(); 
+
+            // Now draw the start message only once
+            if (this.drawer && this.drawer.sceneDrawer) {
+                console.log("DEBUG: Drawing initial start message");
+                this.drawer.sceneDrawer.drawStartMessage(this.ctx, this.canvas);
+            } else {
+                console.error("Drawer or SceneDrawer not ready for initial start message.");
+            }
+            
+            // Initial music setup without triggering redraws
+            console.log("DEBUG: Setting up initial music state");
+            this.audioManager.updateMusicForState(this.gameStateManager.getGameState());
+            
+            console.log("DEBUG: Finished setting up game in constructor");
+        }).catch(error => {
+            console.error("Error loading images:", error);
+        });
+
+        // Add resize event listener
+        window.addEventListener('resize', this.resizeCanvas.bind(this));
+    }
+
+    // Helper to calculate grid size without triggering draw
+    calculateGridSize() {
+        const container = this.canvas.parentElement;
+        if (!container) return; // Exit if container not found
+
+        // Get the container's current dimensions
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+
+        if (containerWidth <= 0 || containerHeight <= 0) {
+            console.warn('calculateGridSize: Container dimensions are zero or negative, using defaults.');
+            this.gridSize = 20;
+            this.tileCount = 20;
+            return;
         }
 
-        // Initialize game settings FIRST
-        this.initializeGameSettings();
-        // Setup managers AFTER settings are initialized
-        this.setupManagers();
-        // Load images LAST
-        this.loadImages();
+        // Calculate square size based on the smallest dimension
+        const size = Math.min(containerWidth, containerHeight);
 
-        // Restore original resize listener and immediate call
-        window.addEventListener('resize', this.resizeCanvas.bind(this));
-        this.resizeCanvas(); // Restore this call
+        // Calculate grid size based on container
+        this.gridSize = Math.min(40, Math.floor(size / 20));
+        if (this.gridSize <= 0) this.gridSize = 10; // Ensure minimum grid size
+
+        // Ensure tileCount is an integer
+        this.tileCount = Math.floor(size / this.gridSize);
+        if (this.tileCount <= 0) this.tileCount = 10; // Ensure minimum tile count
     }
 
     initializeGameSettings() {
-        // Restore resizeCanvas call
-        this.resizeCanvas();
+        // Don't call resizeCanvas() here anymore
         this.hasUserInteraction = false;
         this.startRequested = false;
 
@@ -118,16 +169,16 @@ class SnakeGame {
 
     loadImages() {
         this.fruitImages = {};
-        this.loadFruitImages().then(() => {
+        // Return the promise chain here
+        return this.loadFruitImages().then(() => {
             this.imagesLoaded = true;
-            // No need to schedule resize here anymore
             // Initialize drawer AFTER images are loaded
             this.drawer = new GameDrawer(this.canvas, this.gridSize, this.fruitImages);
-            this.init(); // init calls draw()
+            // Do not call init() here, it's called after loadImages resolves in constructor
         });
     }
 
-    resizeCanvas() {
+    resizeCanvas(shouldDraw = true) {
         const container = this.canvas.parentElement;
         if (!container) return; // Exit if container not found
 
@@ -135,7 +186,7 @@ class SnakeGame {
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
 
-        // Restore original simple check
+        // Simple check
         if (containerWidth <= 0 || containerHeight <= 0) {
             console.warn('resizeCanvas: Container dimensions are zero or negative, skipping update.');
             return;
@@ -195,8 +246,9 @@ class SnakeGame {
             this.drawer.updateGridSize(this.gridSize);
         }
 
-        // Trigger a redraw
-        if (this.imagesLoaded) {
+        // Trigger a redraw only if flag is true
+        if (shouldDraw && this.imagesLoaded) {
+            console.log("DEBUG: Redrawing due to resize");
             this.draw();
         }
     }
@@ -241,7 +293,7 @@ class SnakeGame {
         return 'apple'; // Fallback
     }
 
-    init() {
+    init(shouldDraw = true) {
         this.snake = new Snake(5, 5);
         this.direction = 'right';
         this.nextDirection = 'right';
@@ -252,7 +304,12 @@ class SnakeGame {
         this.foodManager.generateFood(this.snake, this.getRandomFruit.bind(this));
         // Reset tip area to default game instructions
         this.uiManager.updateTipArea(); // Use default initial text
-        this.draw();
+        
+        // Draw only if flag is true
+        if (shouldDraw) {
+            this.draw();
+        }
+        
         this.gameLoop.startFruitLoop(this.manageFruits.bind(this));
     }
 
@@ -714,6 +771,10 @@ class SnakeGame {
     }
 
     draw(skipGameOverScreen = false) {
+        // DEBUG: Log when draw is called and what state we're in
+        const gameState = this.gameStateManager.getGameState();
+        console.log(`DEBUG: Game.draw() called - gameStarted: ${gameState.isGameStarted}, isPaused: ${gameState.isPaused}, isGameOver: ${gameState.isGameOver}`);
+        
         if (!this.imagesLoaded) return;
 
         // Clear the canvas
@@ -728,7 +789,7 @@ class SnakeGame {
         const currentState = this.gameStateManager.getGameState();
 
         // Draw game state
-        const gameState = {
+        const gameStateObj = {
             snake: this.snake.getSegments(),
             food: this.foodManager.food,
             direction: this.direction,
@@ -742,7 +803,7 @@ class SnakeGame {
             isTransition: this.isTransitionState
         };
 
-        this.drawer.draw(gameState);
+        this.drawer.draw(gameStateObj);
 
         // Restore context
         this.ctx.restore();
