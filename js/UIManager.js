@@ -178,8 +178,8 @@ class UIManager {
                     try {
                         navigator.clipboard.writeText(addressInput.value)
                             .then(() => {
-                                // Show success message
-                                this.showTemporaryMessage('Address copied to clipboard!', 1500);
+                                // Show success message in tip area
+                                this.updateTipArea('Address copied to clipboard!');
 
                                 // Visual feedback on button
                                 const originalText = button.querySelector('.copy-icon').textContent;
@@ -191,12 +191,14 @@ class UIManager {
                             })
                             .catch(err => {
                                 console.error('Could not copy text: ', err);
-                                this.showTemporaryMessage('Failed to copy. Try manually selecting the text.', 2000);
+                                // Show failure message in tip area
+                                this.updateTipArea('Failed to copy. Try manually selecting text.');
                             });
                     } catch (err) {
                         // Fallback for older browsers
                         document.execCommand('copy');
-                        this.showTemporaryMessage('Address copied to clipboard!', 1500);
+                         // Show success message in tip area
+                        this.updateTipArea('Address copied to clipboard!');
 
                         // Visual feedback
                         const originalText = button.querySelector('.copy-icon').textContent;
@@ -228,8 +230,8 @@ class UIManager {
             if (this.game.gameStateManager.getGameState().isGameStarted &&
                 !this.game.gameStateManager.getGameState().isPaused) {
                 this.game.pauseGame();
-                // Show message to user
-                this.showTemporaryMessage('Game paused', 1500);
+                // Show message in tip area
+                this.updateTipArea('Game paused');
             }
         } else {
             this.donationPanel.classList.remove('active');
@@ -371,24 +373,6 @@ class UIManager {
         // Update display if music on and melody exists
         melodyTextElement.textContent = currentMelody.name;
         this.musicInfoElement.classList.add('has-melody');
-    }
-
-    showTemporaryMessage(message, duration = 2000) {
-        // Clear any existing message and timeout
-        if (this.messageTimeout) {
-            clearTimeout(this.messageTimeout);
-            this.messageTimeout = null;
-        }
-
-        // Update and show the message
-        this.tempMessageElement.textContent = message;
-        this.tempMessageElement.classList.add('visible');
-
-        // Hide the message after duration
-        this.messageTimeout = setTimeout(() => {
-            this.tempMessageElement.classList.remove('visible');
-            this.messageTimeout = null;
-        }, duration);
     }
 
     /**

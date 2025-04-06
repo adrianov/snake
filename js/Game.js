@@ -771,10 +771,6 @@ class SnakeGame {
     }
 
     draw(skipGameOverScreen = false) {
-        // DEBUG: Log when draw is called and what state we're in
-        const gameState = this.gameStateManager.getGameState();
-        console.log(`DEBUG: Game.draw() called - gameStarted: ${gameState.isGameStarted}, isPaused: ${gameState.isPaused}, isGameOver: ${gameState.isGameOver}`);
-        
         if (!this.imagesLoaded) return;
 
         // Clear the canvas

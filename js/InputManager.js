@@ -199,9 +199,9 @@ class InputManager {
             if (this.game.audioManager.canPlaySound()) {
                 this.game.soundManager.playSound('click', 0.3);
             }
-            this.game.uiManager.showTemporaryMessage(
-                luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF",
-                1500
+            // Show message in tip area
+            this.game.uiManager.updateTipArea(
+                luckEnabled ? "Luck ON (80% chance to avoid crashes)" : "Luck OFF"
             );
             return true;
         }
@@ -213,9 +213,9 @@ class InputManager {
             if (this.game.audioManager.canPlaySound()) {
                 this.game.soundManager.playSound('click', 0.3);
             }
-            this.game.uiManager.showTemporaryMessage(
-                shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF",
-                1500
+            // Show message in tip area
+            this.game.uiManager.updateTipArea(
+                shakeEnabled ? "Snake Vibration ON" : "Snake Vibration OFF"
             );
             return true;
         }
@@ -451,7 +451,8 @@ class InputManager {
         // Pause if running and click outside interactive
         if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver && !isInteractiveClick) {
             this.game.togglePause();
-            this.game.uiManager.showTemporaryMessage('Game paused', 1500);
+            // Show message in tip area
+            this.game.uiManager.updateTipArea('Game paused');
             return;
         }
 

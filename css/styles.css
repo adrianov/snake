@@ -73,3 +73,9 @@
         padding: 5px 12px;
     }
 }
+
+/* Ensure body allows fixed positioning */
+body {
+    position: relative; /* Or ensure it doesn't interfere */
+    /* ... existing body styles ... */
+}

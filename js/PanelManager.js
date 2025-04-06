@@ -79,14 +79,14 @@ class PanelManager {
         if (this.helpPanel) {
             this.helpPanel.classList.add('active');
 
-            // Pause game if it's running
+            // Pause the game if it's running
             const game = window.SnakeGame;
             if (game && game.gameStateManager) {
                 const gameState = game.gameStateManager.getGameState();
-                if (gameState.isGameStarted && !gameState.isPaused && !gameState.isGameOver) {
+                if (gameState.isGameStarted && !gameState.isPaused) {
                     game.pauseGame();
-                    // Show message using existing UIManager
-                    this.uiManager.showTemporaryMessage('Game paused', 1500);
+                    // Show message in tip area
+                    this.uiManager.updateTipArea('Game paused');
                 }
             }
         }

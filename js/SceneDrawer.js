@@ -288,9 +288,6 @@ class SceneDrawer {
 
     // Draw start message overlay
     drawStartMessage(ctx = this.ctx, canvas = this.canvas) {
-        // DEBUG: Log when start message is drawn
-        console.log("SceneDrawer: Drawing Start Message", new Date().getTime());
-        
         // Get the visual canvas size (accounting for device pixel ratio)
         const visualWidth = canvas.width / this.pixelRatio;
         const visualHeight = canvas.height / this.pixelRatio;

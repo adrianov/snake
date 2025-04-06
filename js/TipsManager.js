@@ -80,12 +80,9 @@ class TipsManager {
 
     // Reset the current tip
     resetTip() {
-        console.log("TipsManager: Resetting current tip");
-        
         // Check if we should actually change the tip based on time elapsed
         const now = Date.now();
         if (now - this.lastTipChangeTime < this.minTipChangeInterval) {
-            console.log("TipsManager: Tip reset ignored - too soon since last change");
             return; // Don't reset if it's too soon
         }
         
@@ -99,7 +96,6 @@ class TipsManager {
         if (this.currentTip === null) {
             this.currentTip = this.getRandomTip();
             this.lastTipChangeTime = Date.now(); // Record when we changed the tip
-            console.log("TipsManager: Generated new tip:", this.currentTip);
         }
         return this.currentTip;
     }
@@ -108,7 +104,6 @@ class TipsManager {
     recalculateTipLines(ctx, maxWidth) {
         // Get current tip, generate if needed
         const tip = this.ensureCurrentTip();
-        console.log("TipsManager: Recalculating tip lines for:", tip);
 
         // For long tips, break them into multiple lines
         const words = tip.split(' ');
@@ -128,15 +123,12 @@ class TipsManager {
             }
         }
         this.tipLines.push(currentLine);
-        console.log("TipsManager: Calculated", this.tipLines.length, "lines");
 
         return this.tipLines;
     }
 
     // Draw the tip on the screen
     drawTip(ctx, canvasWidth, canvasHeight, gridSize, pixelRatio = 1) {
-        console.log("TipsManager: drawTip called", new Date().getTime());
-        
         // Ensure we have a tip
         this.ensureCurrentTip();
 
