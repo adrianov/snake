@@ -43,6 +43,20 @@
     transition: opacity 0.3s ease-in-out, height 0.3s ease-in-out, padding 0.3s ease-in-out, margin 0.3s ease-in-out;
     z-index: 10;
     width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-footer a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.game-footer a:hover {
+    color: var(--color-secondary);
+    text-decoration: underline;
 }
 
 /* Unified Game Container Layout - Acts as a centering wrapper */
